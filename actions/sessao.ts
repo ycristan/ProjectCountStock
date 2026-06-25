@@ -131,7 +131,12 @@ export async function criarEquipes(
       const { data: userData, error: userError } = await admin.auth.admin.createUser({
         email,
         password: userPin,
-        user_metadata: { role: 'counter', team_id: teamData.id, counter_role: pessoa.role },
+        user_metadata: {
+          role: 'counter',
+          team_id: teamData.id,
+          counter_role: pessoa.role,
+          full_name: pessoa.nome,
+        },
         email_confirm: true,
       })
 
