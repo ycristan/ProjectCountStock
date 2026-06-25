@@ -3,9 +3,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
-function makeSupabase(cookieStore: ReadonlyRequestCookies) {
+async function makeSupabase() {
+  const cookieStore = await cookies()
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -31,12 +31,8 @@ export async function login(
   const username = (formData.get('username') as string).trim().toLowerCase()
   const password = formData.get('password') as string
 
-  const cookieStore = await cookies()
-  const supabase = makeSupabase(cookieStore)
-
-  // Admins use real email; counters use username@count.local
+  const supabase = await makeSupabase()
   const email = username.includes('@') ? username : `${username}@count.local`
-
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
@@ -47,8 +43,7 @@ export async function login(
 }
 
 export async function logout() {
-  const cookieStore = await cookies()
-  const supabase = makeSupabase(cookieStore)
+  const supabase = await makeSupabase()
   await supabase.auth.signOut()
   redirect('/login')
 }
