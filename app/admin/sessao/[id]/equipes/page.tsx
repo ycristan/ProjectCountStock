@@ -64,24 +64,31 @@ export default function EquipesPage({
           <thead>
             <tr className="bg-gray-100">
               <th className="border border-gray-300 px-3 py-2 text-left">Equipe</th>
+              <th className="border border-gray-300 px-3 py-2 text-left">Cód. Equipe</th>
               <th className="border border-gray-300 px-3 py-2 text-left">Função</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Usuário</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">PIN</th>
+              <th className="border border-gray-300 px-3 py-2 text-left">PIN pessoal</th>
             </tr>
           </thead>
           <tbody>
             {credenciais.map((c, i) => (
               <tr key={i} className="even:bg-gray-50">
                 <td className="border border-gray-300 px-3 py-2">{c.team}</td>
+                <td className="border border-gray-300 px-3 py-2 font-mono font-bold text-blue-700">
+                  {c.team_pin}
+                </td>
                 <td className="border border-gray-300 px-3 py-2">
                   {ROLE_LABEL[c.role] ?? c.role}
                 </td>
-                <td className="border border-gray-300 px-3 py-2 font-mono">{c.username}</td>
-                <td className="border border-gray-300 px-3 py-2 font-mono font-bold">{c.pin}</td>
+                <td className="border border-gray-300 px-3 py-2 font-mono font-bold">
+                  {c.user_pin}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+        <p className="mt-4 text-xs text-gray-500 print:hidden">
+          Cód. Equipe é compartilhado por todos da equipe. PIN pessoal é individual.
+        </p>
       </div>
     )
   }

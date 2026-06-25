@@ -86,9 +86,18 @@ export type EquipeInput = {
 
 export type Credencial = {
   team: string
-  username: string
-  pin: string
+  team_pin: string
   role: string
+  user_pin: string
+}
+
+function genPin(exclude: Set<string>): string {
+  let pin: string
+  do {
+    pin = String(Math.floor(1000 + Math.random() * 9000))
+  } while (exclude.has(pin))
+  exclude.add(pin)
+  return pin
 }
 
 export async function criarEquipes(
@@ -98,17 +107,14 @@ export async function criarEquipes(
   const supabase = await createClient()
   const admin = createAdminClient()
   const credenciais: Credencial[] = []
-
-  const roleShort: Record<string, string> = {
-    contador_1: 'c1',
-    contador_2: 'c2',
-    independente: 'ind',
-  }
+  const usedTeamPins = new Set<string>()
 
   for (const equipe of equipes) {
+    const teamPin = genPin(usedTeamPins)
+
     const { data: teamData, error: teamError } = await supabase
       .from('teams')
-      .insert({ session_id: sessaoId, team_name: equipe.team_name })
+      .insert({ session_id: sessaoId, team_name: equipe.team_name, team_pin: teamPin })
       .select('id')
       .single()
 
@@ -116,39 +122,36 @@ export async function criarEquipes(
       return { error: `Erro ao criar equipe "${equipe.team_name}".` }
     }
 
+    const usedUserPins = new Set<string>()
+
     for (const pessoa of equipe.pessoas) {
-      const slug = pessoa.nome
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
-        .replace(/[^a-z0-9]/g, '')
-      const username = `${slug}.eq${equipe.equipeNum}.${roleShort[pessoa.role]}`
-      const pin = String(Math.floor(1000 + Math.random() * 9000))
-      const email = `${username}@count.local`
+      const userPin = genPin(usedUserPins)
+      const email = `${teamPin}${userPin}@count.local`
 
       const { data: userData, error: userError } = await admin.auth.admin.createUser({
         email,
-        password: pin,
+        password: userPin,
         user_metadata: { role: 'counter', team_id: teamData.id, counter_role: pessoa.role },
         email_confirm: true,
       })
 
       if (userError || !userData.user) {
-        return { error: `Erro ao criar usuário "${username}": ${userError?.message}` }
+        return { error: `Erro ao criar usuário: ${userError?.message}` }
       }
 
       const { error: accountError } = await supabase.from('counter_accounts').insert({
         auth_user_id: userData.user.id,
         team_id: teamData.id,
         role: pessoa.role,
-        username,
+        username: `${teamPin}${userPin}`,
+        user_pin: userPin,
       })
 
       if (accountError) {
-        return { error: `Erro ao salvar conta "${username}": ${accountError.message}` }
+        return { error: `Erro ao salvar conta: ${accountError.message}` }
       }
 
-      credenciais.push({ team: equipe.team_name, username, pin, role: pessoa.role })
+      credenciais.push({ team: equipe.team_name, team_pin: teamPin, role: pessoa.role, user_pin: userPin })
     }
   }
 
