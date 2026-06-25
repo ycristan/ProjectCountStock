@@ -29,17 +29,31 @@ export async function login(
   _prevState: { error: string } | null,
   formData: FormData
 ): Promise<{ error: string } | null> {
-  const username = (formData.get('username') as string).trim().toLowerCase()
-  const password = formData.get('password') as string
+  const teamPin = (formData.get('team_pin') as string | null)?.trim()
+  const userPin = (formData.get('user_pin') as string | null)?.trim()
+  const email = (formData.get('email') as string | null)?.trim().toLowerCase()
+  const password = formData.get('password') as string | null
 
-  const supabase = await makeSupabase()
-  const email = username.includes('@') ? username : `${username}@count.local`
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  let signInEmail: string
+  let signInPassword: string
 
-  if (error) {
-    return { error: 'Usuário ou PIN inválido.' }
+  if (teamPin && userPin) {
+    signInEmail = `${teamPin}${userPin}@count.local`
+    signInPassword = userPin
+  } else if (email && password) {
+    signInEmail = email
+    signInPassword = password
+  } else {
+    return { error: 'Preencha todos os campos.' }
   }
 
+  const supabase = await makeSupabase()
+  const { error } = await supabase.auth.signInWithPassword({
+    email: signInEmail,
+    password: signInPassword,
+  })
+
+  if (error) return { error: 'Código ou PIN inválido.' }
   redirect('/')
 }
 
