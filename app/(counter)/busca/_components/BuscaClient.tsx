@@ -1,1 +1,133 @@
-J3VzZSBjbGllbnQnCgppbXBvcnQgeyB1c2VTdGF0ZSwgdXNlRWZmZWN0LCB1c2VDYWxsYmFjayB9IGZyb20gJ3JlYWN0JwppbXBvcnQgeyBidXNjYXJJdGVucywgdHlwZSBJdGVtQnVzY2EsIHR5cGUgTGFuY2FyQ29udGFnZW1SZXN1bHQgfSBmcm9tICdAL2FjdGlvbnMvY29udGFnZW0nCmltcG9ydCB7IFNlYXJjaElucHV0IH0gZnJvbSAnLi9TZWFyY2hJbnB1dCcKaW1wb3J0IHsgUmVzdWx0TGlzdCB9IGZyb20gJy4vUmVzdWx0TGlzdCcKaW1wb3J0IHsgQ291bnRGb3JtIH0gZnJvbSAnLi9Db3VudEZvcm0nCmltcG9ydCB7IFN1Y2Nlc3NTY3JlZW4gfSBmcm9tICcuL1N1Y2Nlc3NTY3JlZW4nCgp0eXBlIFRlbGEgPSAnYnVzY2EnIHwgJ2Zvcm0nIHwgJ3N1Y2Vzc28nCgp0eXBlIFN1Y2Vzc29EYXRhID0gewogIGJyYW5kQ29kZTogc3RyaW5nCiAgYnJhbmROYW1lOiBzdHJpbmcKICBmaW5hbENhc2VzOiBudW1iZXIKICBmaW5hbFVuaXRzOiBudW1iZXIKfQoKZXhwb3J0IGZ1bmN0aW9uIEJ1c2NhQ2xpZW50KCkgewogIGNvbnN0IFt0ZWxhLCBzZXRUZWxhXSA9IHVzZVN0YXRlPFRlbGE+KCdidXNjYScpCiAgY29uc3QgW3Rlcm1vLCBzZXRUZXJtb10gPSB1c2VTdGF0ZSgnJykKICBjb25zdCBbcmVzdWx0YWRvcywgc2V0UmVzdWx0YWRvc10gPSB1c2VTdGF0ZTxJdGVtQnVzY2FbXT4oW10pCiAgY29uc3QgW2xvYWRpbmcsIHNldExvYWRpbmddID0gdXNlU3RhdGUoZmFsc2UpCiAgY29uc3QgW2l0ZW1TZWxlY2lvbmFkbywgc2V0SXRlbVNlbGVjaW9uYWRvXSA9IHVzZVN0YXRlPEl0ZW1CdXNjYSB8IG51bGw+KG51bGwpCiAgY29uc3QgW3N1Y2Vzc28sIHNldFN1Y2Vzc29dID0gdXNlU3RhdGU8U3VjZXNzb0RhdGEgfCBudWxsPihudWxsKQoKICAvLyBCdXNjYSBjb20gZGVib3VuY2UgMzAwIG1zCiAgdXNlRWZmZWN0KCgpID0+IHsKICAgIGlmICghdGVybW8udHJpbSgpKSB7CiAgICAgIHNldFJlc3VsdGFkb3MoW10pCiAgICAgIHJldHVybgogICAgfQogICAgc2V0TG9hZGluZyh0cnVlKQogICAgbGV0IGFjdGl2ZSA9IHRydWUKICAgIGNvbnN0IHRpbWVyID0gc2V0VGltZW91dChhc3luYyAoKSA9PiB7CiAgICAgIHRyeSB7CiAgICAgICAgY29uc3QgaXRlbXMgPSBhd2FpdCBidXNjYXJJdGVucyh0ZXJtbykKICAgICAgICBpZiAoYWN0aXZlKSBzZXRSZXN1bHRhZG9zKGl0ZW1zKQogICAgICB9IGNhdGNoIHsKICAgICAgICBpZiAoYWN0aXZlKSBzZXRSZXN1bHRhZG9zKFtdKQogICAgICB9IGZpbmFsbHkgewogICAgICAgIGlmIChhY3RpdmUpIHNldExvYWRpbmcoZmFsc2UpCiAgICAgIH0KICAgIH0sIDMwMCkKICAgIHJldHVybiAoKSA9PiB7CiAgICAgIGFjdGl2ZSA9IGZhbHNlCiAgICAgIGNsZWFyVGltZW91dCh0aW1lcikKICAgICAgc2V0TG9hZGluZyhmYWxzZSkKICAgIH0KICB9LCBbdGVybW9dKQoKICBjb25zdCBoYW5kbGVWb2x0YXIgPSB1c2VDYWxsYmFjaygoKSA9PiB7CiAgICBzZXRUZWxhKCdidXNjYScpCiAgICBzZXRJdGVtU2VsZWNpb25hZG8obnVsbCkKICB9LCBbXSkKCiAgY29uc3QgaGFuZGxlU3VjZXNzbyA9IHVzZUNhbGxiYWNrKAogICAgKHJlc3VsdDogUmVxdWlyZWQ8UGljazxMYW5jYXJDb250YWdlbVJlc3VsdCwgJ2ZpbmFsX2Nhc2VzJyB8ICdmaW5hbF91bml0cycgfCAnYnJhbmRfbmFtZSc+PikgPT4gewogICAgICBzZXRTdWNlc3NvKHsKICAgICAgICBicmFuZENvZGU6IGl0ZW1TZWxlY2lvbmFkbyEuYnJhbmRfY29kZSwKICAgICAgICBicmFuZE5hbWU6IHJlc3VsdC5icmFuZF9uYW1lLAogICAgICAgIGZpbmFsQ2FzZXM6IHJlc3VsdC5maW5hbF9jYXNlcywKICAgICAgICBmaW5hbFVuaXRzOiByZXN1bHQuZmluYWxfdW5pdHMsCiAgICAgIH0pCiAgICAgIHNldFRlbGEoJ3N1Y2Vzc28nKQogICAgfSwKICAgIFtpdGVtU2VsZWNpb25hZG9dCiAgKQoKICBjb25zdCBoYW5kbGVEb25lID0gdXNlQ2FsbGJhY2soKCkgPT4gewogICAgc2V0VGVsYSgnYnVzY2EnKQogICAgc2V0VGVybW8oJycpCiAgICBzZXRSZXN1bHRhZG9zKFtdKQogICAgc2V0SXRlbVNlbGVjaW9uYWRvKG51bGwpCiAgICBzZXRTdWNlc3NvKG51bGwpCiAgfSwgW10pCgogIGlmICh0ZWxhID09PSAnc3VjZXNzbycgJiYgc3VjZXNzbykgewogICAgcmV0dXJuICgKICAgICAgPFN1Y2Nlc3NTY3JlZW4KICAgICAgICBicmFuZENvZGU9e3N1Y2Vzc28uYnJhbmRDb2RlfQogICAgICAgIGJyYW5kTmFtZT17c3VjZXNzby5icmFuZE5hbWV9CiAgICAgICAgZmluYWxDYXNlcz17c3VjZXNzby5maW5hbENhc2VzfQogICAgICAgIGZpbmFsVW5pdHM9e3N1Y2Vzc28uZmluYWxVbml0c30KICAgICAgICBvbkRvbmU9e2hhbmRsZURvbmV9CiAgICAgIC8+CiAgICApCiAgfQoKICBpZiAodGVsYSA9PT0gJ2Zvcm0nICYmIGl0ZW1TZWxlY2lvbmFkbykgewogICAgcmV0dXJuICgKICAgICAgPENvdW50Rm9ybQogICAgICAgIGl0ZW09e2l0ZW1TZWxlY2lvbmFkb30KICAgICAgICBvblZvbHRhcj17aGFuZGxlVm9sdGFyfQogICAgICAgIG9uU3VjZXNzbz17aGFuZGxlU3VjZXNzb30KICAgICAgLz4KICAgICkKICB9CgogIHJldHVybiAoCiAgICA8ZGl2PgogICAgICA8aDIgY2xhc3NOYW1lPSJ0ZXh0LXhsIGZvbnQtc2VtaWJvbGQgdGV4dC1zbGF0ZS05MDAgbWItNCI+QnVzY2FyIEl0ZW08L2gyPgogICAgICA8U2VhcmNoSW5wdXQgdmFsdWU9e3Rlcm1vfSBvbkNoYW5nZT17c2V0VGVybW99IGxvYWRpbmc9e2xvYWRpbmd9IC8+CgogICAgICB7dGVybW8udHJpbSgpICYmIHJlc3VsdGFkb3MubGVuZ3RoID09PSAwICYmICFsb2FkaW5nICYmICgKICAgICAgICA8cCBjbGFzc05hbWU9InRleHQtc20gdGV4dC1zbGF0ZS00MDAgbXQtMyB0ZXh0LWNlbnRlciI+CiAgICAgICAgICBOZW5odW0gaXRlbSBlbmNvbnRyYWRvIHBhcmEgJmxkcXVvO3t0ZXJtb30mcmRxdW87LgogICAgICAgIDwvcD4KICAgICAgKX0KCiAgICAgIDxSZXN1bHRMaXN0CiAgICAgICAgaXRlbXM9e3Jlc3VsdGFkb3N9CiAgICAgICAgb25TZWxlY3Q9eyhpdGVtKSA9PiB7CiAgICAgICAgICBzZXRJdGVtU2VsZWNpb25hZG8oaXRlbSkKICAgICAgICAgIHNldFRlbGEoJ2Zvcm0nKQogICAgICAgIH19CiAgICAgIC8+CgogICAgICB7IXRlcm1vICYmICgKICAgICAgICA8cCBjbGFzc05hbWU9InRleHQtc20gdGV4dC1zbGF0ZS00MDAgbXQtNCB0ZXh0LWNlbnRlciI+CiAgICAgICAgICBCdXNxdWUgcG9yIGPDs2RpZ28gKGV4OiA2MzIzKSwgbm9tZSBkbyBwcm9kdXRvIG91IEJJTiAoZXg6IEEtMDEpCiAgICAgICAgPC9wPgogICAgICApfQogICAgPC9kaXY+CiAgKQp9
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { buscarItens } from '@/actions/contagem'
+import type { ItemBusca, LancarContagemResult } from '@/actions/contagem'
+import { SearchInput } from './SearchInput'
+import { ResultList } from './ResultList'
+import { CountForm } from './CountForm'
+import { SuccessScreen } from './SuccessScreen'
+
+type Tela = 'busca' | 'form' | 'sucesso'
+
+type SucessoData = {
+  brandCode: string
+  brandName: string
+  finalCases: number
+  finalUnits: number
+}
+
+type SucessoResult = {
+  final_cases: number
+  final_units: number
+  brand_name: string
+}
+
+export function BuscaClient() {
+  const [tela, setTela] = useState<Tela>('busca')
+  const [termo, setTermo] = useState('')
+  const [resultados, setResultados] = useState<ItemBusca[]>([])
+  const [loading, setLoading] = useState(false)
+  const [itemSelecionado, setItemSelecionado] = useState<ItemBusca | null>(null)
+  const [sucesso, setSucesso] = useState<SucessoData | null>(null)
+
+  useEffect(() => {
+    if (!termo.trim()) {
+      setResultados([])
+      return
+    }
+    setLoading(true)
+    let active = true
+    const timer = setTimeout(async () => {
+      try {
+        const items = await buscarItens(termo)
+        if (active) setResultados(items)
+      } catch (_e) {
+        if (active) setResultados([])
+      } finally {
+        if (active) setLoading(false)
+      }
+    }, 300)
+    return () => {
+      active = false
+      clearTimeout(timer)
+      setLoading(false)
+    }
+  }, [termo])
+
+  const handleVoltar = useCallback(() => {
+    setTela('busca')
+    setItemSelecionado(null)
+  }, [])
+
+  const handleSucesso = useCallback(
+    (result: SucessoResult) => {
+      if (!itemSelecionado) return
+      setSucesso({
+        brandCode: itemSelecionado.brand_code,
+        brandName: result.brand_name,
+        finalCases: result.final_cases,
+        finalUnits: result.final_units,
+      })
+      setTela('sucesso')
+    },
+    [itemSelecionado]
+  )
+
+  const handleDone = useCallback(() => {
+    setTela('busca')
+    setTermo('')
+    setResultados([])
+    setItemSelecionado(null)
+    setSucesso(null)
+  }, [])
+
+  if (tela === 'sucesso' && sucesso) {
+    return (
+      <SuccessScreen
+        brandCode={sucesso.brandCode}
+        brandName={sucesso.brandName}
+        finalCases={sucesso.finalCases}
+        finalUnits={sucesso.finalUnits}
+        onDone={handleDone}
+      />
+    )
+  }
+
+  if (tela === 'form' && itemSelecionado) {
+    return (
+      <CountForm
+        item={itemSelecionado}
+        onVoltar={handleVoltar}
+        onSucesso={handleSucesso}
+      />
+    )
+  }
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold text-slate-900 mb-4">Buscar Item</h2>
+      <SearchInput value={termo} onChange={setTermo} loading={loading} />
+
+      {termo.trim() && resultados.length === 0 && !loading && (
+        <p className="text-sm text-slate-400 mt-3 text-center">
+          Nenhum item encontrado para &ldquo;{termo}&rdquo;.
+        </p>
+      )}
+
+      <ResultList
+        items={resultados}
+        onSelect={(item) => {
+          setItemSelecionado(item)
+          setTela('form')
+        }}
+      />
+
+      {!termo && (
+        <p className="text-sm text-slate-400 mt-4 text-center">
+          Busque por código (ex: 6323), nome do produto ou BIN (ex: A-01)
+        </p>
+      )}
+    </div>
+  )
+}
