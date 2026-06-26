@@ -56,11 +56,11 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
   let items: RawItem[] = []
   let binContextoMap: Record<string, string> = {}
 
-  // 1. Exact brand_code match
+  // 1. Exact brand_code match (case-insensitive)
   const { data: exactMatch } = await supabase
     .from('inventory_items')
     .select('brand_code, brand_name, bpu, pallet_size')
-    .eq('brand_code', termoTrimmed)
+    .ilike('brand_code', termoTrimmed)
     .limit(1)
 
   if (exactMatch && exactMatch.length > 0) {
@@ -148,6 +148,10 @@ export async function lancarContagem(
     return { error: 'Valores não podem ser negativos.' }
   }
 
+  if (!Number.isInteger(payload.pallets) || !Number.isInteger(payload.cases) || !Number.isInteger(payload.units)) {
+    return { error: 'Valores de contagem devem ser números inteiros' }
+  }
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -213,6 +217,7 @@ export async function lancarContagem(
       .eq('id', existing.id)
     if (error) return { error: `Erro ao atualizar: ${error.message}` }
   } else {
+    // Race: concurrent submit can violate partial unique index; tolerable (one device per counter)
     const { error } = await supabase.from('count_entries').insert({
       team_id: teamId,
       counter_role: counterRole,
