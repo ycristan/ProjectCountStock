@@ -1,1 +1,186 @@
-J3VzZSBjbGllbnQnCgppbXBvcnQgeyB1c2VTdGF0ZSwgdXNlRWZmZWN0LCB1c2VUcmFuc2l0aW9uIH0gZnJvbSAncmVhY3QnCmltcG9ydCB0eXBlIHsgSXRlbUJ1c2NhLCBMYW5jYXJDb250YWdlbVJlc3VsdCB9IGZyb20gJ0AvYWN0aW9ucy9jb250YWdlbScKaW1wb3J0IHsgbGFuY2FyQ29udGFnZW0gfSBmcm9tICdAL2FjdGlvbnMvY29udGFnZW0nCgp0eXBlIFByb3BzID0gewogIGl0ZW06IEl0ZW1CdXNjYQogIG9uVm9sdGFyOiAoKSA9PiB2b2lkCiAgb25TdWNlc3NvOiAocmVzdWx0OiBSZXF1aXJlZDxQaWNrPExhbmNhckNvbnRhZ2VtUmVzdWx0LCAnZmluYWxfY2FzZXMnIHwgJ2ZpbmFsX3VuaXRzJyB8ICdicmFuZF9uYW1lJz4+KSA9PiB2b2lkCn0KCmZ1bmN0aW9uIGluaXRCaW4oaXRlbTogSXRlbUJ1c2NhKTogc3RyaW5nIHwgbnVsbCB7CiAgaWYgKGl0ZW0uYmluQ29udGV4dG8pIHJldHVybiBpdGVtLmJpbkNvbnRleHRvCiAgaWYgKGl0ZW0uYmlucy5sZW5ndGggPT09IDEpIHJldHVybiBpdGVtLmJpbnNbMF0KICBpZiAoaXRlbS5iaW5zLmxlbmd0aCA9PT0gMCkgcmV0dXJuIG51bGwKICByZXR1cm4gbnVsbCAvLyBtw7psdGlwbG9zIEJJTnMgc2VtIGNvbnRleHRvIOKGkiBhZ3VhcmRhIHNlbGXDp8Ojbwp9CgpleHBvcnQgZnVuY3Rpb24gQ291bnRGb3JtKHsgaXRlbSwgb25Wb2x0YXIsIG9uU3VjZXNzbyB9OiBQcm9wcykgewogIGNvbnN0IFtiaW5TZWxlY2lvbmFkbywgc2V0QmluU2VsZWNpb25hZG9dID0gdXNlU3RhdGU8c3RyaW5nIHwgbnVsbD4oaW5pdEJpbihpdGVtKSkKCiAgY29uc3QgZW50cnlBdHVhbCA9IGl0ZW0uZW50cmllc0V4aXN0ZW50ZXMuZmluZCgKICAgIChlKSA9PiBlLmJpbl9sb2NhdGlvbiA9PT0gYmluU2VsZWNpb25hZG8KICApID8/IChpdGVtLmVudHJpZXNFeGlzdGVudGVzLmxlbmd0aCA+IDAgJiYgaXRlbS5iaW5zLmxlbmd0aCA8PSAxID8gaXRlbS5lbnRyaWVzRXhpc3RlbnRlc1swXSA6IHVuZGVmaW5lZCkKCiAgY29uc3QgaXNFZGl0ID0gISFlbnRyeUF0dWFsCgogIGNvbnN0IFtwYWxsZXRzLCBzZXRQYWxsZXRzXSA9IHVzZVN0YXRlKFN0cmluZyhlbnRyeUF0dWFsPy5wYWxsZXRzID8/IDApKQogIGNvbnN0IFtjYXNlcywgc2V0Q2FzZXNdID0gdXNlU3RhdGUoU3RyaW5nKGVudHJ5QXR1YWw/LmNhc2VzID8/IDApKQogIGNvbnN0IFt1bml0cywgc2V0VW5pdHNdID0gdXNlU3RhdGUoU3RyaW5nKGVudHJ5QXR1YWw/LnVuaXRzID8/IDApKQogIGNvbnN0IFtlcnJvLCBzZXRFcnJvXSA9IHVzZVN0YXRlPHN0cmluZyB8IG51bGw+KG51bGwpCiAgY29uc3QgW2lzUGVuZGluZywgc3RhcnRUcmFuc2l0aW9uXSA9IHVzZVRyYW5zaXRpb24oKQoKICB1c2VFZmZlY3QoKCkgPT4gewogICAgY29uc3QgZW50cnkgPSBpdGVtLmVudHJpZXNFeGlzdGVudGVzLmZpbmQoKGUpID0+IGUuYmluX2xvY2F0aW9uID09PSBiaW5TZWxlY2lvbmFkbykKICAgIGlmIChlbnRyeSkgewogICAgICBzZXRQYWxsZXRzKFN0cmluZyhlbnRyeS5wYWxsZXRzKSkKICAgICAgc2V0Q2FzZXMoU3RyaW5nKGVudHJ5LmNhc2VzKSkKICAgICAgc2V0VW5pdHMoU3RyaW5nKGVudHJ5LnVuaXRzKSkKICAgIH0gZWxzZSB7CiAgICAgIHNldFBhbGxldHMoJzAnKQogICAgICBzZXRDYXNlcygnMCcpCiAgICAgIHNldFVuaXRzKCcwJykKICAgIH0KICB9LCBbYmluU2VsZWNpb25hZG8sIGl0ZW0uZW50cmllc0V4aXN0ZW50ZXNdKQoKICBjb25zdCBwcmVjaXNhU2VsZWNpb25hckJpbiA9CiAgICAhaXRlbS5iaW5Db250ZXh0byAmJiBpdGVtLmJpbnMubGVuZ3RoID4gMSAmJiBiaW5TZWxlY2lvbmFkbyA9PT0gbnVsbAoKICBjb25zdCBoYW5kbGVTdWJtaXQgPSAoKSA9PiB7CiAgICBpZiAocHJlY2lzYVNlbGVjaW9uYXJCaW4pIHsKICAgICAgc2V0RXJybygnU2VsZWNpb25lIHVtIEJJTiBhbnRlcyBkZSBjb25maXJtYXIuJykKICAgICAgcmV0dXJuCiAgICB9CiAgICBzZXRFcnJvKG51bGwpCiAgICBjb25zdCBwID0gTWF0aC5tYXgoMCwgcGFyc2VJbnQocGFsbGV0cykgfHwgMCkKICAgIGNvbnN0IGMgPSBNYXRoLm1heCgwLCBwYXJzZUludChjYXNlcykgfHwgMCkKICAgIGNvbnN0IHUgPSBNYXRoLm1heCgwLCBwYXJzZUludCh1bml0cykgfHwgMCkKCiAgICBzdGFydFRyYW5zaXRpb24oYXN5bmMgKCkgPT4gewogICAgICBjb25zdCByZXN1bHQgPSBhd2FpdCBsYW5jYXJDb250YWdlbSh7CiAgICAgICAgYnJhbmRfY29kZTogaXRlbS5icmFuZF9jb2RlLAogICAgICAgIGJpbl9sb2NhdGlvbjogYmluU2VsZWNpb25hZG8sCiAgICAgICAgcGFsbGV0czogcCwKICAgICAgICBjYXNlczogYywKICAgICAgICB1bml0czogdSwKICAgICAgfSkKICAgICAgaWYgKHJlc3VsdC5lcnJvcikgewogICAgICAgIHNldEVycm8ocmVzdWx0LmVycm9yKQogICAgICB9IGVsc2UgewogICAgICAgIG9uU3VjZXNzbyh7CiAgICAgICAgICBmaW5hbF9jYXNlczogcmVzdWx0LmZpbmFsX2Nhc2VzISwKICAgICAgICAgIGZpbmFsX3VuaXRzOiByZXN1bHQuZmluYWxfdW5pdHMhLAogICAgICAgICAgYnJhbmRfbmFtZTogcmVzdWx0LmJyYW5kX25hbWUhLAogICAgICAgIH0pCiAgICAgIH0KICAgIH0pCiAgfQoKICBjb25zdCBib3JkZXJDbGFzcyA9IGlzRWRpdCA/ICdib3JkZXItYW1iZXItNDAwJyA6ICdib3JkZXItc2xhdGUtMzAwJwogIGNvbnN0IGJnSW5wdXQgPSBpc0VkaXQgPyAnYmctYW1iZXItNTAnIDogJ2JnLXNsYXRlLTUwJwogIGNvbnN0IGhlYWRlckNsYXNzID0gaXNFZGl0CiAgICA/ICdiZy1hbWJlci01MCBib3JkZXItYW1iZXItMjAwIHRleHQtYW1iZXItNzAwJwogICAgOiAnYmctZ3JlZW4tNTAgYm9yZGVyLWdyZWVuLTIwMCB0ZXh0LWdyZWVuLTcwMCcKICBjb25zdCBidG5DbGFzcyA9IGlzRWRpdCA/ICdiZy1hbWJlci02MDAnIDogJ2JnLWJsdWUtNjAwJwogIGNvbnN0IGJ0bkxhYmVsID0gaXNQZW5kaW5nCiAgICA/ICdTYWx2YW5kby4uLicKICAgIDogaXNFZGl0CiAgICA/ICfinI/vuI8gU2FsdmFyIEVkacOnw6NvJwogICAgOiAnQ29uZmlybWFyIENvbnRhZ2VtJwoKICByZXR1cm4gKAogICAgPGRpdj4KICAgICAgey8qIEhlYWRlciBkbyBpdGVtICovfQogICAgICA8ZGl2IGNsYXNzTmFtZT17YHJvdW5kZWQteGwgcC0zIG1iLTQgYm9yZGVyICR7aGVhZGVyQ2xhc3N9YH0+CiAgICAgICAgPGRpdiBjbGFzc05hbWU9InRleHQtWzExcHhdIGZvbnQtc2VtaWJvbGQgdXBwZXJjYXNlIHRyYWNraW5nLXdpZGUiPgogICAgICAgICAge2lzRWRpdCA/ICfinJMgSsOhIGNvbnRhZG8g4oCUIGVkaXTDoXZlbCcgOiAnSXRlbSBzZWxlY2lvbmFkbyd9CiAgICAgICAgPC9kaXY+CiAgICAgICAgPGRpdiBjbGFzc05hbWU9InRleHQtbGcgZm9udC1ib2xkIHRleHQtc2xhdGUtOTAwIG10LTAuNSI+e2l0ZW0uYnJhbmRfY29kZX08L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzTmFtZT0idGV4dC1zbSB0ZXh0LXNsYXRlLTcwMCI+e2l0ZW0uYnJhbmRfbmFtZX08L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzTmFtZT0idGV4dC14cyB0ZXh0LXNsYXRlLTUwMCBtdC0xIj4KICAgICAgICAgIHtpdGVtLmJpbnMubGVuZ3RoID4gMCA/IGBCSU46ICR7aXRlbS5iaW5zLmpvaW4oJywgJyl9IMK3IGAgOiAnJ30KICAgICAgICAgIEJQVToge2l0ZW0uYnB1fSDCtyBQYWxsZXQ6IHtpdGVtLnBhbGxldF9zaXplfQogICAgICAgIDwvZGl2PgogICAgICA8L2Rpdj4KCiAgICAgIHsvKiBTZWxldG9yIGRlIEJJTiBxdWFuZG8gbmVjZXNzw6FyaW8gKi99CiAgICAgIHshaXRlbS5iaW5Db250ZXh0byAmJiBpdGVtLmJpbnMubGVuZ3RoID4gMSAmJiAoCiAgICAgICAgPGRpdiBjbGFzc05hbWU9Im1iLTQiPgogICAgICAgICAgPGRpdiBjbGFzc05hbWU9InRleHQteHMgZm9udC1zZW1pYm9sZCB0ZXh0LXNsYXRlLTUwMCB1cHBlcmNhc2UgbWItMiI+CiAgICAgICAgICAgIFNlbGVjaW9uZSBvIEJJTiBxdWUgZXN0w6EgY29udGFuZG8KICAgICAgICAgIDwvZGl2PgogICAgICAgICAgPGRpdiBjbGFzc05hbWU9ImZsZXggZ2FwLTIgZmxleC13cmFwIj4KICAgICAgICAgICAge2l0ZW0uYmlucy5tYXAoKGJpbikgPT4gKAogICAgICAgICAgICAgIDxidXR0b24KICAgICAgICAgICAgICAgIGtleT17YmlufQogICAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gc2V0QmluU2VsZWNpb25hZG8oYmluKX0KICAgICAgICAgICAgICAgIGNsYXNzTmFtZT17YHB4LTMgcHktMiByb3VuZGVkLWxnIHRleHQtc20gYm9yZGVyIGZvbnQtbWVkaXVtIHRyYW5zaXRpb24tY29sb3JzICR7CiAgICAgICAgICAgICAgICAgIGJpblNlbGVjaW9uYWRvID09PSBiaW4KICAgICAgICAgICAgICAgICAgICA/ICdiZy1pbmRpZ28tNjAwIHRleHQtd2hpdGUgYm9yZGVyLWluZGlnby02MDAnCiAgICAgICAgICAgICAgICAgICAgOiAnYm9yZGVyLXNsYXRlLTIwMCB0ZXh0LXNsYXRlLTcwMCBiZy13aGl0ZScKICAgICAgICAgICAgICAgIH1gfQogICAgICAgICAgICAgID4KICAgICAgICAgICAgICAgIHtiaW59CiAgICAgICAgICAgICAgPC9idXR0b24+CiAgICAgICAgICAgICkpfQogICAgICAgICAgPC9kaXY+CiAgICAgICAgPC9kaXY+CiAgICAgICl9CgogICAgICB7LyogQ2FtcG9zIHBhbGxldHMvY2FzZXMvdW5pdHMgKi99CiAgICAgIDxkaXYgY2xhc3NOYW1lPSJncmlkIGdyaWQtY29scy0zIGdhcC0yIG1iLTQiPgogICAgICAgIHtbCiAgICAgICAgICB7IGxhYmVsOiAnUGFsbGV0cycsIHZhbHVlOiBwYWxsZXRzLCBzZXQ6IHNldFBhbGxldHMgfSwKICAgICAgICAgIHsgbGFiZWw6ICdDYXNlcycsIHZhbHVlOiBjYXNlcywgc2V0OiBzZXRDYXNlcyB9LAogICAgICAgICAgeyBsYWJlbDogJ1VuaXRzJywgdmFsdWU6IHVuaXRzLCBzZXQ6IHNldFVuaXRzIH0sCiAgICAgICAgXS5tYXAoKHsgbGFiZWwsIHZhbHVlLCBzZXQgfSkgPT4gKAogICAgICAgICAgPGRpdiBrZXk9e2xhYmVsfSBjbGFzc05hbWU9InRleHQtY2VudGVyIj4KICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9InRleHQtWzExcHhdIHRleHQtc2xhdGUtNTAwIGZvbnQtc2VtaWJvbGQgdXBwZXJjYXNlIG1iLTEiPntsYWJlbH08L2Rpdj4KICAgICAgICAgICAgPGlucHV0CiAgICAgICAgICAgICAgdHlwZT0ibnVtYmVyIgogICAgICAgICAgICAgIGlucHV0TW9kZT0ibnVtZXJpYyIKICAgICAgICAgICAgICBtaW49IjAiCiAgICAgICAgICAgICAgdmFsdWU9e3ZhbHVlfQogICAgICAgICAgICAgIG9uQ2hhbmdlPXsoZSkgPT4gc2V0KGUudGFyZ2V0LnZhbHVlKX0KICAgICAgICAgICAgICBjbGFzc05hbWU9e2B3LWZ1bGwgdGV4dC1jZW50ZXIgdGV4dC0yeGwgZm9udC1ib2xkIHB4LTEgcHktMyByb3VuZGVkLXhsIGJvcmRlci1bMS41cHhdICR7Ym9yZGVyQ2xhc3N9ICR7YmdJbnB1dH0gZm9jdXM6b3V0bGluZS1ub25lIGZvY3VzOmJvcmRlci1pbmRpZ28tNTAwYH0KICAgICAgICAgICAgLz4KICAgICAgICAgIDwvZGl2PgogICAgICAgICkpfQogICAgICA8L2Rpdj4KCiAgICAgIHshaXNFZGl0ICYmICgKICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iYmcteWVsbG93LTUwIGJvcmRlciBib3JkZXIteWVsbG93LTIwMCByb3VuZGVkLWxnIHB4LTMgcHktMiB0ZXh0LXhzIHRleHQteWVsbG93LTgwMCBtYi0zIj4KICAgICAgICAgIOKEue+4jyBaZXJvcyBzw6NvIHbDoWxpZG9zIOKAlCBjb25maXJtYSBxdWUgbyBpdGVtIGZvaSBjb250YWRvIGUgZXN0YXZhIHplcmFkby4KICAgICAgICA8L2Rpdj4KICAgICAgKX0KCiAgICAgIHtlcnJvICYmICgKICAgICAgICA8ZGl2IGNsYXNzTmFtZT0iYmctcmVkLTUwIGJvcmRlciBib3JkZXItcmVkLTIwMCByb3VuZGVkLWxnIHB4LTMgcHktMiB0ZXh0LXNtIHRleHQtcmVkLTcwMCBtYi0zIj4KICAgICAgICAgIHtlcnJvfQogICAgICAgIDwvZGl2PgogICAgICApfQoKICAgICAgPGJ1dHRvbgogICAgICAgIG9uQ2xpY2s9e2hhbmRsZVN1Ym1pdH0KICAgICAgICBkaXNhYmxlZD17aXNQZW5kaW5nfQogICAgICAgIGNsYXNzTmFtZT17YHctZnVsbCB0ZXh0LXdoaXRlIGZvbnQtc2VtaWJvbGQgcHktNCByb3VuZGVkLXhsIHRleHQtYmFzZSB0cmFuc2l0aW9uLW9wYWNpdHkgZGlzYWJsZWQ6b3BhY2l0eS02MCAke2J0bkNsYXNzfWB9CiAgICAgID4KICAgICAgICB7YnRuTGFiZWx9CiAgICAgIDwvYnV0dG9uPgogICAgICA8YnV0dG9uCiAgICAgICAgb25DbGljaz17b25Wb2x0YXJ9CiAgICAgICAgY2xhc3NOYW1lPSJ3LWZ1bGwgbXQtMiB0ZXh0LXNsYXRlLTUwMCB0ZXh0LXNtIHB5LTIuNSByb3VuZGVkLXhsIGJvcmRlciBib3JkZXItc2xhdGUtMjAwIgogICAgICA+CiAgICAgICAg4oaQIFZvbHRhciDDoCBidXNjYQogICAgICA8L2J1dHRvbj4KICAgIDwvZGl2PgogICkKfQ==
+'use client'
+
+import { useState, useEffect, useTransition } from 'react'
+import type { ItemBusca } from '@/actions/contagem'
+import { lancarContagem } from '@/actions/contagem'
+
+type SucessoResult = {
+  final_cases: number
+  final_units: number
+  brand_name: string
+}
+
+type Props = {
+  item: ItemBusca
+  onVoltar: () => void
+  onSucesso: (result: SucessoResult) => void
+}
+
+function initBin(item: ItemBusca): string | null {
+  if (item.binContexto) return item.binContexto
+  if (item.bins.length === 1) return item.bins[0]
+  if (item.bins.length === 0) return null
+  return null // múltiplos BINs sem contexto → aguarda seleção
+}
+
+export function CountForm({ item, onVoltar, onSucesso }: Props) {
+  const [binSelecionado, setBinSelecionado] = useState<string | null>(initBin(item))
+
+  const entryAtual = item.entriesExistentes.find(
+    (e) => e.bin_location === binSelecionado
+  ) ?? (item.entriesExistentes.length > 0 && item.bins.length <= 1 ? item.entriesExistentes[0] : undefined)
+
+  const isEdit = !!entryAtual
+
+  const [pallets, setPallets] = useState(String(entryAtual?.pallets ?? 0))
+  const [cases, setCases] = useState(String(entryAtual?.cases ?? 0))
+  const [units, setUnits] = useState(String(entryAtual?.units ?? 0))
+  const [erro, setErro] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    const entry = item.entriesExistentes.find((e) => e.bin_location === binSelecionado)
+    if (entry) {
+      setPallets(String(entry.pallets))
+      setCases(String(entry.cases))
+      setUnits(String(entry.units))
+    } else {
+      setPallets('0')
+      setCases('0')
+      setUnits('0')
+    }
+  }, [binSelecionado, item.entriesExistentes])
+
+  const precisaSelecionarBin =
+    !item.binContexto && item.bins.length > 1 && binSelecionado === null
+
+  const handleSubmit = () => {
+    if (precisaSelecionarBin) {
+      setErro('Selecione um BIN antes de confirmar.')
+      return
+    }
+    setErro(null)
+    const p = Math.max(0, parseInt(pallets) || 0)
+    const c = Math.max(0, parseInt(cases) || 0)
+    const u = Math.max(0, parseInt(units) || 0)
+
+    startTransition(async () => {
+      const result = await lancarContagem({
+        brand_code: item.brand_code,
+        bin_location: binSelecionado,
+        pallets: p,
+        cases: c,
+        units: u,
+      })
+      if (result.error) {
+        setErro(result.error)
+      } else {
+        onSucesso({
+          final_cases: result.final_cases!,
+          final_units: result.final_units!,
+          brand_name: result.brand_name!,
+        })
+      }
+    })
+  }
+
+  const borderClass = isEdit ? 'border-amber-400' : 'border-slate-300'
+  const bgInput = isEdit ? 'bg-amber-50' : 'bg-slate-50'
+  const headerClass = isEdit
+    ? 'bg-amber-50 border-amber-200 text-amber-700'
+    : 'bg-green-50 border-green-200 text-green-700'
+  const btnClass = isEdit ? 'bg-amber-600' : 'bg-blue-600'
+  const btnLabel = isPending
+    ? 'Salvando...'
+    : isEdit
+    ? '✏️ Salvar Edição'
+    : 'Confirmar Contagem'
+
+  return (
+    <div>
+      {/* Header do item */}
+      <div className={`rounded-xl p-3 mb-4 border ${headerClass}`}>
+        <div className="text-[11px] font-semibold uppercase tracking-wide">
+          {isEdit ? '✓ Já contado — editável' : 'Item selecionado'}
+        </div>
+        <div className="text-lg font-bold text-slate-900 mt-0.5">{item.brand_code}</div>
+        <div className="text-sm text-slate-700">{item.brand_name}</div>
+        <div className="text-xs text-slate-500 mt-1">
+          {item.bins.length > 0 ? `BIN: ${item.bins.join(', ')} · ` : ''}
+          BPU: {item.bpu} · Pallet: {item.pallet_size}
+        </div>
+      </div>
+
+      {/* Seletor de BIN quando necessário */}
+      {!item.binContexto && item.bins.length > 1 && (
+        <div className="mb-4">
+          <div className="text-xs font-semibold text-slate-500 uppercase mb-2">
+            Selecione o BIN que está contando
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {item.bins.map((bin) => (
+              <button
+                key={bin}
+                onClick={() => setBinSelecionado(bin)}
+                className={`px-3 py-2 rounded-lg text-sm border font-medium transition-colors ${
+                  binSelecionado === bin
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'border-slate-200 text-slate-700 bg-white'
+                }`}
+              >
+                {bin}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Campos pallets/cases/units */}
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        {[
+          { label: 'Pallets', value: pallets, set: setPallets },
+          { label: 'Cases', value: cases, set: setCases },
+          { label: 'Units', value: units, set: setUnits },
+        ].map(({ label, value, set }) => (
+          <div key={label} className="text-center">
+            <div className="text-[11px] text-slate-500 font-semibold uppercase mb-1">{label}</div>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              value={value}
+              onChange={(e) => set(e.target.value)}
+              className={`w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] ${borderClass} ${bgInput} focus:outline-none focus:border-indigo-500`}
+            />
+          </div>
+        ))}
+      </div>
+
+      {!isEdit && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-xs text-yellow-800 mb-3">
+          ℹ️ Zeros são válidos — confirma que o item foi contado e estava zerado.
+        </div>
+      )}
+
+      {erro && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700 mb-3">
+          {erro}
+        </div>
+      )}
+
+      <button
+        onClick={handleSubmit}
+        disabled={isPending}
+        className={`w-full text-white font-semibold py-4 rounded-xl text-base transition-opacity disabled:opacity-60 ${btnClass}`}
+      >
+        {btnLabel}
+      </button>
+      <button
+        onClick={onVoltar}
+        className="w-full mt-2 text-slate-500 text-sm py-2.5 rounded-xl border border-slate-200"
+      >
+        ← Voltar à busca
+      </button>
+    </div>
+  )
+}
