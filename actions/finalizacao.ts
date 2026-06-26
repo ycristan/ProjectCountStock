@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase-server'
-import { createClient as createAdminClient } from '@/lib/supabase-admin'
+import { createAdminClient } from '@/lib/supabase-admin'
 
 export type FinalizacaoResult = {
   error?: string

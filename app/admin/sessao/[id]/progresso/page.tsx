@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase-server'
-import { createClient as createAdminClient } from '@/lib/supabase-admin'
+import { createAdminClient } from '@/lib/supabase-admin'
 import { ProgressoClient } from './_components/ProgressoClient'
 
 type Counter = {
