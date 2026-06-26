@@ -19,6 +19,13 @@ export default function AdminPage() {
           <h3 className="font-semibold text-gray-900 mb-1">Nova Sessão</h3>
           <p className="text-sm text-gray-500">Criar sessão de contagem e configurar equipes</p>
         </Link>
+        <Link
+          href="/admin/sessoes"
+          className="block p-6 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-sm transition-all"
+        >
+          <h3 className="font-semibold text-gray-900 mb-1">Monitorar Contagem</h3>
+          <p className="text-sm text-gray-500">Acompanhar progresso das equipes em tempo real</p>
+        </Link>
       </div>
     </div>
   )
