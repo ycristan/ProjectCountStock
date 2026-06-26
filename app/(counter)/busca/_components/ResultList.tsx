@@ -1,3 +1,5 @@
+'use client'
+
 import type { ItemBusca } from '@/actions/contagem'
 
 type Props = {
