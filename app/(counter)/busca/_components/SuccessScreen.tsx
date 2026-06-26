@@ -1,1 +1,61 @@
-J3VzZSBjbGllbnQnCgppbXBvcnQgeyB1c2VFZmZlY3QsIHVzZVN0YXRlIH0gZnJvbSAncmVhY3QnCgp0eXBlIFByb3BzID0gewogIGJyYW5kQ29kZTogc3RyaW5nCiAgYnJhbmROYW1lOiBzdHJpbmcKICBmaW5hbENhc2VzOiBudW1iZXIKICBmaW5hbFVuaXRzOiBudW1iZXIKICBvbkRvbmU6ICgpID0+IHZvaWQKfQoKZXhwb3J0IGZ1bmN0aW9uIFN1Y2Nlc3NTY3JlZW4oewogIGJyYW5kQ29kZSwKICBicmFuZE5hbWUsCiAgZmluYWxDYXNlcywKICBmaW5hbFVuaXRzLAogIG9uRG9uZSwKfTogUHJvcHMpIHsKICBjb25zdCBbc2Vjb25kcywgc2V0U2Vjb25kc10gPSB1c2VTdGF0ZSgyKQoKICB1c2VFZmZlY3QoKCkgPT4gewogICAgaWYgKHNlY29uZHMgPT09IDApIHsKICAgICAgb25Eb25lKCkKICAgIH0KICB9LCBbc2Vjb25kcywgb25Eb25lXSkKCiAgdXNlRWZmZWN0KCgpID0+IHsKICAgIGlmIChzZWNvbmRzID09PSAwKSByZXR1cm4KICAgIGNvbnN0IGludGVydmFsID0gc2V0SW50ZXJ2YWwoKCkgPT4gewogICAgICBzZXRTZWNvbmRzKChzKSA9PiBNYXRoLm1heCgwLCBzIC0gMSkpCiAgICB9LCAxMDAwKQogICAgcmV0dXJuICgpID0+IGNsZWFySW50ZXJ2YWwoaW50ZXJ2YWwpCiAgfSwgW3NlY29uZHNdKQoKICByZXR1cm4gKAogICAgPGRpdiBjbGFzc05hbWU9InRleHQtY2VudGVyIHB5LTgiPgogICAgICA8ZGl2IGNsYXNzTmFtZT0idGV4dC01eGwgbWItMyI+4pyFPC9kaXY+CiAgICAgIDxkaXYgY2xhc3NOYW1lPSJ0ZXh0LXhsIGZvbnQtYm9sZCB0ZXh0LXNsYXRlLTkwMCI+Q29udGFnZW0gc2FsdmEhPC9kaXY+CiAgICAgIDxkaXYgY2xhc3NOYW1lPSJ0ZXh0LXNtIHRleHQtc2xhdGUtNTAwIG10LTEiPgogICAgICAgIHticmFuZENvZGV9IMK3IHticmFuZE5hbWV9CiAgICAgIDwvZGl2PgogICAgICA8ZGl2IGNsYXNzTmFtZT0idGV4dC1ncmVlbi02MDAgZm9udC1zZW1pYm9sZCBtdC0xIHRleHQtc20iPgogICAgICAgIHtmaW5hbENhc2VzfSBjYXNlcyArIHtmaW5hbFVuaXRzfSB1bml0cwogICAgICA8L2Rpdj4KCiAgICAgIDxkaXYgY2xhc3NOYW1lPSJtdC02IGJnLWdyZWVuLTUwIGJvcmRlciBib3JkZXItZ3JlZW4tMjAwIHJvdW5kZWQteGwgcC00Ij4KICAgICAgICA8ZGl2IGNsYXNzTmFtZT0idGV4dC1zbSB0ZXh0LXNsYXRlLTYwMCI+Vm9sdGFuZG8gcGFyYSBidXNjYSBlbS4uLjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3NOYW1lPSJ0ZXh0LTR4bCBmb250LWJvbGQgdGV4dC1ncmVlbi02MDAgbGVhZGluZy10aWdodCBtdC0xIj57c2Vjb25kc308L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzTmFtZT0idGV4dC14cyB0ZXh0LXNsYXRlLTUwMCI+c2VndW5kb3M8L2Rpdj4KICAgICAgPC9kaXY+CgogICAgICA8YnV0dG9uCiAgICAgICAgb25DbGljaz17b25Eb25lfQogICAgICAgIGNsYXNzTmFtZT0ibXQtNCB3LWZ1bGwgdGV4dC1zbSBweS0zIHJvdW5kZWQteGwgYmctc2xhdGUtMTAwIHRleHQtc2xhdGUtNzAwIGJvcmRlciBib3JkZXItc2xhdGUtMjAwIgogICAgICA+CiAgICAgICAgQnVzY2FyIGFnb3JhIOKGkgogICAgICA8L2J1dHRvbj4KICAgIDwvZGl2PgogICkKfQ==
+'use client'
+
+import { useEffect, useState } from 'react'
+
+type Props = {
+  brandCode: string
+  brandName: string
+  finalCases: number
+  finalUnits: number
+  onDone: () => void
+}
+
+export function SuccessScreen({
+  brandCode,
+  brandName,
+  finalCases,
+  finalUnits,
+  onDone,
+}: Props) {
+  const [seconds, setSeconds] = useState(2)
+
+  useEffect(() => {
+    if (seconds === 0) {
+      onDone()
+    }
+  }, [seconds, onDone])
+
+  useEffect(() => {
+    if (seconds === 0) return
+    const interval = setInterval(() => {
+      setSeconds((s) => Math.max(0, s - 1))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [seconds])
+
+  return (
+    <div className="text-center py-8">
+      <div className="text-5xl mb-3">✅</div>
+      <div className="text-xl font-bold text-slate-900">Contagem salva!</div>
+      <div className="text-sm text-slate-500 mt-1">
+        {brandCode} · {brandName}
+      </div>
+      <div className="text-green-600 font-semibold mt-1 text-sm">
+        {finalCases} cases + {finalUnits} units
+      </div>
+
+      <div className="mt-6 bg-green-50 border border-green-200 rounded-xl p-4">
+        <div className="text-sm text-slate-600">Voltando para busca em...</div>
+        <div className="text-4xl font-bold text-green-600 leading-tight mt-1">{seconds}</div>
+        <div className="text-xs text-slate-500">segundos</div>
+      </div>
+
+      <button
+        onClick={onDone}
+        className="mt-4 w-full text-sm py-3 rounded-xl bg-slate-100 text-slate-700 border border-slate-200"
+      >
+        Buscar agora →
+      </button>
+    </div>
+  )
+}
