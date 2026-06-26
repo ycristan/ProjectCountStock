@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 type Counter = {
   id: string
   role: string
+  full_name: string | null
   finalized_at: string | null
   entry_count: number
 }
@@ -74,22 +75,19 @@ export function ProgressoClient({ sessionCreatedAt, sessionStatus, teams }: Prop
 
       <div className="space-y-4">
         {teams.map((team) => {
-          const allFinalized = team.counters.length > 0 && team.counters.every((c) => c.finalized_at)
+          const allFinalized =
+            team.counters.length > 0 && team.counters.every((c) => c.finalized_at)
           return (
             <div key={team.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
               <div
                 className={`px-4 py-3 flex items-center justify-between border-b ${
-                  allFinalized
-                    ? 'bg-green-50 border-green-100'
-                    : 'bg-gray-50 border-gray-100'
+                  allFinalized ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100'
                 }`}
               >
                 <span className="font-semibold text-gray-900">{team.team_name}</span>
                 <span
                   className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    allFinalized
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-200 text-gray-600'
+                    allFinalized ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
                   }`}
                 >
                   {allFinalized ? '✓ Finalizado' : 'Em contagem'}
@@ -104,7 +102,7 @@ export function ProgressoClient({ sessionCreatedAt, sessionStatus, teams }: Prop
                       </span>
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {c.role.replace('_', ' ')}
+                          {c.full_name ?? c.role.replace(/_/g, ' ')}
                         </div>
                         <div className="text-xs text-gray-500">{c.entry_count} itens lançados</div>
                       </div>

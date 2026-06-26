@@ -5,6 +5,7 @@ import { ProgressoClient } from './_components/ProgressoClient'
 type Counter = {
   id: string
   role: string
+  full_name: string | null
   finalized_at: string | null
   entry_count: number
 }
@@ -60,6 +61,19 @@ export default async function ProgressoPage({
     .select('team_id, counter_role')
     .in('team_id', teamIds)
 
+  // Buscar full_name dos contadores via auth.admin
+  const { data: { users: authUsers } = { users: [] } } = await admin.auth.admin.listUsers({
+    perPage: 1000,
+  })
+
+  const nameMap: Record<string, string> = {}
+  for (const u of authUsers) {
+    const tid = u.user_metadata?.team_id
+    const role = u.user_metadata?.counter_role
+    const name = u.user_metadata?.full_name
+    if (tid && role && name) nameMap[`${tid}:${role}`] = name
+  }
+
   const entryCountMap: Record<string, number> = {}
   for (const e of entries ?? []) {
     const key = `${e.team_id}:${e.counter_role}`
@@ -75,6 +89,7 @@ export default async function ProgressoPage({
       .map((a) => ({
         id: a.id,
         role: a.role,
+        full_name: nameMap[`${t.id}:${a.role}`] ?? null,
         finalized_at: a.finalized_at,
         entry_count: entryCountMap[`${t.id}:${a.role}`] ?? 0,
       }))
