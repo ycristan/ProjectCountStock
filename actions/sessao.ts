@@ -78,6 +78,46 @@ export async function criarSessao(
   redirect(`/admin/sessao/${data.id}/equipes?n=${numEquipes}`)
 }
 
+export async function buscarInventarioParaDownload() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user || user.user_metadata?.role === 'counter') return null
+
+  const [{ data: items }, { data: bins }] = await Promise.all([
+    supabase
+      .from('inventory_items')
+      .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
+      .order('brand_code'),
+    supabase
+      .from('item_bin_locations')
+      .select('brand_code, bin_location')
+      .order('brand_code'),
+  ])
+
+  const binMap: Record<string, string[]> = {}
+  for (const b of bins ?? []) {
+    if (!binMap[b.brand_code]) binMap[b.brand_code] = []
+    binMap[b.brand_code].push(b.bin_location)
+  }
+
+  return (items ?? []).map((item) => {
+    const b = binMap[item.brand_code] ?? []
+    return {
+      'Brand Code': item.brand_code,
+      'Brand Name': item.brand_name,
+      'Brand Purchase Unit': item.bpu,
+      'Pallet Size': item.pallet_size,
+      'Weight AVG': item.weight_avg ?? 0,
+      'BIN Location 1': b[0] ?? '',
+      'BIN Location 2': b[1] ?? '',
+      'BIN Location 3': b[2] ?? '',
+      'BIN Location 4': b[3] ?? '',
+    }
+  })
+}
+
 export type EquipeInput = {
   team_name: string
   equipeNum: number

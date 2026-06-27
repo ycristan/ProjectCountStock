@@ -1,16 +1,36 @@
 'use client'
 
-import { useActionState } from 'react'
-import { uploadInventory } from '@/actions/sessao'
+import { useActionState, useState } from 'react'
+import { uploadInventory, buscarInventarioParaDownload } from '@/actions/sessao'
 import Link from 'next/link'
+import * as XLSX from 'xlsx'
 
 type UploadState = { error?: string; success?: boolean; count?: number } | null
 
 export default function UploadPage() {
-  const [state, formAction, pending] = useActionState<UploadState, FormData>(
-    uploadInventory,
-    null
-  )
+  const [state, formAction, pending] = useActionState<UploadState, FormData>(uploadInventory, null)
+  const [downloading, setDownloading] = useState(false)
+
+  async function handleDownload() {
+    setDownloading(true)
+    try {
+      const data = await buscarInventarioParaDownload()
+      if (!data?.length) return
+      const ws = XLSX.utils.json_to_sheet(data)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Inventário')
+      const arr: Uint8Array = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
+      const blob = new Blob([arr], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'inventario.xlsx'
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   if (state?.success) {
     return (
@@ -46,12 +66,13 @@ export default function UploadPage() {
       </Link>
       <div className="flex items-start justify-between mb-2">
         <h2 className="text-xl font-semibold text-slate-900">Upload Inventário</h2>
-        <a
-          href="/api/admin/inventario"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50"
+        <button
+          onClick={handleDownload}
+          disabled={downloading}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-50"
         >
-          ⬇️ Baixar atual
-        </a>
+          {downloading ? 'Baixando...' : '⬇️ Baixar atual'}
+        </button>
       </div>
       <p className="text-sm text-slate-500 mb-6">
         Arquivo .xlsx com colunas: Brand Code, Brand Name, Brand Purchase Unit, Pallet Size, Weight AVG,
