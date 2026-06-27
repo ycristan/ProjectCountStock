@@ -112,15 +112,15 @@ export function ReconciliacaoClient({
     <div>
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Reconciliação — {teamName}</h2>
-          <div className="text-sm text-gray-500 mt-0.5">
+          <h2 className="text-xl font-semibold text-slate-900">Reconciliação — {teamName}</h2>
+          <div className="text-sm text-slate-500 mt-0.5">
             {counterNames.independente} é o Independente
           </div>
         </div>
         <button
           onClick={handleConfirmar}
           disabled={!canConfirmar || confirmingTeam}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity ${
+          className={`px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity ${
             canConfirmar && !confirmingTeam
               ? 'bg-green-600 hover:bg-green-700'
               : 'bg-green-600 opacity-40 cursor-not-allowed'
@@ -138,23 +138,23 @@ export function ReconciliacaoClient({
       </Link>
 
       {error && (
-        <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+        <div className="mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
       <div className="flex gap-3 mt-5 mb-5">
-        <div className="flex-1 bg-white border border-gray-200 rounded-xl p-4">
+        <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4">
           <div className="text-3xl font-bold text-green-600">{combinados.length}</div>
-          <div className="text-xs text-gray-500 mt-1">Combinados</div>
+          <div className="text-xs text-slate-500 mt-1">Combinados</div>
         </div>
-        <div className="flex-1 bg-white border border-gray-200 rounded-xl p-4">
+        <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4">
           <div className="text-3xl font-bold text-red-600">{discrepancias.length}</div>
-          <div className="text-xs text-gray-500 mt-1">Discrepâncias restantes</div>
+          <div className="text-xs text-slate-500 mt-1">Discrepâncias restantes</div>
         </div>
-        <div className="flex-1 bg-white border border-gray-200 rounded-xl p-4">
+        <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4">
           <div className="text-3xl font-bold text-indigo-600">{resolvidos.length}</div>
-          <div className="text-xs text-gray-500 mt-1">Resolvidos</div>
+          <div className="text-xs text-slate-500 mt-1">Resolvidos</div>
         </div>
       </div>
 
@@ -165,13 +165,13 @@ export function ReconciliacaoClient({
         </div>
       )}
 
-      <div className="flex border-b border-gray-200 mb-4">
+      <div className="flex border-b border-slate-200 mb-4">
         <button
           onClick={() => setActiveTab('discrepancias')}
           className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${
             activeTab === 'discrepancias'
-              ? 'text-indigo-600 border-indigo-600'
-              : 'text-gray-500 border-transparent hover:text-gray-700'
+              ? 'text-slate-900 border-slate-900'
+              : 'text-slate-500 border-transparent hover:text-slate-700'
           }`}
         >
           Discrepâncias ({discrepancias.length} restantes)
@@ -180,31 +180,31 @@ export function ReconciliacaoClient({
           onClick={() => setActiveTab('combinados')}
           className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${
             activeTab === 'combinados'
-              ? 'text-indigo-600 border-indigo-600'
-              : 'text-gray-500 border-transparent hover:text-gray-700'
+              ? 'text-slate-900 border-slate-900'
+              : 'text-slate-500 border-transparent hover:text-slate-700'
           }`}
         >
           Combinados ({combinados.length})
         </button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 w-48">Item</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500">
+            <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 w-48">Item</th>
+              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">
                 {counterNames.contador_1} (C1)
               </th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500">
+              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">
                 {counterNames.contador_2} (C2)
               </th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500">
+              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">
                 {counterNames.independente} (Ind)
               </th>
               {activeTab === 'discrepancias' && (
                 <>
-                  <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500">
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">
                     Valor acordado
                   </th>
                   <th className="px-4 py-3 w-20" />
@@ -212,7 +212,7 @@ export function ReconciliacaoClient({
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {tabItems.map((item) => {
               const isResolved = item.status === 'resolvido'
               const c1: [number | null, number | null] = [item.contador_1_cases, item.contador_1_units]
@@ -225,10 +225,10 @@ export function ReconciliacaoClient({
               return (
                 <tr key={item.id} className={isResolved ? 'opacity-50' : ''}>
                   <td className="px-4 py-3">
-                    <div className="font-semibold text-gray-900 text-sm">{item.brand_code}</div>
-                    <div className="text-xs text-gray-500">{item.brand_name}</div>
+                    <div className="font-semibold text-slate-900 text-sm">{item.brand_code}</div>
+                    <div className="text-xs text-slate-500">{item.brand_name}</div>
                     {item.bin_location && (
-                      <div className="text-xs text-gray-400">{item.bin_location}</div>
+                      <div className="text-xs text-slate-400">{item.bin_location}</div>
                     )}
                   </td>
                   <td className={cellColor(c1[0], c1[1], [c2, ind])}>
@@ -266,16 +266,16 @@ export function ReconciliacaoClient({
                               min={0}
                               value={getInput(item.id).cases}
                               onChange={(e) => setInput(item.id, 'cases', e.target.value)}
-                              className="w-14 text-center border border-gray-300 rounded-lg px-2 py-1 text-sm font-semibold bg-gray-50"
+                              className="w-14 text-center border border-slate-200 rounded-xl px-2 py-1 text-sm font-semibold bg-slate-50 focus:outline-none focus:border-blue-500"
                               placeholder="0"
                             />
-                            <span className="text-gray-400 text-sm">+</span>
+                            <span className="text-slate-400 text-sm">+</span>
                             <input
                               type="number"
                               min={0}
                               value={getInput(item.id).units}
                               onChange={(e) => setInput(item.id, 'units', e.target.value)}
-                              className="w-14 text-center border border-gray-300 rounded-lg px-2 py-1 text-sm font-semibold bg-gray-50"
+                              className="w-14 text-center border border-slate-200 rounded-xl px-2 py-1 text-sm font-semibold bg-slate-50 focus:outline-none focus:border-blue-500"
                               placeholder="0"
                             />
                           </div>
@@ -290,7 +290,7 @@ export function ReconciliacaoClient({
                           <button
                             onClick={() => handleSalvar(item)}
                             disabled={savingId === item.id}
-                            className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 disabled:opacity-60"
+                            className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 disabled:opacity-60"
                           >
                             {savingId === item.id ? '...' : 'Salvar'}
                           </button>
@@ -305,7 +305,7 @@ export function ReconciliacaoClient({
               <tr>
                 <td
                   colSpan={activeTab === 'discrepancias' ? 6 : 4}
-                  className="px-4 py-8 text-center text-gray-400 text-sm"
+                  className="px-4 py-8 text-center text-slate-400 text-sm"
                 >
                   {activeTab === 'discrepancias'
                     ? 'Nenhuma discrepância pendente.'
@@ -319,14 +319,14 @@ export function ReconciliacaoClient({
 
       {activeTab === 'discrepancias' && discrepancias.length > 0 && (
         <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-slate-500">
             {discrepancias.length} discrepância{discrepancias.length !== 1 ? 's' : ''} restante
             {discrepancias.length !== 1 ? 's' : ''} — resolva todas para confirmar
           </div>
           <button
             onClick={handleConfirmar}
             disabled={!canConfirmar || confirmingTeam}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity ${
+            className={`px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity ${
               canConfirmar && !confirmingTeam
                 ? 'bg-green-600 hover:bg-green-700'
                 : 'bg-green-600 opacity-40 cursor-not-allowed'

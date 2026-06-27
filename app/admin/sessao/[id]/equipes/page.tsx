@@ -52,41 +52,41 @@ export default function EquipesPage({
     return (
       <div>
         <div className="flex justify-between items-center mb-4 print:hidden">
-          <h2 className="text-xl font-semibold text-gray-900">Logins gerados</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Logins gerados</h2>
           <button
             onClick={() => window.print()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800"
           >
             Imprimir
           </button>
         </div>
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="bg-gray-100">
-              <th className="border border-gray-300 px-3 py-2 text-left">Equipe</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Cód. Equipe</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Função</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">PIN pessoal</th>
+            <tr className="bg-slate-100">
+              <th className="border border-slate-200 px-3 py-2 text-left">Equipe</th>
+              <th className="border border-slate-200 px-3 py-2 text-left">Cód. Equipe</th>
+              <th className="border border-slate-200 px-3 py-2 text-left">Função</th>
+              <th className="border border-slate-200 px-3 py-2 text-left">PIN pessoal</th>
             </tr>
           </thead>
           <tbody>
             {credenciais.map((c, i) => (
-              <tr key={i} className="even:bg-gray-50">
-                <td className="border border-gray-300 px-3 py-2">{c.team}</td>
-                <td className="border border-gray-300 px-3 py-2 font-mono font-bold text-blue-700">
+              <tr key={i} className="even:bg-slate-50">
+                <td className="border border-slate-200 px-3 py-2">{c.team}</td>
+                <td className="border border-slate-200 px-3 py-2 font-mono font-bold text-blue-700">
                   {c.team_pin}
                 </td>
-                <td className="border border-gray-300 px-3 py-2">
+                <td className="border border-slate-200 px-3 py-2">
                   {ROLE_LABEL[c.role] ?? c.role}
                 </td>
-                <td className="border border-gray-300 px-3 py-2 font-mono font-bold">
+                <td className="border border-slate-200 px-3 py-2 font-mono font-bold">
                   {c.user_pin}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p className="mt-4 text-xs text-gray-500 print:hidden">
+        <p className="mt-4 text-xs text-slate-500 print:hidden">
           Cód. Equipe é compartilhado por todos da equipe. PIN pessoal é individual.
         </p>
       </div>
@@ -95,31 +95,31 @@ export default function EquipesPage({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">Configurar Equipes</h2>
+      <h2 className="text-xl font-semibold text-slate-900 mb-6">Configurar Equipes</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         {Array.from({ length: numEquipes }, (_, i) => (
-          <div key={i} className="border border-gray-200 rounded-lg p-4">
-            <h3 className="font-medium text-gray-900 mb-3">Equipe {i + 1}</h3>
+          <div key={i} className="border border-slate-200 rounded-xl p-4">
+            <h3 className="font-medium text-slate-900 mb-3">Equipe {i + 1}</h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Nome da equipe</label>
+                <label className="block text-sm text-slate-600 mb-1">Nome da equipe</label>
                 <input
                   name={`team_${i}_name`}
                   defaultValue={`Equipe ${i + 1}`}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {(['c1', 'c2', 'ind'] as const).map((role, j) => (
                   <div key={role}>
-                    <label className="block text-sm text-gray-600 mb-1">
+                    <label className="block text-sm text-slate-600 mb-1">
                       {['Contador 1', 'Contador 2', 'Independente'][j]}
                     </label>
                     <input
                       name={`team_${i}_${role}`}
                       required
                       placeholder="Nome"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
                     />
                   </div>
                 ))}
@@ -131,7 +131,7 @@ export default function EquipesPage({
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="w-full py-3 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 disabled:opacity-50"
         >
           {loading ? 'Criando equipes...' : 'Criar equipes e gerar logins'}
         </button>
