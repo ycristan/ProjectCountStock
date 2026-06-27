@@ -41,9 +41,20 @@ export default function UploadPage() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900 mb-4">Upload Inventário</h2>
+      <Link href="/admin" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
+        ← Dashboard
+      </Link>
+      <div className="flex items-start justify-between mb-2">
+        <h2 className="text-xl font-semibold text-slate-900">Upload Inventário</h2>
+        <a
+          href="/api/admin/inventario"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50"
+        >
+          ⬇️ Baixar atual
+        </a>
+      </div>
       <p className="text-sm text-slate-500 mb-6">
-        Arquivo .xlsx com colunas: Brand Code, Brand Name, Brand Purchase Unit, Pallet Size,
+        Arquivo .xlsx com colunas: Brand Code, Brand Name, Brand Purchase Unit, Pallet Size, Weight AVG,
         BIN Location 1–4.
       </p>
       <form action={formAction} className="space-y-4">
