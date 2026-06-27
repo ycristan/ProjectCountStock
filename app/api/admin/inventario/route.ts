@@ -1,15 +1,14 @@
 import { createClient } from '@/lib/supabase-server'
 import * as XLSX from 'xlsx'
-import { NextResponse } from 'next/server'
 
 export async function GET() {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+  if (!user) return Response.json({ error: 'Não autenticado' }, { status: 401 })
   if (user.user_metadata?.role === 'counter') {
-    return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    return Response.json({ error: 'Acesso negado' }, { status: 403 })
   }
 
   const [{ data: items }, { data: bins }] = await Promise.all([
@@ -47,9 +46,9 @@ export async function GET() {
   const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Inventário')
-  const body = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as Uint8Array
+  const body: Uint8Array = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
 
-  return new NextResponse(body, {
+  return new Response(body.buffer as ArrayBuffer, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': 'attachment; filename="inventario.xlsx"',
