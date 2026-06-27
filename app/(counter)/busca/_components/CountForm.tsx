@@ -20,15 +20,17 @@ function initBin(item: ItemBusca): string | null {
   if (item.binContexto) return item.binContexto
   if (item.bins.length === 1) return item.bins[0]
   if (item.bins.length === 0) return null
-  return null // múltiplos BINs sem contexto → aguarda seleção
+  return null
 }
 
 export function CountForm({ item, onVoltar, onSucesso }: Props) {
   const [binSelecionado, setBinSelecionado] = useState<string | null>(initBin(item))
 
-  const entryAtual = item.entriesExistentes.find(
-    (e) => e.bin_location === binSelecionado
-  ) ?? (item.entriesExistentes.length > 0 && item.bins.length <= 1 ? item.entriesExistentes[0] : undefined)
+  const entryAtual =
+    item.entriesExistentes.find((e) => e.bin_location === binSelecionado) ??
+    (item.entriesExistentes.length > 0 && item.bins.length <= 1
+      ? item.entriesExistentes[0]
+      : undefined)
 
   const isEdit = !!entryAtual
 
@@ -84,37 +86,34 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
     })
   }
 
-  const borderClass = isEdit ? 'border-amber-400' : 'border-slate-300'
-  const bgInput = isEdit ? 'bg-amber-50' : 'bg-slate-50'
-  const headerClass = isEdit
-    ? 'bg-amber-50 border-amber-200 text-amber-700'
-    : 'bg-green-50 border-green-200 text-green-700'
-  const btnClass = isEdit ? 'bg-amber-600' : 'bg-blue-600'
-  const btnLabel = isPending
-    ? 'Salvando...'
-    : isEdit
-    ? '✏️ Salvar Edição'
-    : 'Confirmar Contagem'
+  const btnLabel = isPending ? 'Salvando...' : isEdit ? 'Salvar Edição' : 'Confirmar Contagem'
 
   return (
     <div>
-      {/* Header do item */}
-      <div className={`rounded-xl p-3 mb-4 border ${headerClass}`}>
-        <div className="text-[11px] font-semibold uppercase tracking-wide">
-          {isEdit ? '✓ Já contado — editável' : 'Item selecionado'}
+      {/* Item header */}
+      <div className="rounded-xl p-4 mb-4 bg-slate-900 text-white">
+        <div className="flex items-start justify-between">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            Item selecionado
+          </div>
+          {isEdit && (
+            <span className="text-[11px] font-semibold bg-amber-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wide">
+              Editável
+            </span>
+          )}
         </div>
-        <div className="text-lg font-bold text-slate-900 mt-0.5">{item.brand_code}</div>
-        <div className="text-sm text-slate-700">{item.brand_name}</div>
-        <div className="text-xs text-slate-500 mt-1">
+        <div className="text-xl font-bold mt-1">{item.brand_code}</div>
+        <div className="text-sm text-slate-300">{item.brand_name}</div>
+        <div className="text-xs text-slate-400 mt-1">
           {item.bins.length > 0 ? `BIN: ${item.bins.join(', ')} · ` : ''}
           BPU: {item.bpu} · Pallet: {item.pallet_size}
         </div>
       </div>
 
-      {/* Seletor de BIN quando necessário */}
+      {/* BIN selector */}
       {!item.binContexto && item.bins.length > 1 && (
         <div className="mb-4">
-          <div className="text-xs font-semibold text-slate-500 uppercase mb-2">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
             Selecione o BIN que está contando
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -124,7 +123,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
                 onClick={() => setBinSelecionado(bin)}
                 className={`px-3 py-2 rounded-lg text-sm border font-medium transition-colors ${
                   binSelecionado === bin
-                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    ? 'bg-slate-900 text-white border-slate-900'
                     : 'border-slate-200 text-slate-700 bg-white'
                 }`}
               >
@@ -135,7 +134,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
         </div>
       )}
 
-      {/* Campos pallets/cases/units */}
+      {/* Pallets / Cases / Units */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {[
           { label: 'Pallets', value: pallets, set: setPallets },
@@ -143,27 +142,29 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
           { label: 'Units', value: units, set: setUnits },
         ].map(({ label, value, set }) => (
           <div key={label} className="text-center">
-            <div className="text-[11px] text-slate-500 font-semibold uppercase mb-1">{label}</div>
+            <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
+              {label}
+            </div>
             <input
               type="number"
               inputMode="numeric"
               min="0"
               value={value}
               onChange={(e) => set(e.target.value)}
-              className={`w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] ${borderClass} ${bgInput} focus:outline-none focus:border-indigo-500`}
+              className="w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
             />
           </div>
         ))}
       </div>
 
       {!isEdit && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-xs text-yellow-800 mb-3">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 mb-3">
           ℹ️ Zeros são válidos — confirma que o item foi contado e estava zerado.
         </div>
       )}
 
       {erro && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700 mb-3">
+        <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700 mb-3">
           {erro}
         </div>
       )}
@@ -171,13 +172,13 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
       <button
         onClick={handleSubmit}
         disabled={isPending}
-        className={`w-full text-white font-semibold py-4 rounded-xl text-base transition-opacity disabled:opacity-60 ${btnClass}`}
+        className="w-full bg-slate-900 text-white font-semibold py-4 rounded-xl text-base transition-opacity disabled:opacity-40"
       >
         {btnLabel}
       </button>
       <button
         onClick={onVoltar}
-        className="w-full mt-2 text-slate-500 text-sm py-2.5 rounded-xl border border-slate-200"
+        className="w-full mt-2 text-slate-500 text-sm py-3 rounded-xl border border-slate-200 bg-white"
       >
         ← Voltar à busca
       </button>

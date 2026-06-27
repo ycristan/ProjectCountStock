@@ -1,1 +1,34 @@
 @import "tailwindcss";
+
+/* Design tokens — Count Stock mobile UI
+ *
+ * --cs-bg            page background      #f1f5f9
+ * --cs-surface        card / input bg      #ffffff
+ * --cs-dark           header, primary btn  #1e293b
+ * --cs-accent         focus ring           #3b82f6
+ * --cs-success-bg     success card bg      #f0fdf4
+ * --cs-success-border success card border  #bbf7d0
+ * --cs-radius-card    card border-radius   12px
+ * --cs-radius-input   input border-radius  8px
+ * --cs-touch-min      min touch target     56px
+ */
+:root {
+  --cs-bg: #f1f5f9;
+  --cs-surface: #ffffff;
+  --cs-dark: #1e293b;
+  --cs-accent: #3b82f6;
+  --cs-success-bg: #f0fdf4;
+  --cs-success-border: #bbf7d0;
+  --cs-radius-card: 12px;
+  --cs-radius-input: 8px;
+  --cs-touch-min: 56px;
+}
+
+body {
+  background: var(--cs-bg);
+}
+
+/* Prevents iOS Safari from zooming on input focus */
+input, select, textarea {
+  font-size: max(16px, 1em);
+}

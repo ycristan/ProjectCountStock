@@ -16,7 +16,7 @@ export function ResultList({ items, onSelect }: Props) {
         <button
           key={item.brand_code}
           onClick={() => onSelect(item)}
-          className="w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 flex justify-between items-center active:bg-slate-50"
+          className="w-full text-left px-4 py-4 border-b border-slate-100 last:border-b-0 flex justify-between items-center active:bg-slate-50 min-h-[56px]"
         >
           <div>
             <div className="text-sm font-semibold text-slate-900">{item.brand_code}</div>
@@ -25,7 +25,7 @@ export function ResultList({ items, onSelect }: Props) {
               <div className="text-xs text-green-600 font-semibold mt-0.5">✓ Já contado</div>
             )}
           </div>
-          <div className="text-indigo-500 text-lg">›</div>
+          <div className="text-slate-400 text-lg">›</div>
         </button>
       ))}
     </div>
