@@ -24,11 +24,11 @@ export function SearchInput({ value, onChange, loading }: Props) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Código, nome ou BIN..."
-        className="w-full text-base px-4 py-3 pr-10 rounded-xl border-[1.5px] border-slate-300 bg-slate-50 focus:outline-none focus:border-indigo-500"
+        className="w-full text-base px-4 py-3 pr-10 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
       />
       <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
         {loading ? (
-          <span className="inline-block w-4 h-4 border-2 border-slate-300 border-t-indigo-500 rounded-full animate-spin" />
+          <span className="inline-block w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
         ) : (
           <span>🔍</span>
         )}
