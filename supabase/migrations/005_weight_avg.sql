@@ -1,0 +1,2 @@
+ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS weight_avg NUMERIC NOT NULL DEFAULT 0 CHECK (weight_avg >= 0);
+ALTER TABLE count_sessions ADD COLUMN IF NOT EXISTS box_tare_g INTEGER NOT NULL DEFAULT 300 CHECK (box_tare_g > 0);

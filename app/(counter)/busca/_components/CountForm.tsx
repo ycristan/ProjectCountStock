@@ -16,29 +16,49 @@ type Props = {
   onSucesso: (result: SucessoResult) => void
 }
 
+type Rodada = { id: number; caixas: string; pesoFmt: string }
+
 function initBin(item: ItemBusca): string | null {
   if (item.binContexto) return item.binContexto
   if (item.bins.length === 1) return item.bins[0]
-  if (item.bins.length === 0) return null
   return null
+}
+
+function parseGrams(fmt: string): number {
+  return parseInt(fmt.replace(/\D/g, '') || '0', 10)
+}
+
+function formatGrams(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  const num = parseInt(digits || '0', 10)
+  return num === 0 ? '' : num.toLocaleString('pt-BR')
+}
+
+function calcWeightQty(rodadas: Rodada[], weightAvg: number, boxTareG: number): number {
+  const totalTara = rodadas.reduce((s, r) => s + parseInt(r.caixas || '0', 10) * boxTareG, 0)
+  const totalPeso = rodadas.reduce((s, r) => s + parseGrams(r.pesoFmt), 0)
+  const liquido = totalPeso - totalTara
+  if (liquido <= 0) return 0
+  const raw = liquido / weightAvg
+  const decimal = raw - Math.floor(raw)
+  return decimal >= 0.7 ? Math.ceil(raw) : Math.floor(raw)
 }
 
 export function CountForm({ item, onVoltar, onSucesso }: Props) {
   const [binSelecionado, setBinSelecionado] = useState<string | null>(initBin(item))
+  const [modo, setModo] = useState<'normal' | 'peso'>('normal')
+  const [rodadas, setRodadas] = useState<Rodada[]>([{ id: 0, caixas: '', pesoFmt: '' }])
+  const [erro, setErro] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   const entryAtual =
     item.entriesExistentes.find((e) => e.bin_location === binSelecionado) ??
-    (item.entriesExistentes.length > 0 && item.bins.length <= 1
-      ? item.entriesExistentes[0]
-      : undefined)
-
+    (item.entriesExistentes.length > 0 && item.bins.length <= 1 ? item.entriesExistentes[0] : undefined)
   const isEdit = !!entryAtual
 
   const [pallets, setPallets] = useState(String(entryAtual?.pallets ?? 0))
   const [cases, setCases] = useState(String(entryAtual?.cases ?? 0))
   const [units, setUnits] = useState(String(entryAtual?.units ?? 0))
-  const [erro, setErro] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
     const entry = item.entriesExistentes.find((e) => e.bin_location === binSelecionado)
@@ -53,8 +73,29 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
     }
   }, [binSelecionado, item.entriesExistentes])
 
-  const precisaSelecionarBin =
-    !item.binContexto && item.bins.length > 1 && binSelecionado === null
+  const precisaSelecionarBin = !item.binContexto && item.bins.length > 1 && binSelecionado === null
+
+  function addRodada() {
+    setRodadas((prev) => [...prev, { id: Date.now(), caixas: '', pesoFmt: '' }])
+  }
+
+  function removeRodada(id: number) {
+    setRodadas((prev) => prev.filter((r) => r.id !== id))
+  }
+
+  function updateRodada(id: number, field: 'caixas' | 'pesoFmt', value: string) {
+    setRodadas((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r
+        return { ...r, [field]: field === 'pesoFmt' ? formatGrams(value) : value }
+      })
+    )
+  }
+
+  const totalTara = rodadas.reduce((s, r) => s + parseInt(r.caixas || '0', 10) * item.box_tare_g, 0)
+  const totalPeso = rodadas.reduce((s, r) => s + parseGrams(r.pesoFmt), 0)
+  const weightQty = modo === 'peso' ? calcWeightQty(rodadas, item.weight_avg, item.box_tare_g) : 0
+  const hasWeightData = totalPeso > 0
 
   const handleSubmit = () => {
     if (precisaSelecionarBin) {
@@ -62,9 +103,19 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
       return
     }
     setErro(null)
-    const p = Math.max(0, parseInt(pallets) || 0)
-    const c = Math.max(0, parseInt(cases) || 0)
-    const u = Math.max(0, parseInt(units) || 0)
+
+    let p = 0, c = 0, u = 0
+    if (modo === 'peso') {
+      if (!hasWeightData) {
+        setErro('Informe o peso para calcular a quantidade.')
+        return
+      }
+      u = weightQty
+    } else {
+      p = Math.max(0, parseInt(pallets) || 0)
+      c = Math.max(0, parseInt(cases) || 0)
+      u = Math.max(0, parseInt(units) || 0)
+    }
 
     startTransition(async () => {
       const result = await lancarContagem({
@@ -77,11 +128,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
       if (result.error) {
         setErro(result.error)
       } else {
-        onSucesso({
-          final_cases: result.final_cases!,
-          final_units: result.final_units!,
-          brand_name: result.brand_name!,
-        })
+        onSucesso({ final_cases: result.final_cases!, final_units: result.final_units!, brand_name: result.brand_name! })
       }
     })
   }
@@ -107,6 +154,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
         <div className="text-xs text-slate-400 mt-1">
           {item.bins.length > 0 ? `BIN: ${item.bins.join(', ')} · ` : ''}
           BPU: {item.bpu} · Pallet: {item.pallet_size}
+          {item.weight_avg > 0 && ` · ⚖️ ${item.weight_avg}g/un`}
         </div>
       </div>
 
@@ -134,32 +182,153 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
         </div>
       )}
 
-      {/* Pallets / Cases / Units */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {[
-          { label: 'Pallets', value: pallets, set: setPallets },
-          { label: 'Cases', value: cases, set: setCases },
-          { label: 'Units', value: units, set: setUnits },
-        ].map(({ label, value, set }) => (
-          <div key={label} className="text-center">
-            <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
-              {label}
-            </div>
-            <input
-              type="number"
-              inputMode="numeric"
-              min="0"
-              value={value}
-              onChange={(e) => set(e.target.value)}
-              className="w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
-            />
-          </div>
-        ))}
-      </div>
+      {/* Mode selector — only for items with weight_avg */}
+      {item.weight_avg > 0 && (
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          <button
+            onClick={() => setModo('normal')}
+            className={`rounded-xl py-3 text-sm font-semibold border-2 transition-colors ${
+              modo === 'normal'
+                ? 'border-slate-900 bg-slate-900 text-white'
+                : 'border-slate-200 text-slate-600 bg-white'
+            }`}
+          >
+            🔢 Contagem normal
+          </button>
+          <button
+            onClick={() => setModo('peso')}
+            className={`rounded-xl py-3 text-sm font-semibold border-2 transition-colors ${
+              modo === 'peso'
+                ? 'border-slate-900 bg-slate-900 text-white'
+                : 'border-slate-200 text-slate-600 bg-white'
+            }`}
+          >
+            ⚖️ Contar por peso
+          </button>
+        </div>
+      )}
 
-      {!isEdit && (
-        <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 mb-3">
-          ℹ️ Zeros são válidos — confirma que o item foi contado e estava zerado.
+      {/* Normal mode */}
+      {modo === 'normal' && (
+        <>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[
+              { label: 'Pallets', value: pallets, set: setPallets },
+              { label: 'Cases', value: cases, set: setCases },
+              { label: 'Units', value: units, set: setUnits },
+            ].map(({ label, value, set }) => (
+              <div key={label} className="text-center">
+                <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
+                  {label}
+                </div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  value={value}
+                  onChange={(e) => set(e.target.value)}
+                  className="w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            ))}
+          </div>
+          {!isEdit && (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 mb-3">
+              ℹ️ Zeros são válidos — confirma que o item foi contado e estava zerado.
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Weight mode */}
+      {modo === 'peso' && (
+        <div className="mb-4 space-y-3">
+          <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+            📦 Tara: <strong className="text-slate-700">{item.box_tare_g.toLocaleString('pt-BR')} g/cx</strong>
+            <span className="text-slate-300">·</span>
+            ⚖️ Peso/un: <strong className="text-slate-700">{item.weight_avg} g</strong>
+          </div>
+
+          {rodadas.map((r, i) => (
+            <div key={r.id} className="border border-slate-200 rounded-xl p-3 bg-white">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Rodada {i + 1}
+                </span>
+                {rodadas.length > 1 && (
+                  <button
+                    onClick={() => removeRodada(r.id)}
+                    className="text-slate-300 hover:text-red-500 text-lg leading-none"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
+                    Nº de caixas
+                  </div>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    value={r.caixas}
+                    onChange={(e) => updateRodada(r.id, 'caixas', e.target.value)}
+                    placeholder="0"
+                    className="w-full text-center text-xl font-bold px-2 py-2.5 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
+                    Peso (g)
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={r.pesoFmt}
+                    onChange={(e) => updateRodada(r.id, 'pesoFmt', e.target.value)}
+                    placeholder="0"
+                    className="w-full text-center text-xl font-bold px-2 py-2.5 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <button
+            onClick={addRodada}
+            className="w-full border-2 border-dashed border-slate-200 rounded-xl py-2.5 text-sm font-semibold text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+          >
+            + Nova rodada de pesagem
+          </button>
+
+          <div className={`rounded-xl p-4 border ${
+            hasWeightData && weightQty > 0 ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between text-slate-500">
+                <span>Tara total</span>
+                <span>{hasWeightData ? `${totalTara.toLocaleString('pt-BR')} g` : '— g'}</span>
+              </div>
+              <div className="flex justify-between text-slate-500">
+                <span>Peso líquido</span>
+                <span>{hasWeightData ? `${Math.max(0, totalPeso - totalTara).toLocaleString('pt-BR')} g` : '— g'}</span>
+              </div>
+            </div>
+            <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200">
+              <span className={`text-sm font-bold ${
+                hasWeightData && weightQty > 0 ? 'text-green-700' : 'text-slate-400'
+              }`}>
+                Resultado
+              </span>
+              <span className={`text-2xl font-bold ${
+                hasWeightData && weightQty > 0 ? 'text-green-700' : 'text-slate-300'
+              }`}>
+                {hasWeightData ? `${weightQty} un` : '— un'}
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -171,7 +340,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
 
       <button
         onClick={handleSubmit}
-        disabled={isPending}
+        disabled={isPending || (modo === 'peso' && !hasWeightData)}
         className="w-full bg-slate-900 text-white font-semibold py-4 rounded-xl text-base transition-opacity disabled:opacity-40"
       >
         {btnLabel}
