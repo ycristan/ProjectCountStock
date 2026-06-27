@@ -47,9 +47,9 @@ export async function GET() {
   const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Inventário')
-  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+  const body = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as Uint8Array
 
-  return new NextResponse(buffer, {
+  return new NextResponse(body, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': 'attachment; filename="inventario.xlsx"',
