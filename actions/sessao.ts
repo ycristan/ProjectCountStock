@@ -147,6 +147,7 @@ export type Credencial = {
   team: string
   team_pin: string
   role: string
+  name: string
   user_pin: string
 }
 
@@ -215,7 +216,7 @@ export async function criarEquipes(
         return { error: `Erro ao salvar conta: ${accountError.message}` }
       }
 
-      credenciais.push({ team: equipe.team_name, team_pin: teamPin, role: pessoa.role, user_pin: userPin })
+      credenciais.push({ team: equipe.team_name, team_pin: teamPin, role: pessoa.role, name: pessoa.nome, user_pin: userPin })
     }
   }
 
