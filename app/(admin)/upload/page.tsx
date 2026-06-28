@@ -19,7 +19,8 @@ export default function UploadPage() {
       const ws = XLSX.utils.json_to_sheet(data)
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, ws, 'Inventário')
-      const arr: Uint8Array = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
+      // ponytail: cast necessario — XLSX retorna Uint8Array<ArrayBufferLike> mas TS5 exige ArrayBuffer
+      const arr = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as unknown as Uint8Array<ArrayBuffer>
       const blob = new Blob([arr], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
