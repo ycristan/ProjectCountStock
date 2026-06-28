@@ -68,12 +68,12 @@ export function EquipesGerenciar({
           <p className="text-sm text-slate-500 mt-0.5">{contadores.length} contadores · {teams.length} equipes</p>
         </div>
         <div className="flex gap-2 print:hidden">
-          <button
-            onClick={() => window.print()}
+          <Link
+            href={`/admin/sessao/${sessaoId}/imprimir`}
             className="px-3 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 text-sm"
           >
-            Imprimir
-          </button>
+            Cartões QR
+          </Link>
           <Link
             href={`/admin/sessao/${sessaoId}/progresso`}
             className="px-3 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-sm"
