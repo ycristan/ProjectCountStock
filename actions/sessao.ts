@@ -221,3 +221,69 @@ export async function criarEquipes(
 
   return { credenciais }
 }
+
+// ─── Gerenciamento de equipes ────────────────────────────────────────────────
+
+export type ContadorComCredencial = {
+  auth_user_id: string
+  team_id: string
+  team_name: string
+  team_pin: string
+  role: string
+  user_pin: string
+  full_name: string
+}
+
+export async function listarEquipes(sessaoId: string): Promise<ContadorComCredencial[]> {
+  const supabase = await createClient()
+  const admin = createAdminClient()
+
+  const { data: teams } = await supabase
+    .from('teams')
+    .select('id, team_name, team_pin')
+    .eq('session_id', sessaoId)
+    .order('team_name')
+
+  if (!teams || teams.length === 0) return []
+
+  const teamIds = teams.map((t) => t.id)
+
+  const [{ data: accounts }, { data: { users } = { users: [] } }] = await Promise.all([
+    supabase
+      .from('counter_accounts')
+      .select('auth_user_id, team_id, role, user_pin')
+      .in('team_id', teamIds),
+    admin.auth.admin.listUsers({ perPage: 1000 }),
+  ])
+
+  const nameMap: Record<string, string> = {}
+  for (const u of users) {
+    const tid = u.user_metadata?.team_id as string
+    const role = u.user_metadata?.counter_role as string
+    const name = u.user_metadata?.full_name as string
+    if (tid && role) nameMap[`${tid}:${role}`] = name ?? ''
+  }
+
+  const teamMap = Object.fromEntries(teams.map((t) => [t.id, t]))
+
+  return (accounts ?? []).map((a) => ({
+    auth_user_id: a.auth_user_id,
+    team_id: a.team_id,
+    team_name: teamMap[a.team_id]?.team_name ?? '',
+    team_pin: teamMap[a.team_id]?.team_pin ?? '',
+    role: a.role,
+    user_pin: a.user_pin,
+    full_name: nameMap[`${a.team_id}:${a.role}`] ?? '',
+  }))
+}
+
+export async function renomearContador(
+  authUserId: string,
+  novoNome: string
+): Promise<{ error?: string }> {
+  const admin = createAdminClient()
+  const { error } = await admin.auth.admin.updateUserById(authUserId, {
+    user_metadata: { full_name: novoNome.trim() },
+  })
+  return error ? { error: error.message } : {}
+}
