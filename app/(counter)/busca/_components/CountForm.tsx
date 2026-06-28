@@ -116,17 +116,22 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
     }
 
     startTransition(async () => {
-      const result = await lancarContagem({
-        brand_code: item.brand_code,
-        bin_location: binSelecionado,
-        pallets: p,
-        cases: c,
-        units: u,
-      })
-      if (result.error) {
-        setErro(result.error)
-      } else {
-        onSucesso({ final_cases: result.final_cases!, final_units: result.final_units!, brand_name: result.brand_name! })
+      try {
+        const result = await lancarContagem({
+          brand_code: item.brand_code,
+          bin_location: binSelecionado,
+          pallets: p,
+          cases: c,
+          units: u,
+        })
+        if (result.error) {
+          setErro(result.error)
+        } else {
+          onSucesso({ final_cases: result.final_cases!, final_units: result.final_units!, brand_name: result.brand_name! })
+        }
+      } catch {
+        // ponytail: action ID fica stale após novo deploy — Next.js vai recarregar a página
+        setErro('Aplicação atualizada — feche e reabra o app e tente novamente.')
       }
     })
   }
