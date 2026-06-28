@@ -57,6 +57,9 @@ export function ProgressoClient({ sessionId, sessionCreatedAt, sessionStatus, te
 
   return (
     <div>
+      <Link href="/admin" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
+        ← Dashboard
+      </Link>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Progresso da Contagem</h2>

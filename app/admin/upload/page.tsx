@@ -1,16 +1,37 @@
 'use client'
 
-import { useActionState } from 'react'
-import { uploadInventory } from '@/actions/sessao'
+import { useActionState, useState } from 'react'
+import { uploadInventory, buscarInventarioParaDownload } from '@/actions/sessao'
 import Link from 'next/link'
+import * as XLSX from 'xlsx'
 
 type UploadState = { error?: string; success?: boolean; count?: number } | null
 
 export default function UploadPage() {
-  const [state, formAction, pending] = useActionState<UploadState, FormData>(
-    uploadInventory,
-    null
-  )
+  const [state, formAction, pending] = useActionState<UploadState, FormData>(uploadInventory, null)
+  const [downloading, setDownloading] = useState(false)
+
+  async function handleDownload() {
+    setDownloading(true)
+    try {
+      const data = await buscarInventarioParaDownload()
+      if (!data?.length) return
+      const ws = XLSX.utils.json_to_sheet(data)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Inventário')
+      // ponytail: cast necessario — XLSX retorna Uint8Array<ArrayBufferLike> mas TS5 exige ArrayBuffer
+      const arr = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as unknown as Uint8Array<ArrayBuffer>
+      const blob = new Blob([arr], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'inventario.xlsx'
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   if (state?.success) {
     return (
@@ -41,9 +62,21 @@ export default function UploadPage() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900 mb-4">Upload Inventário</h2>
+      <Link href="/admin" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
+        ← Dashboard
+      </Link>
+      <div className="flex items-start justify-between mb-2">
+        <h2 className="text-xl font-semibold text-slate-900">Upload Inventário</h2>
+        <button
+          onClick={handleDownload}
+          disabled={downloading}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+        >
+          {downloading ? 'Baixando...' : '⬇️ Baixar atual'}
+        </button>
+      </div>
       <p className="text-sm text-slate-500 mb-6">
-        Arquivo .xlsx com colunas: Brand Code, Brand Name, Brand Purchase Unit, Pallet Size,
+        Arquivo .xlsx com colunas: Brand Code, Brand Name, Brand Purchase Unit, Pallet Size, Weight AVG,
         BIN Location 1–4.
       </p>
       <form action={formAction} className="space-y-4">

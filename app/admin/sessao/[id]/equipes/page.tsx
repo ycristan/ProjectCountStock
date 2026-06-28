@@ -3,6 +3,7 @@
 import { use, useState } from 'react'
 import { criarEquipes } from '@/actions/sessao'
 import type { EquipeInput, Credencial } from '@/actions/sessao'
+import Link from 'next/link'
 
 const ROLE_LABEL: Record<string, string> = {
   contador_1: 'Contador 1',
@@ -53,12 +54,20 @@ export default function EquipesPage({
       <div>
         <div className="flex justify-between items-center mb-4 print:hidden">
           <h2 className="text-xl font-semibold text-slate-900">Logins gerados</h2>
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800"
-          >
-            Imprimir
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/admin/sessao/${id}/progresso`}
+              className="px-4 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl hover:bg-slate-50"
+            >
+              Ver progresso →
+            </Link>
+            <button
+              onClick={() => window.print()}
+              className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800"
+            >
+              Imprimir
+            </button>
+          </div>
         </div>
         <table className="w-full border-collapse text-sm">
           <thead>
@@ -95,6 +104,9 @@ export default function EquipesPage({
 
   return (
     <div>
+      <Link href="/admin" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
+        ← Dashboard
+      </Link>
       <h2 className="text-xl font-semibold text-slate-900 mb-6">Configurar Equipes</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         {Array.from({ length: numEquipes }, (_, i) => (
