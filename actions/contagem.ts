@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server'
 
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+// ─── Tipos ─────────────────────────────────────────────────────────────────────────────
 
 export type EntryExistente = {
   bin_location: string | null
@@ -39,7 +39,7 @@ export type LancarContagemResult = {
   brand_name?: string
 }
 
-// ─── buscarItens ──────────────────────────────────────────────────────────────
+// ─── buscarItens ─────────────────────────────────────────────────────────────────────────
 
 export async function buscarItens(termo: string): Promise<ItemBusca[]> {
   const termoTrimmed = termo.trim()
@@ -159,7 +159,7 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
   })
 }
 
-// ─── lancarContagem ───────────────────────────────────────────────────────────
+// ─── lancarContagem ─────────────────────────────────────────────────────────────────────
 
 export async function lancarContagem(
   payload: LancarContagemPayload
@@ -189,7 +189,8 @@ export async function lancarContagem(
     .single()
 
   if (itemError || !item) return { error: 'Item não encontrado.' }
-  if (!item.bpu || !item.pallet_size) {
+  // ponytail: apenas bpu=0 bloqueia (divide por zero no RPC); pallet_size=0 é válido
+  if (!item.bpu) {
     return { error: 'Item com dados incompletos — contate o admin.' }
   }
 
@@ -237,7 +238,6 @@ export async function lancarContagem(
       .eq('id', existing.id)
     if (error) return { error: `Erro ao atualizar: ${error.message}` }
   } else {
-    // Race: concurrent submit can violate partial unique index; tolerable (one device per counter)
     const { error } = await supabase.from('count_entries').insert({
       team_id: teamId,
       counter_role: counterRole,
