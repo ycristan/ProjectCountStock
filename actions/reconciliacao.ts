@@ -9,6 +9,7 @@ export type ReconcItemLista = {
   brand_name: string
   bin_location: string | null
   status: 'discrepancia' | 'resolvido'
+  is_weight_count: boolean
   contador_1_cases: number | null
   contador_1_units: number | null
   contador_2_cases: number | null
@@ -17,6 +18,9 @@ export type ReconcItemLista = {
   independente_units: number | null
   reconciliated_cases: number | null
   reconciliated_units: number | null
+  weight_avg: number
+  bpu: number
+  box_tare_g: number
 }
 
 export async function finalizarEquipe(
@@ -47,7 +51,7 @@ export async function listarDiscrepancias(): Promise<ReconcItemLista[]> {
   const { data: items } = await admin
     .from('reconciliation_items')
     .select(
-      'id, brand_code, bin_location, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units',
+      'id, brand_code, bin_location, status, is_weight_count, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units',
     )
     .eq('team_id', teamId)
     .in('status', ['discrepancia', 'resolvido'])
@@ -55,18 +59,40 @@ export async function listarDiscrepancias(): Promise<ReconcItemLista[]> {
 
   if (!items?.length) return []
 
+  // box_tare_g da sessão
+  const { data: teamRow } = await admin.from('teams').select('session_id').eq('id', teamId).single()
+  let box_tare_g = 300
+  if (teamRow?.session_id) {
+    const { data: sessionRow } = await admin
+      .from('count_sessions')
+      .select('box_tare_g')
+      .eq('id', teamRow.session_id)
+      .single()
+    if (sessionRow?.box_tare_g) box_tare_g = sessionRow.box_tare_g
+  }
+
   const codes = [...new Set(items.map((i) => i.brand_code))]
-  const { data: invItems } = await supabase
+  const { data: invItems } = await admin
     .from('inventory_items')
-    .select('brand_code, brand_name')
+    .select('brand_code, brand_name, weight_avg, bpu')
     .in('brand_code', codes)
 
-  const nameMap: Record<string, string> = {}
-  for (const i of invItems ?? []) nameMap[i.brand_code] = i.brand_name
+  const invMap: Record<string, { brand_name: string; weight_avg: number; bpu: number }> = {}
+  for (const i of invItems ?? []) {
+    invMap[i.brand_code] = {
+      brand_name: i.brand_name,
+      weight_avg: i.weight_avg ?? 0,
+      bpu: i.bpu ?? 1,
+    }
+  }
 
   return items.map((i) => ({
     ...i,
-    brand_name: nameMap[i.brand_code] ?? i.brand_code,
+    brand_name: invMap[i.brand_code]?.brand_name ?? i.brand_code,
+    weight_avg: invMap[i.brand_code]?.weight_avg ?? 0,
+    bpu: invMap[i.brand_code]?.bpu ?? 1,
+    box_tare_g,
+    is_weight_count: i.is_weight_count ?? false,
     status: i.status as 'discrepancia' | 'resolvido',
   }))
 }

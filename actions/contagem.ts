@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server'
 
-// ─── Tipos ─────────────────────────────────────────────────────────────────────────────
+// ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export type EntryExistente = {
   bin_location: string | null
@@ -19,7 +19,7 @@ export type ItemBusca = {
   weight_avg: number
   box_tare_g: number
   bins: string[]
-  binContexto?: string       // BIN pelo qual o item foi encontrado (busca por BIN)
+  binContexto?: string
   jaContado: boolean
   entriesExistentes: EntryExistente[]
 }
@@ -30,6 +30,7 @@ export type LancarContagemPayload = {
   pallets: number
   cases: number
   units: number
+  is_weight_count?: boolean
 }
 
 export type LancarContagemResult = {
@@ -39,7 +40,7 @@ export type LancarContagemResult = {
   brand_name?: string
 }
 
-// ─── buscarItens ─────────────────────────────────────────────────────────────────────────
+// ─── buscarItens ───────────────────────────────────────────────────────────────
 
 export async function buscarItens(termo: string): Promise<ItemBusca[]> {
   const termoTrimmed = termo.trim()
@@ -58,7 +59,6 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
   let items: RawItem[] = []
   let binContextoMap: Record<string, string> = {}
 
-  // 1. Exact brand_code match (case-insensitive)
   const { data: exactMatch } = await supabase
     .from('inventory_items')
     .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
@@ -68,7 +68,6 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
   if (exactMatch && exactMatch.length > 0) {
     items = exactMatch
   } else {
-    // 2. BIN match (prefix)
     const { data: binMatch } = await supabase
       .from('item_bin_locations')
       .select('brand_code, bin_location')
@@ -82,11 +81,8 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
         .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
         .in('brand_code', codes)
       items = binItems ?? []
-      binContextoMap = Object.fromEntries(
-        binMatch.map((b) => [b.brand_code, b.bin_location])
-      )
+      binContextoMap = Object.fromEntries(binMatch.map((b) => [b.brand_code, b.bin_location]))
     } else {
-      // 3. Brand name search
       const { data: nameMatch } = await supabase
         .from('inventory_items')
         .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
@@ -100,7 +96,6 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
 
   const codes = items.map((i) => i.brand_code)
 
-  // Buscar box_tare_g da sessão do contador
   let box_tare_g = 300
   const { data: teamRow } = await supabase
     .from('teams')
@@ -116,13 +111,11 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
     if (sessionRow?.box_tare_g) box_tare_g = sessionRow.box_tare_g
   }
 
-  // Buscar BINs de todos os itens
   const { data: binData } = await supabase
     .from('item_bin_locations')
     .select('brand_code, bin_location')
     .in('brand_code', codes)
 
-  // Buscar entries existentes deste contador
   const { data: entries } = await supabase
     .from('count_entries')
     .select('brand_code, bin_location, pallets, cases, units')
@@ -159,7 +152,7 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
   })
 }
 
-// ─── lancarContagem ─────────────────────────────────────────────────────────────────────
+// ─── lancarContagem ────────────────────────────────────────────────────────────
 
 export async function lancarContagem(
   payload: LancarContagemPayload
@@ -167,7 +160,6 @@ export async function lancarContagem(
   if (payload.pallets < 0 || payload.cases < 0 || payload.units < 0) {
     return { error: 'Valores não podem ser negativos.' }
   }
-
   if (!Number.isInteger(payload.pallets) || !Number.isInteger(payload.cases) || !Number.isInteger(payload.units)) {
     return { error: 'Valores de contagem devem ser números inteiros' }
   }
@@ -181,7 +173,6 @@ export async function lancarContagem(
   const teamId = user.user_metadata?.team_id as string
   const counterRole = user.user_metadata?.counter_role as string
 
-  // Buscar dados do item
   const { data: item, error: itemError } = await supabase
     .from('inventory_items')
     .select('bpu, pallet_size, brand_name')
@@ -190,11 +181,8 @@ export async function lancarContagem(
 
   if (itemError || !item) return { error: 'Item não encontrado.' }
   // ponytail: apenas bpu=0 bloqueia (divide por zero no RPC); pallet_size=0 é válido
-  if (!item.bpu) {
-    return { error: 'Item com dados incompletos — contate o admin.' }
-  }
+  if (!item.bpu) return { error: 'Item com dados incompletos — contate o admin.' }
 
-  // Converter via RPC
   const { data: converted, error: convError } = await supabase.rpc('convert_count', {
     p_pallets: payload.pallets,
     p_cases: payload.cases,
@@ -208,8 +196,8 @@ export async function lancarContagem(
   const row = Array.isArray(converted) ? converted[0] : converted
   const final_cases = row.final_cases as number
   const final_units = row.final_units as number
+  const is_weight_count = payload.is_weight_count ?? false
 
-  // Verificar se entry já existe (índices parciais — não usar upsert direto)
   const existsQuery = supabase
     .from('count_entries')
     .select('id')
@@ -228,6 +216,7 @@ export async function lancarContagem(
     units: payload.units,
     final_cases,
     final_units,
+    is_weight_count,
     entered_at: new Date().toISOString(),
   }
 

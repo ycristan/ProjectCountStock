@@ -123,6 +123,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
           pallets: p,
           cases: c,
           units: u,
+          is_weight_count: modo === 'peso',
         })
         if (result.error) {
           setErro(result.error)
@@ -140,7 +141,6 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
 
   return (
     <div>
-      {/* Item header */}
       <div className="rounded-xl p-4 mb-4 bg-slate-900 text-white">
         <div className="flex items-start justify-between">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
@@ -161,7 +161,6 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
         </div>
       </div>
 
-      {/* BIN selector */}
       {!item.binContexto && item.bins.length > 1 && (
         <div className="mb-4">
           <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
@@ -185,7 +184,6 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
         </div>
       )}
 
-      {/* Mode selector — only for items with weight_avg */}
       {item.weight_avg > 0 && (
         <div className="grid grid-cols-2 gap-2 mb-4">
           <button
@@ -211,7 +209,6 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
         </div>
       )}
 
-      {/* Normal mode */}
       {modo === 'normal' && (
         <>
           <div className="grid grid-cols-3 gap-2 mb-4">
@@ -243,7 +240,6 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
         </>
       )}
 
-      {/* Weight mode */}
       {modo === 'peso' && (
         <div className="mb-4 space-y-3">
           <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
