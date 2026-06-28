@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { redirect } from 'next/navigation'
 
-type UploadState = { error?: string; success?: boolean; count?: number; skipped?: string[] } | null
+type UploadState = { error?: string; success?: boolean; count?: number; skipped?: number } | null
 type SessaoState = { error?: string } | null
 
 export async function uploadInventory(
@@ -26,32 +26,31 @@ export async function uploadInventory(
     bpu: Number(row['Brand Purchase Unit'] ?? row['bpu'] ?? 0),
     pallet_size: Number(row['Pallet Size'] ?? row['pallet_size'] ?? 0),
     weight_avg: Number(row['Weight AVG'] ?? row['weight_avg'] ?? 0),
+    category: String(row['Category'] ?? row['category'] ?? '').trim(),
+    category1: String(row['Category1'] ?? row['category1'] ?? '').trim(),
     bins: [1, 2, 3, 4]
       .map((i) => String(row[`BIN Location ${i}`] ?? '').trim())
       .filter(Boolean),
   }))
 
-  const items = allItems.filter((i) => i.brand_code && i.bpu > 0 && i.pallet_size > 0)
-  // ponytail: itens com bpu/pallet_size ausentes são reportados, não descartados silenciosamente
-  const skipped = allItems
-    .filter((i) => i.brand_code && (i.bpu <= 0 || i.pallet_size <= 0))
-    .map((i) => i.brand_code)
+  // ponytail: brand_code é o único campo obrigatório; bpu/pallet_size podem ser 0
+  const items = allItems.filter((i) => !!i.brand_code)
+  const skipped = allItems.length - items.length
 
   if (items.length === 0)
-    return {
-      error:
-        'Nenhum item válido encontrado. Verifique se as colunas Brand Purchase Unit e Pallet Size estão preenchidas.',
-    }
+    return { error: 'Nenhum item com Brand Code encontrado no arquivo.' }
 
   const supabase = await createClient()
 
   const { error: itemsError } = await supabase.from('inventory_items').upsert(
-    items.map(({ brand_code, brand_name, bpu, pallet_size, weight_avg }) => ({
+    items.map(({ brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1 }) => ({
       brand_code,
       brand_name,
       bpu,
       pallet_size,
       weight_avg,
+      category,
+      category1,
     }))
   )
   if (itemsError) return { error: `Erro ao salvar itens: ${itemsError.message}` }
@@ -72,7 +71,7 @@ export async function uploadInventory(
     if (binsError) return { error: `Erro ao salvar BINs: ${binsError.message}` }
   }
 
-  return { success: true, count: items.length, skipped: skipped.length > 0 ? skipped : undefined }
+  return { success: true, count: items.length, skipped: skipped > 0 ? skipped : undefined }
 }
 
 export async function criarSessao(
@@ -106,7 +105,7 @@ export async function buscarInventarioParaDownload() {
   const [{ data: items }, { data: bins }] = await Promise.all([
     supabase
       .from('inventory_items')
-      .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
+      .select('brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1')
       .order('brand_code'),
     supabase
       .from('item_bin_locations')
@@ -128,6 +127,8 @@ export async function buscarInventarioParaDownload() {
       'Brand Purchase Unit': item.bpu,
       'Pallet Size': item.pallet_size,
       'Weight AVG': item.weight_avg ?? 0,
+      'Category': item.category ?? '',
+      'Category1': item.category1 ?? '',
       'BIN Location 1': b[0] ?? '',
       'BIN Location 2': b[1] ?? '',
       'BIN Location 3': b[2] ?? '',
