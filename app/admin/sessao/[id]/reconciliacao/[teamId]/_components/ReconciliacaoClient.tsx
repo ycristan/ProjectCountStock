@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createBrowserClient } from '@/lib/supabase-client'
 
 type ReconcItem = {
   id: string
@@ -35,12 +37,30 @@ function formatVal(cases: number | null, units: number | null): string {
 
 export function ReconciliacaoClient({
   sessionId,
+  teamId,
   teamName,
   teamStatus,
   items,
   counterNames,
 }: Props) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'discrepancias' | 'combinados'>('discrepancias')
+
+  useEffect(() => {
+    const supabase = createBrowserClient()
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    supabase.auth.getSession().then(({ data }) => {
+      const token = data.session?.access_token
+      if (!token) return
+      supabase.realtime.setAuth(token)
+      channel = supabase
+        .channel('reconciliacao-admin')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reconciliation_items', filter: `team_id=eq.${teamId}` }, () => router.refresh())
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'teams', filter: `id=eq.${teamId}` }, () => router.refresh())
+        .subscribe()
+    })
+    return () => { if (channel) supabase.removeChannel(channel) }
+  }, [teamId, router])
 
   const combinados = items.filter((i) => i.status === 'combinado')
   const discrepancias = items.filter((i) => i.status === 'discrepancia')
