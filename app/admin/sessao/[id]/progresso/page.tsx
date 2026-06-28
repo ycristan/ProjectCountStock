@@ -47,24 +47,33 @@ export default async function ProgressoPage({
         sessionStatus={session?.status ?? 'aberta'}
         sessionCreatedAt={session?.created_at ?? ''}
         teams={[]}
+        initialEntries={[]}
+        initialReconc={[]}
+        invMap={{}}
       />
     )
   }
 
-  const { data: accounts } = await admin
-    .from('counter_accounts')
-    .select('id, team_id, role, finalized_at')
-    .in('team_id', teamIds)
-
-  const { data: entries } = await supabase
-    .from('count_entries')
-    .select('team_id, counter_role')
-    .in('team_id', teamIds)
-
-  // Buscar full_name dos contadores via auth.admin
-  const { data: { users: authUsers } = { users: [] } } = await admin.auth.admin.listUsers({
-    perPage: 1000,
-  })
+  const [
+    { data: accounts },
+    { data: entries },
+    { data: reconcItems },
+    { data: { users: authUsers } = { users: [] } },
+  ] = await Promise.all([
+    admin.from('counter_accounts').select('id, team_id, role, finalized_at').in('team_id', teamIds),
+    admin
+      .from('count_entries')
+      .select('team_id, counter_role, brand_code, final_cases, final_units')
+      .in('team_id', teamIds)
+      .eq('is_joint_recount', false),
+    admin
+      .from('reconciliation_items')
+      .select(
+        'team_id, brand_code, bin_location, status, reconciliated_cases, reconciliated_units, independente_cases, independente_units',
+      )
+      .in('team_id', teamIds),
+    admin.auth.admin.listUsers({ perPage: 1000 }),
+  ])
 
   const nameMap: Record<string, string> = {}
   for (const u of authUsers) {
@@ -96,12 +105,42 @@ export default async function ProgressoPage({
       .sort((a, b) => a.role.localeCompare(b.role)),
   }))
 
+  const allCodes = [...new Set((entries ?? []).map((e) => e.brand_code))]
+  const invMap: Record<string, { brand_name: string; bpu: number }> = {}
+  if (allCodes.length > 0) {
+    const { data: invItems } = await admin
+      .from('inventory_items')
+      .select('brand_code, brand_name, bpu')
+      .in('brand_code', allCodes)
+    for (const i of invItems ?? []) {
+      invMap[i.brand_code] = { brand_name: i.brand_name, bpu: i.bpu }
+    }
+  }
+
   return (
     <ProgressoClient
       sessionId={sessionId}
       sessionStatus={session?.status ?? 'aberta'}
       sessionCreatedAt={session?.created_at ?? ''}
       teams={teamData}
+      initialEntries={(entries ?? []).map((e) => ({
+        team_id: e.team_id,
+        counter_role: e.counter_role,
+        brand_code: e.brand_code,
+        final_cases: e.final_cases,
+        final_units: e.final_units,
+      }))}
+      initialReconc={(reconcItems ?? []).map((r) => ({
+        team_id: r.team_id,
+        brand_code: r.brand_code,
+        bin_location: r.bin_location,
+        status: r.status,
+        reconciliated_cases: r.reconciliated_cases,
+        reconciliated_units: r.reconciliated_units,
+        independente_cases: r.independente_cases,
+        independente_units: r.independente_units,
+      }))}
+      invMap={invMap}
     />
   )
 }
