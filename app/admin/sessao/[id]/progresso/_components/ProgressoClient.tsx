@@ -85,73 +85,83 @@ export function ProgressoClient({
   useEffect(() => {
     const supabase = createClient()
     const tids = new Set(init.map((t) => t.id))
+    let mounted = true
+    // ponytail: channel declared outside so cleanup can reference it after async setup
+    let channel: ReturnType<typeof supabase.channel>
 
-    const channel = supabase
-      .channel(`progresso-${sessionId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'count_entries' }, ({ new: row }) => {
-        const r = row as EntryRow
-        if (!tids.has(r.team_id)) return
-        setEntries((p) => [
-          ...p.filter(
-            (e) => !(e.team_id === r.team_id && e.counter_role === r.counter_role && e.brand_code === r.brand_code),
-          ),
-          r,
-        ])
-        const k = `${r.team_id}:${r.brand_code}`
-        setNewKeys((p) => new Set([...p, k]))
-        setTimeout(
-          () => setNewKeys((p) => { const n = new Set(p); n.delete(k); return n }),
-          1500,
-        )
-      })
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'reconciliation_items' },
-        ({ new: row }) => {
-          const r = row as ReconcRow
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return
+      // Explicitly set JWT so the realtime WS connection passes the RLS check
+      if (session?.access_token) supabase.realtime.setAuth(session.access_token)
+
+      channel = supabase
+        .channel(`progresso-${sessionId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'count_entries' }, ({ new: row }) => {
+          const r = row as EntryRow
           if (!tids.has(r.team_id)) return
-          setReconc((p) => [
+          setEntries((p) => [
             ...p.filter(
-              (x) => !(x.team_id === r.team_id && x.brand_code === r.brand_code && x.bin_location === r.bin_location),
+              (e) => !(e.team_id === r.team_id && e.counter_role === r.counter_role && e.brand_code === r.brand_code),
             ),
             r,
           ])
-        },
-      )
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'teams' }, ({ new: row }) => {
-        const r = row as { id: string; status: string }
-        if (!tids.has(r.id)) return
-        setTeams((p) => p.map((t) => (t.id === r.id ? { ...t, status: r.status } : t)))
-      })
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'counter_accounts' },
-        ({ new: row }) => {
-          const r = row as { id: string; finalized_at: string | null }
-          setTeams((p) =>
-            p.map((t) => ({
-              ...t,
-              counters: t.counters.map((c) => (c.id === r.id ? { ...c, finalized_at: r.finalized_at } : c)),
-            }))
+          const k = `${r.team_id}:${r.brand_code}`
+          setNewKeys((p) => new Set([...p, k]))
+          setTimeout(
+            () => setNewKeys((p) => { const n = new Set(p); n.delete(k); return n }),
+            1500,
           )
-        },
-      )
-      .subscribe()
+        })
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'reconciliation_items' },
+          ({ new: row }) => {
+            const r = row as ReconcRow
+            if (!tids.has(r.team_id)) return
+            setReconc((p) => [
+              ...p.filter(
+                (x) => !(x.team_id === r.team_id && x.brand_code === r.brand_code && x.bin_location === r.bin_location),
+              ),
+              r,
+            ])
+          },
+        )
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'teams' }, ({ new: row }) => {
+          const r = row as { id: string; status: string }
+          if (!tids.has(r.id)) return
+          setTeams((p) => p.map((t) => (t.id === r.id ? { ...t, status: r.status } : t)))
+        })
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'counter_accounts' },
+          ({ new: row }) => {
+            const r = row as { id: string; finalized_at: string | null }
+            setTeams((p) =>
+              p.map((t) => ({
+                ...t,
+                counters: t.counters.map((c) => (c.id === r.id ? { ...c, finalized_at: r.finalized_at } : c)),
+              }))
+            )
+          },
+        )
+        .subscribe()
+    })
 
-    return () => { supabase.removeChannel(channel) }
-  }, [sessionId]) // ponytail: init is stable — only need sessionId as dep
+    return () => {
+      mounted = false
+      if (channel) supabase.removeChannel(channel)
+    }
+  }, [sessionId]) // ponytail: init stable at mount; tids captures session's team IDs
 
   async function handleFinalizarEquipe(teamId: string) {
     setLoadingTeam(teamId)
     await finalizarEquipe(teamId)
     setLoadingTeam(null)
-    // reconciliation_items arrive via Realtime
   }
 
   const totalCounters = teams.reduce((s, t) => s + t.counters.length, 0)
   const finalizedCounters = teams.reduce((s, t) => s + t.counters.filter((c) => c.finalized_at).length, 0)
 
-  // Merged count — only reconciliada teams
   const mergedMap: Record<string, { brand_name: string; bpu: number; totalUnits: number; teamCount: number }> = {}
   for (const team of teams.filter((t) => t.status === 'reconciliada')) {
     const tr = reconc.filter((r) => r.team_id === team.id)
@@ -186,10 +196,7 @@ export function ProgressoClient({
         .row-flash { animation: rowFlash 1.5s ease-out forwards; }
       `}</style>
 
-      <Link
-        href="/admin"
-        className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4"
-      >
+      <Link href="/admin" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
         ← Dashboard
       </Link>
 
@@ -233,23 +240,15 @@ export function ProgressoClient({
             <div
               key={team.id}
               className={`bg-white border rounded-xl overflow-hidden ${
-                isReconciliada
-                  ? 'border-green-400'
-                  : isReconciliando
-                  ? 'border-amber-400'
-                  : 'border-slate-200'
+                isReconciliada ? 'border-green-400' : isReconciliando ? 'border-amber-400' : 'border-slate-200'
               }`}
             >
-              {/* Team header */}
               <div
                 className={`px-4 py-3 flex items-center justify-between border-b ${
-                  isReconciliada
-                    ? 'bg-green-50 border-green-100'
-                    : isReconciliando
-                    ? 'bg-amber-50 border-amber-100'
-                    : allFinalized
-                    ? 'bg-blue-50 border-blue-100'
-                    : 'bg-slate-50 border-slate-100'
+                  isReconciliada ? 'bg-green-50 border-green-100'
+                  : isReconciliando ? 'bg-amber-50 border-amber-100'
+                  : allFinalized ? 'bg-blue-50 border-blue-100'
+                  : 'bg-slate-50 border-slate-100'
                 }`}
               >
                 <span className="font-semibold text-slate-900">{team.team_name}</span>
@@ -289,7 +288,6 @@ export function ProgressoClient({
                 </div>
               </div>
 
-              {/* Counter pills */}
               <div className="px-4 py-2.5 flex gap-2 flex-wrap border-b border-slate-100">
                 {team.counters.map((c) => (
                   <span
@@ -301,15 +299,12 @@ export function ProgressoClient({
                     <span className="font-bold">{roleLabel[c.role] ?? c.role}</span>
                     {c.full_name && <span>{c.full_name}</span>}
                     <span>
-                      {c.finalized_at
-                        ? ' ✓'
-                        : ` · ${te.filter((e) => e.counter_role === c.role).length} itens`}
+                      {c.finalized_at ? ' ✓' : ` · ${te.filter((e) => e.counter_role === c.role).length} itens`}
                     </span>
                   </span>
                 ))}
               </div>
 
-              {/* Live items table */}
               {codes.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -335,10 +330,8 @@ export function ProgressoClient({
                         const ind = sumRole(te, code, 'independente', bpu)
                         const rRows = reconc.filter((r) => r.team_id === team.id && r.brand_code === code)
                         const rStatus = rRows.length
-                          ? rRows.some((r) => r.status === 'discrepancia')
-                            ? 'discrepancia'
-                            : rRows.every((r) => r.status === 'combinado')
-                            ? 'combinado'
+                          ? rRows.some((r) => r.status === 'discrepancia') ? 'discrepancia'
+                            : rRows.every((r) => r.status === 'combinado') ? 'combinado'
                             : 'resolvido'
                           : null
                         const isNew = newKeys.has(`${team.id}:${code}`)
@@ -347,13 +340,10 @@ export function ProgressoClient({
                           <tr
                             key={code}
                             className={`border-b border-slate-50 ${
-                              isNew
-                                ? 'row-flash'
-                                : rStatus === 'combinado' || rStatus === 'resolvido'
-                                ? 'bg-green-50'
-                                : rStatus === 'discrepancia'
-                                ? 'bg-amber-50'
-                                : ''
+                              isNew ? 'row-flash'
+                              : rStatus === 'combinado' || rStatus === 'resolvido' ? 'bg-green-50'
+                              : rStatus === 'discrepancia' ? 'bg-amber-50'
+                              : ''
                             }`}
                           >
                             <td className="px-4 py-2.5">
@@ -373,18 +363,10 @@ export function ProgressoClient({
                               </td>
                             ))}
                             <td className="px-3 py-2.5 text-center">
-                              {rStatus === 'combinado' && (
-                                <span className="text-green-500 font-bold">✓</span>
-                              )}
-                              {rStatus === 'resolvido' && (
-                                <span className="text-xs font-semibold text-green-600">OK</span>
-                              )}
-                              {rStatus === 'discrepancia' && (
-                                <span className="text-amber-500">⚠</span>
-                              )}
-                              {!rStatus && (
-                                <span className="text-slate-300 text-xs">···</span>
-                              )}
+                              {rStatus === 'combinado' && <span className="text-green-500 font-bold">✓</span>}
+                              {rStatus === 'resolvido' && <span className="text-xs font-semibold text-green-600">OK</span>}
+                              {rStatus === 'discrepancia' && <span className="text-amber-500">⚠</span>}
+                              {!rStatus && <span className="text-slate-300 text-xs">···</span>}
                             </td>
                           </tr>
                         )
@@ -393,19 +375,14 @@ export function ProgressoClient({
                   </table>
                 </div>
               ) : (
-                <div className="px-4 py-4 text-xs text-slate-400">
-                  Aguardando primeiras contagens...
-                </div>
+                <div className="px-4 py-4 text-xs text-slate-400">Aguardando primeiras contagens...</div>
               )}
             </div>
           )
         })}
-        {teams.length === 0 && (
-          <p className="text-sm text-slate-500">Nenhuma equipe criada nesta sessão.</p>
-        )}
+        {teams.length === 0 && <p className="text-sm text-slate-500">Nenhuma equipe criada nesta sessão.</p>}
       </div>
 
-      {/* Merged count */}
       {mergedItems.length > 0 && (
         <div>
           <h3 className="text-base font-semibold text-slate-900 mb-3">Contagem consolidada</h3>
