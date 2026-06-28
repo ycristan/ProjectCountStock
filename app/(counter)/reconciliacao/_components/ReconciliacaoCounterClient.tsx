@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createBrowserClient } from '@/lib/supabase-client'
+import { createClient } from '@/lib/supabase-client'
 import type { ReconcItemLista } from '@/actions/reconciliacao'
 import { resolverItemReconciliacao, confirmarReconciliacao } from '@/actions/reconciliacao'
 
@@ -49,7 +49,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
   const [erro, setErro] = useState<string | null>(null)
 
   useEffect(() => {
-    const supabase = createBrowserClient()
+    const supabase = createClient()
     let channel: ReturnType<typeof supabase.channel> | null = null
     supabase.auth.getSession().then(({ data }) => {
       const token = data.session?.access_token

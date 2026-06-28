@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createBrowserClient } from '@/lib/supabase-client'
+import { createClient } from '@/lib/supabase-client'
 
 type ReconcItem = {
   id: string
@@ -47,7 +47,7 @@ export function ReconciliacaoClient({
   const [activeTab, setActiveTab] = useState<'discrepancias' | 'combinados'>('discrepancias')
 
   useEffect(() => {
-    const supabase = createBrowserClient()
+    const supabase = createClient()
     let channel: ReturnType<typeof supabase.channel> | null = null
     supabase.auth.getSession().then(({ data }) => {
       const token = data.session?.access_token
