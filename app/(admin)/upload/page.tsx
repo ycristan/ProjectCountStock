@@ -5,7 +5,7 @@ import { uploadInventory, buscarInventarioParaDownload } from '@/actions/sessao'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
 
-type UploadState = { error?: string; success?: boolean; count?: number } | null
+type UploadState = { error?: string; success?: boolean; count?: number; skipped?: string[] } | null
 
 export default function UploadPage() {
   const [state, formAction, pending] = useActionState<UploadState, FormData>(uploadInventory, null)
@@ -42,6 +42,14 @@ export default function UploadPage() {
             {state.count} {state.count === 1 ? 'item importado' : 'itens importados'} com sucesso.
           </p>
         </div>
+        {state.skipped && state.skipped.length > 0 && (
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl mb-4">
+            <p className="text-amber-800 font-medium mb-1">
+              {state.skipped.length} {state.skipped.length === 1 ? 'item ignorado' : 'itens ignorados'} (BPU ou Pallet Size ausente):
+            </p>
+            <p className="text-amber-700 text-sm font-mono">{state.skipped.join(', ')}</p>
+          </div>
+        )}
         <div className="flex gap-3">
           <Link
             href="/admin"

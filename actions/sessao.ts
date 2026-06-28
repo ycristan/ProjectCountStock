@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { redirect } from 'next/navigation'
 
-type UploadState = { error?: string; success?: boolean; count?: number } | null
+type UploadState = { error?: string; success?: boolean; count?: number; skipped?: string[] } | null
 type SessaoState = { error?: string } | null
 
 export async function uploadInventory(
@@ -20,20 +20,28 @@ export async function uploadInventory(
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet)
 
-  const items = rows
-    .map((row) => ({
-      brand_code: String(row['Brand Code'] ?? row['brand_code'] ?? '').trim(),
-      brand_name: String(row['Brand Name'] ?? row['brand_name'] ?? '').trim(),
-      bpu: Number(row['Brand Purchase Unit'] ?? row['bpu'] ?? 0),
-      pallet_size: Number(row['Pallet Size'] ?? row['pallet_size'] ?? 0),
-      weight_avg: Number(row['Weight AVG'] ?? row['weight_avg'] ?? 0),
-      bins: [1, 2, 3, 4]
-        .map((i) => String(row[`BIN Location ${i}`] ?? '').trim())
-        .filter(Boolean),
-    }))
-    .filter((i) => i.brand_code && i.bpu > 0 && i.pallet_size > 0)
+  const allItems = rows.map((row) => ({
+    brand_code: String(row['Brand Code'] ?? row['brand_code'] ?? '').trim(),
+    brand_name: String(row['Brand Name'] ?? row['brand_name'] ?? '').trim(),
+    bpu: Number(row['Brand Purchase Unit'] ?? row['bpu'] ?? 0),
+    pallet_size: Number(row['Pallet Size'] ?? row['pallet_size'] ?? 0),
+    weight_avg: Number(row['Weight AVG'] ?? row['weight_avg'] ?? 0),
+    bins: [1, 2, 3, 4]
+      .map((i) => String(row[`BIN Location ${i}`] ?? '').trim())
+      .filter(Boolean),
+  }))
 
-  if (items.length === 0) return { error: 'Nenhum item válido encontrado no arquivo.' }
+  const items = allItems.filter((i) => i.brand_code && i.bpu > 0 && i.pallet_size > 0)
+  // ponytail: itens com bpu/pallet_size ausentes são reportados, não descartados silenciosamente
+  const skipped = allItems
+    .filter((i) => i.brand_code && (i.bpu <= 0 || i.pallet_size <= 0))
+    .map((i) => i.brand_code)
+
+  if (items.length === 0)
+    return {
+      error:
+        'Nenhum item válido encontrado. Verifique se as colunas Brand Purchase Unit e Pallet Size estão preenchidas.',
+    }
 
   const supabase = await createClient()
 
@@ -48,17 +56,23 @@ export async function uploadInventory(
   )
   if (itemsError) return { error: `Erro ao salvar itens: ${itemsError.message}` }
 
+  // ponytail: delete + insert garante replace limpo dos BINs por item
+  const affectedCodes = items.map((i) => i.brand_code)
+  const { error: delError } = await supabase
+    .from('item_bin_locations')
+    .delete()
+    .in('brand_code', affectedCodes)
+  if (delError) return { error: `Erro ao atualizar BINs: ${delError.message}` }
+
   const binRows = items.flatMap(({ brand_code, bins }) =>
     bins.map((bin_location) => ({ brand_code, bin_location }))
   )
   if (binRows.length > 0) {
-    const { error: binsError } = await supabase
-      .from('item_bin_locations')
-      .upsert(binRows, { onConflict: 'brand_code,bin_location', ignoreDuplicates: true })
+    const { error: binsError } = await supabase.from('item_bin_locations').insert(binRows)
     if (binsError) return { error: `Erro ao salvar BINs: ${binsError.message}` }
   }
 
-  return { success: true, count: items.length }
+  return { success: true, count: items.length, skipped: skipped.length > 0 ? skipped : undefined }
 }
 
 export async function criarSessao(
