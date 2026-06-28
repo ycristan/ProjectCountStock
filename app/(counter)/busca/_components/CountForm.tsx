@@ -34,16 +34,6 @@ function formatGrams(raw: string): string {
   return num === 0 ? '' : num.toLocaleString('pt-BR')
 }
 
-function calcWeightQty(rodadas: Rodada[], weightAvg: number, boxTareG: number): number {
-  const totalTara = rodadas.reduce((s, r) => s + parseInt(r.caixas || '0', 10) * boxTareG, 0)
-  const totalPeso = rodadas.reduce((s, r) => s + parseGrams(r.pesoFmt), 0)
-  const liquido = totalPeso - totalTara
-  if (liquido <= 0) return 0
-  const raw = liquido / weightAvg
-  const decimal = raw - Math.floor(raw)
-  return decimal >= 0.7 ? Math.ceil(raw) : Math.floor(raw)
-}
-
 export function CountForm({ item, onVoltar, onSucesso }: Props) {
   const [binSelecionado, setBinSelecionado] = useState<string | null>(initBin(item))
   const [modo, setModo] = useState<'normal' | 'peso'>('normal')
@@ -92,9 +82,13 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
     )
   }
 
+  // ponytail: inline — evita 2 reduces extras vs função separada
   const totalTara = rodadas.reduce((s, r) => s + parseInt(r.caixas || '0', 10) * item.box_tare_g, 0)
   const totalPeso = rodadas.reduce((s, r) => s + parseGrams(r.pesoFmt), 0)
-  const weightQty = modo === 'peso' ? calcWeightQty(rodadas, item.weight_avg, item.box_tare_g) : 0
+  const liquido = totalPeso - totalTara
+  const raw = liquido > 0 && item.weight_avg > 0 ? liquido / item.weight_avg : 0
+  const decimal = raw - Math.floor(raw)
+  const weightQty = raw > 0 ? (decimal >= 0.7 ? Math.ceil(raw) : Math.floor(raw)) : 0
   const hasWeightData = totalPeso > 0
 
   const handleSubmit = () => {
@@ -108,6 +102,10 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
     if (modo === 'peso') {
       if (!hasWeightData) {
         setErro('Informe o peso para calcular a quantidade.')
+        return
+      }
+      if (weightQty <= 0) {
+        setErro('Peso líquido insuficiente — verifique o número de caixas.')
         return
       }
       u = weightQty
@@ -313,7 +311,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
               </div>
               <div className="flex justify-between text-slate-500">
                 <span>Peso líquido</span>
-                <span>{hasWeightData ? `${Math.max(0, totalPeso - totalTara).toLocaleString('pt-BR')} g` : '— g'}</span>
+                <span>{hasWeightData ? `${Math.max(0, liquido).toLocaleString('pt-BR')} g` : '— g'}</span>
               </div>
             </div>
             <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200">
@@ -340,7 +338,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
 
       <button
         onClick={handleSubmit}
-        disabled={isPending || (modo === 'peso' && !hasWeightData)}
+        disabled={isPending || (modo === 'peso' && weightQty <= 0)}
         className="w-full bg-slate-900 text-white font-semibold py-4 rounded-xl text-base transition-opacity disabled:opacity-40"
       >
         {btnLabel}
