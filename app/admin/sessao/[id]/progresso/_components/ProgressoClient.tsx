@@ -134,13 +134,13 @@ export function ProgressoClient({ sessionId, sessionCreatedAt, sessionStatus, te
                   {isReconciliando && (
                     <>
                       <span className="text-xs font-medium px-2 py-1 rounded-full bg-amber-100 text-amber-700">
-                        Reconciliando
+                        Aguardando independente
                       </span>
                       <Link
                         href={`/admin/sessao/${sessionId}/reconciliacao/${team.id}`}
                         className="text-xs font-semibold text-blue-600 hover:text-blue-800"
                       >
-                        Ver reconciliação →
+                        Acompanhar →
                       </Link>
                     </>
                   )}
@@ -161,7 +161,7 @@ export function ProgressoClient({ sessionId, sessionCreatedAt, sessionStatus, te
                       disabled={isLoading}
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-60"
                     >
-                      {isLoading ? 'Aguarde...' : 'Finalizar Equipe →'}
+                      {isLoading ? 'Aguarde...' : 'Checar discrepâncias →'}
                     </button>
                   )}
                 </div>

@@ -14,6 +14,8 @@ type ReconcItem = {
   contador_2_units: number | null
   independente_cases: number | null
   independente_units: number | null
+  reconciliated_cases: number | null
+  reconciliated_units: number | null
 }
 
 export default async function ReconciliacaoPage({
@@ -34,7 +36,7 @@ export default async function ReconciliacaoPage({
   const { data: rawItems } = await admin
     .from('reconciliation_items')
     .select(
-      'id, brand_code, bin_location, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units',
+      'id, brand_code, bin_location, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units',
     )
     .eq('team_id', teamId)
     .order('brand_code')
@@ -80,6 +82,8 @@ export default async function ReconciliacaoPage({
     contador_2_units: i.contador_2_units,
     independente_cases: i.independente_cases,
     independente_units: i.independente_units,
+    reconciliated_cases: i.reconciliated_cases,
+    reconciliated_units: i.reconciliated_units,
   }))
 
   return (
