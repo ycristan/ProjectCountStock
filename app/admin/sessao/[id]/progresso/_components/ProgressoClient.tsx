@@ -74,12 +74,20 @@ export function ProgressoClient({ sessionId, sessionCreatedAt, sessionStatus, te
             {' · '}Status: {sessionStatus}
           </div>
         </div>
-        <button
-          onClick={() => router.refresh()}
-          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-        >
-          Atualizar
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/admin/sessao/${sessionId}/equipes`}
+            className="text-sm text-slate-600 hover:text-slate-900 font-medium border border-slate-200 rounded-xl px-3 py-1.5 hover:border-slate-400"
+          >
+            Gerenciar equipes
+          </Link>
+          <button
+            onClick={() => router.refresh()}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Atualizar
+          </button>
+        </div>
       </div>
 
       <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
