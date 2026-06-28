@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase-server'
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export type EntryExistente = {
-  bin_location: string | null
   pallets: number
   cases: number
   units: number
@@ -19,14 +18,12 @@ export type ItemBusca = {
   weight_avg: number
   box_tare_g: number
   bins: string[]
-  binContexto?: string
   jaContado: boolean
-  entriesExistentes: EntryExistente[]
+  entryExistente: EntryExistente | null
 }
 
 export type LancarContagemPayload = {
   brand_code: string
-  bin_location: string | null
   pallets: number
   cases: number
   units: number
@@ -57,7 +54,6 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
 
   type RawItem = { brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number }
   let items: RawItem[] = []
-  let binContextoMap: Record<string, string> = {}
 
   const { data: exactMatch } = await supabase
     .from('inventory_items')
@@ -81,7 +77,6 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
         .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
         .in('brand_code', codes)
       items = binItems ?? []
-      binContextoMap = Object.fromEntries(binMatch.map((b) => [b.brand_code, b.bin_location]))
     } else {
       const { data: nameMatch } = await supabase
         .from('inventory_items')
@@ -118,7 +113,7 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
 
   const { data: entries } = await supabase
     .from('count_entries')
-    .select('brand_code, bin_location, pallets, cases, units')
+    .select('brand_code, pallets, cases, units')
     .eq('team_id', teamId)
     .eq('counter_role', counterRole)
     .in('brand_code', codes)
@@ -128,14 +123,7 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
       .filter((b) => b.brand_code === item.brand_code)
       .map((b) => b.bin_location as string)
 
-    const entriesExistentes: EntryExistente[] = (entries ?? [])
-      .filter((e) => e.brand_code === item.brand_code)
-      .map((e) => ({
-        bin_location: e.bin_location,
-        pallets: e.pallets,
-        cases: e.cases,
-        units: e.units,
-      }))
+    const entry = (entries ?? []).find((e) => e.brand_code === item.brand_code)
 
     return {
       brand_code: item.brand_code,
@@ -145,9 +133,10 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
       weight_avg: item.weight_avg ?? 0,
       box_tare_g,
       bins,
-      binContexto: binContextoMap[item.brand_code],
-      jaContado: entriesExistentes.length > 0,
-      entriesExistentes,
+      jaContado: !!entry,
+      entryExistente: entry
+        ? { pallets: entry.pallets, cases: entry.cases, units: entry.units }
+        : null,
     }
   })
 }
@@ -198,17 +187,13 @@ export async function lancarContagem(
   const final_units = row.final_units as number
   const is_weight_count = payload.is_weight_count ?? false
 
-  const existsQuery = supabase
+  const { data: existing } = await supabase
     .from('count_entries')
     .select('id')
     .eq('team_id', teamId)
     .eq('counter_role', counterRole)
     .eq('brand_code', payload.brand_code)
-
-  const { data: existing } = await (payload.bin_location === null
-    ? existsQuery.is('bin_location', null)
-    : existsQuery.eq('bin_location', payload.bin_location)
-  ).maybeSingle()
+    .maybeSingle()
 
   const updateData = {
     pallets: payload.pallets,
@@ -231,7 +216,7 @@ export async function lancarContagem(
       team_id: teamId,
       counter_role: counterRole,
       brand_code: payload.brand_code,
-      bin_location: payload.bin_location,
+      bin_location: null,
       is_joint_recount: false,
       ...updateData,
     })

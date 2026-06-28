@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import type { ItemBusca } from '@/actions/contagem'
 import { lancarContagem } from '@/actions/contagem'
 
@@ -18,12 +18,6 @@ type Props = {
 
 type Rodada = { id: number; caixas: string; pesoFmt: string }
 
-function initBin(item: ItemBusca): string | null {
-  if (item.binContexto) return item.binContexto
-  if (item.bins.length === 1) return item.bins[0]
-  return null
-}
-
 function parseGrams(fmt: string): number {
   return parseInt(fmt.replace(/\D/g, '') || '0', 10)
 }
@@ -35,35 +29,16 @@ function formatGrams(raw: string): string {
 }
 
 export function CountForm({ item, onVoltar, onSucesso }: Props) {
-  const [binSelecionado, setBinSelecionado] = useState<string | null>(initBin(item))
+  const entry = item.entryExistente
+  const isEdit = !!entry
+
   const [modo, setModo] = useState<'normal' | 'peso'>('normal')
   const [rodadas, setRodadas] = useState<Rodada[]>([{ id: 0, caixas: '', pesoFmt: '' }])
+  const [pallets, setPallets] = useState(String(entry?.pallets ?? 0))
+  const [cases, setCases] = useState(String(entry?.cases ?? 0))
+  const [units, setUnits] = useState(String(entry?.units ?? 0))
   const [erro, setErro] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-
-  const entryAtual =
-    item.entriesExistentes.find((e) => e.bin_location === binSelecionado) ??
-    (item.entriesExistentes.length > 0 && item.bins.length <= 1 ? item.entriesExistentes[0] : undefined)
-  const isEdit = !!entryAtual
-
-  const [pallets, setPallets] = useState(String(entryAtual?.pallets ?? 0))
-  const [cases, setCases] = useState(String(entryAtual?.cases ?? 0))
-  const [units, setUnits] = useState(String(entryAtual?.units ?? 0))
-
-  useEffect(() => {
-    const entry = item.entriesExistentes.find((e) => e.bin_location === binSelecionado)
-    if (entry) {
-      setPallets(String(entry.pallets))
-      setCases(String(entry.cases))
-      setUnits(String(entry.units))
-    } else {
-      setPallets('0')
-      setCases('0')
-      setUnits('0')
-    }
-  }, [binSelecionado, item.entriesExistentes])
-
-  const precisaSelecionarBin = !item.binContexto && item.bins.length > 1 && binSelecionado === null
 
   function addRodada() {
     setRodadas((prev) => [...prev, { id: Date.now(), caixas: '', pesoFmt: '' }])
@@ -92,10 +67,6 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
   const hasWeightData = totalPeso > 0
 
   const handleSubmit = () => {
-    if (precisaSelecionarBin) {
-      setErro('Selecione um BIN antes de confirmar.')
-      return
-    }
     setErro(null)
 
     let p = 0, c = 0, u = 0
@@ -119,7 +90,6 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
       try {
         const result = await lancarContagem({
           brand_code: item.brand_code,
-          bin_location: binSelecionado,
           pallets: p,
           cases: c,
           units: u,
@@ -160,29 +130,6 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
           {item.weight_avg > 0 && ` · ⚖️ ${item.weight_avg}g/un`}
         </div>
       </div>
-
-      {!item.binContexto && item.bins.length > 1 && (
-        <div className="mb-4">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-            Selecione o BIN que está contando
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {item.bins.map((bin) => (
-              <button
-                key={bin}
-                onClick={() => setBinSelecionado(bin)}
-                className={`px-3 py-2 rounded-lg text-sm border font-medium transition-colors ${
-                  binSelecionado === bin
-                    ? 'bg-slate-900 text-white border-slate-900'
-                    : 'border-slate-200 text-slate-700 bg-white'
-                }`}
-              >
-                {bin}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {item.weight_avg > 0 && (
         <div className="grid grid-cols-2 gap-2 mb-4">

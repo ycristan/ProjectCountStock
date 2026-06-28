@@ -51,8 +51,9 @@ type Props = {
 
 const roleLabel: Record<string, string> = { contador_1: 'C1', contador_2: 'C2', independente: 'Ind' }
 
+// ponytail: 10+21 is the company standard — no cx/un labels
 function fmtVal(v: { cases: number; units: number } | null) {
-  return v ? `${v.cases}cx + ${v.units}un` : '—'
+  return v ? `${v.cases}+${v.units}` : '—'
 }
 
 function sumRole(
@@ -86,12 +87,10 @@ export function ProgressoClient({
     const supabase = createClient()
     const tids = new Set(init.map((t) => t.id))
     let mounted = true
-    // ponytail: channel declared outside so cleanup can reference it after async setup
     let channel: ReturnType<typeof supabase.channel>
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return
-      // Explicitly set JWT so the realtime WS connection passes the RLS check
       if (session?.access_token) supabase.realtime.setAuth(session.access_token)
 
       channel = supabase
@@ -118,10 +117,9 @@ export function ProgressoClient({
           ({ new: row }) => {
             const r = row as ReconcRow
             if (!tids.has(r.team_id)) return
+            // ponytail: bin_location no longer meaningful; dedup by team+brand only
             setReconc((p) => [
-              ...p.filter(
-                (x) => !(x.team_id === r.team_id && x.brand_code === r.brand_code && x.bin_location === r.bin_location),
-              ),
+              ...p.filter((x) => !(x.team_id === r.team_id && x.brand_code === r.brand_code)),
               r,
             ])
           },
@@ -151,7 +149,7 @@ export function ProgressoClient({
       mounted = false
       if (channel) supabase.removeChannel(channel)
     }
-  }, [sessionId]) // ponytail: init stable at mount; tids captures session's team IDs
+  }, [sessionId])
 
   async function handleFinalizarEquipe(teamId: string) {
     setLoadingTeam(teamId)
@@ -239,16 +237,19 @@ export function ProgressoClient({
           return (
             <div
               key={team.id}
-              className={`bg-white border rounded-xl overflow-hidden ${
-                isReconciliada ? 'border-green-400' : isReconciliando ? 'border-amber-400' : 'border-slate-200'
+              className={`bg-white border rounded-xl overflow-hidden shadow-sm ${
+                isReconciliada ? 'border-green-400'
+                : isReconciliando ? 'border-amber-400'
+                : 'border-slate-200'
               }`}
             >
+              {/* Team header */}
               <div
-                className={`px-4 py-3 flex items-center justify-between border-b ${
-                  isReconciliada ? 'bg-green-50 border-green-100'
-                  : isReconciliando ? 'bg-amber-50 border-amber-100'
-                  : allFinalized ? 'bg-blue-50 border-blue-100'
-                  : 'bg-slate-50 border-slate-100'
+                className={`px-4 py-3 flex items-center justify-between ${
+                  isReconciliada ? 'bg-green-50 border-b border-green-200'
+                  : isReconciliando ? 'bg-amber-50 border-b border-amber-200'
+                  : allFinalized ? 'bg-blue-50 border-b border-blue-100'
+                  : 'bg-slate-50 border-b border-slate-200'
                 }`}
               >
                 <span className="font-semibold text-slate-900">{team.team_name}</span>
@@ -288,7 +289,8 @@ export function ProgressoClient({
                 </div>
               </div>
 
-              <div className="px-4 py-2.5 flex gap-2 flex-wrap border-b border-slate-100">
+              {/* Counter badges */}
+              <div className="px-4 py-2.5 flex gap-2 flex-wrap border-b border-slate-100 bg-white">
                 {team.counters.map((c) => (
                   <span
                     key={c.id}
@@ -305,24 +307,20 @@ export function ProgressoClient({
                 ))}
               </div>
 
+              {/* Items table */}
               {codes.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-100">
-                        {['Item', 'C1', 'C2', 'Ind', 'Status'].map((h) => (
-                          <th
-                            key={h}
-                            className={`py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide ${
-                              h === 'Item' ? 'text-left px-4' : 'text-center px-3'
-                            }`}
-                          >
-                            {h}
-                          </th>
-                        ))}
+                      <tr className="bg-slate-100 border-b-2 border-slate-300">
+                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide w-1/2">Item</th>
+                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">C1</th>
+                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">C2</th>
+                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">Ind</th>
+                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide w-14"></th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-slate-200">
                       {codes.map((code) => {
                         const bpu = invMap[code]?.bpu ?? 1
                         const c1 = sumRole(te, code, 'contador_1', bpu)
@@ -339,34 +337,33 @@ export function ProgressoClient({
                         return (
                           <tr
                             key={code}
-                            className={`border-b border-slate-50 ${
+                            className={`${
                               isNew ? 'row-flash'
                               : rStatus === 'combinado' || rStatus === 'resolvido' ? 'bg-green-50'
                               : rStatus === 'discrepancia' ? 'bg-amber-50'
-                              : ''
+                              : 'hover:bg-slate-50'
                             }`}
                           >
                             <td className="px-4 py-2.5">
                               <div className="font-semibold text-slate-800 text-xs">{code}</div>
-                              <div className="text-xs text-slate-400 truncate max-w-[140px]">
+                              <div className="text-xs text-slate-400 truncate max-w-[200px] lg:max-w-none">
                                 {invMap[code]?.brand_name ?? ''}
                               </div>
                             </td>
                             {[c1, c2, ind].map((v, i) => (
                               <td
                                 key={i}
-                                className={`px-3 py-2.5 text-center text-xs font-mono ${
-                                  v ? 'text-slate-700' : 'text-slate-300'
+                                className={`px-3 py-2.5 text-center font-mono text-sm ${
+                                  v ? 'text-slate-800 font-semibold' : 'text-slate-300'
                                 }`}
                               >
                                 {fmtVal(v)}
                               </td>
                             ))}
-                            <td className="px-3 py-2.5 text-center">
-                              {rStatus === 'combinado' && <span className="text-green-500 font-bold">✓</span>}
-                              {rStatus === 'resolvido' && <span className="text-xs font-semibold text-green-600">OK</span>}
+                            <td className="px-3 py-2.5 text-center text-base">
+                              {rStatus === 'combinado' && <span className="text-green-500">✓</span>}
+                              {rStatus === 'resolvido' && <span className="text-green-500 text-xs font-bold">OK</span>}
                               {rStatus === 'discrepancia' && <span className="text-amber-500">⚠</span>}
-                              {!rStatus && <span className="text-slate-300 text-xs">···</span>}
                             </td>
                           </tr>
                         )
@@ -375,7 +372,7 @@ export function ProgressoClient({
                   </table>
                 </div>
               ) : (
-                <div className="px-4 py-4 text-xs text-slate-400">Aguardando primeiras contagens...</div>
+                <div className="px-4 py-5 text-xs text-slate-400 text-center">Aguardando primeiras contagens...</div>
               )}
             </div>
           )
@@ -386,32 +383,25 @@ export function ProgressoClient({
       {mergedItems.length > 0 && (
         <div>
           <h3 className="text-base font-semibold text-slate-900 mb-3">Contagem consolidada</h3>
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  {['Item', 'Equipes', 'Total'].map((h) => (
-                    <th
-                      key={h}
-                      className={`py-2.5 text-xs font-semibold text-slate-400 uppercase tracking-wide ${
-                        h === 'Item' ? 'text-left px-4' : 'text-center px-3'
-                      }`}
-                    >
-                      {h}
-                    </th>
-                  ))}
+                <tr className="bg-slate-100 border-b-2 border-slate-300">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide w-1/2">Item</th>
+                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">Equipes</th>
+                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">Total</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-200">
                 {mergedItems.map((item) => (
-                  <tr key={item.brand_code} className="border-b border-slate-50">
+                  <tr key={item.brand_code} className="hover:bg-slate-50">
                     <td className="px-4 py-2.5">
                       <div className="font-semibold text-slate-800 text-xs">{item.brand_code}</div>
                       <div className="text-xs text-slate-400">{item.brand_name}</div>
                     </td>
                     <td className="px-3 py-2.5 text-center text-xs text-slate-500">{item.teamCount}</td>
-                    <td className="px-3 py-2.5 text-center text-xs font-mono font-semibold text-slate-800">
-                      {item.merged_cases}cx + {item.merged_units}un
+                    <td className="px-3 py-2.5 text-center font-mono text-sm font-semibold text-slate-800">
+                      {item.merged_cases}+{item.merged_units}
                     </td>
                   </tr>
                 ))}
