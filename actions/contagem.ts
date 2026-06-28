@@ -16,6 +16,8 @@ export type ItemBusca = {
   brand_name: string
   bpu: number
   pallet_size: number
+  weight_avg: number
+  box_tare_g: number
   bins: string[]
   binContexto?: string       // BIN pelo qual o item foi encontrado (busca por BIN)
   jaContado: boolean
@@ -52,14 +54,14 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
   const teamId = user.user_metadata?.team_id as string
   const counterRole = user.user_metadata?.counter_role as string
 
-  type RawItem = { brand_code: string; brand_name: string; bpu: number; pallet_size: number }
+  type RawItem = { brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number }
   let items: RawItem[] = []
   let binContextoMap: Record<string, string> = {}
 
   // 1. Exact brand_code match (case-insensitive)
   const { data: exactMatch } = await supabase
     .from('inventory_items')
-    .select('brand_code, brand_name, bpu, pallet_size')
+    .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
     .ilike('brand_code', termoTrimmed)
     .limit(1)
 
@@ -77,7 +79,7 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
       const codes = [...new Set(binMatch.map((b) => b.brand_code))]
       const { data: binItems } = await supabase
         .from('inventory_items')
-        .select('brand_code, brand_name, bpu, pallet_size')
+        .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
         .in('brand_code', codes)
       items = binItems ?? []
       binContextoMap = Object.fromEntries(
@@ -87,7 +89,7 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
       // 3. Brand name search
       const { data: nameMatch } = await supabase
         .from('inventory_items')
-        .select('brand_code, brand_name, bpu, pallet_size')
+        .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
         .ilike('brand_name', `%${termoTrimmed}%`)
         .limit(20)
       items = nameMatch ?? []
@@ -97,6 +99,22 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
   if (items.length === 0) return []
 
   const codes = items.map((i) => i.brand_code)
+
+  // Buscar box_tare_g da sessão do contador
+  let box_tare_g = 300
+  const { data: teamRow } = await supabase
+    .from('teams')
+    .select('session_id')
+    .eq('id', teamId)
+    .single()
+  if (teamRow?.session_id) {
+    const { data: sessionRow } = await supabase
+      .from('count_sessions')
+      .select('box_tare_g')
+      .eq('id', teamRow.session_id)
+      .single()
+    if (sessionRow?.box_tare_g) box_tare_g = sessionRow.box_tare_g
+  }
 
   // Buscar BINs de todos os itens
   const { data: binData } = await supabase
@@ -131,6 +149,8 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
       brand_name: item.brand_name,
       bpu: item.bpu,
       pallet_size: item.pallet_size,
+      weight_avg: item.weight_avg ?? 0,
+      box_tare_g,
       bins,
       binContexto: binContextoMap[item.brand_code],
       jaContado: entriesExistentes.length > 0,

@@ -26,6 +26,7 @@ export async function uploadInventory(
       brand_name: String(row['Brand Name'] ?? row['brand_name'] ?? '').trim(),
       bpu: Number(row['Brand Purchase Unit'] ?? row['bpu'] ?? 0),
       pallet_size: Number(row['Pallet Size'] ?? row['pallet_size'] ?? 0),
+      weight_avg: Number(row['Weight AVG'] ?? row['weight_avg'] ?? 0),
       bins: [1, 2, 3, 4]
         .map((i) => String(row[`BIN Location ${i}`] ?? '').trim())
         .filter(Boolean),
@@ -37,11 +38,12 @@ export async function uploadInventory(
   const supabase = await createClient()
 
   const { error: itemsError } = await supabase.from('inventory_items').upsert(
-    items.map(({ brand_code, brand_name, bpu, pallet_size }) => ({
+    items.map(({ brand_code, brand_name, bpu, pallet_size, weight_avg }) => ({
       brand_code,
       brand_name,
       bpu,
       pallet_size,
+      weight_avg,
     }))
   )
   if (itemsError) return { error: `Erro ao salvar itens: ${itemsError.message}` }
@@ -66,10 +68,12 @@ export async function criarSessao(
   const numEquipes = parseInt(formData.get('num_equipes') as string)
   if (!numEquipes || numEquipes < 1) return { error: 'Número de equipes inválido.' }
 
+  const box_tare_g = Math.max(1, parseInt(formData.get('box_tare_g') as string) || 300)
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('count_sessions')
-    .insert({ status: 'aberta' })
+    .insert({ status: 'aberta', box_tare_g })
     .select('id')
     .single()
 
