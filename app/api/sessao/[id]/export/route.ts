@@ -70,7 +70,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const allCodes = [...new Set((reconcItems ?? []).map((r) => r.brand_code))].sort()
 
-  // 3-row header (sem merge de células — compatível com todos os leitores Excel)
   const h1 = ['Brand Name', 'BPU',
     ...teamList.flatMap((t) => [t.team_name, '', '', '', '', '', '', '']),
     'MERGED COUNT', '',
@@ -114,9 +113,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const wsConsolidado = XLSX.utils.aoa_to_sheet([h1, h2, h3, ...consolidatedRows])
   XLSX.utils.book_append_sheet(wb, wsConsolidado, 'Consolidado')
 
-  const buf: Buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+  // ponytail: type:'array' retorna Uint8Array, compatível com BodyInit
+  const buf: Uint8Array = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
 
-  return new NextResponse(buf, {
+  return new Response(buf, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename="contagem-${sessionId.slice(0, 8)}.xlsx"`,
