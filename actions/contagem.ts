@@ -187,15 +187,23 @@ export async function lancarContagem(
   const final_units = row.final_units as number
   const is_weight_count = payload.is_weight_count ?? false
 
-  const { data: existing } = await supabase
+  // ponytail: delete+insert evita maybeSingle() quebrar com >1 linha (duplicatas históricas)
+  const { error: delError } = await supabase
     .from('count_entries')
-    .select('id')
+    .delete()
     .eq('team_id', teamId)
     .eq('counter_role', counterRole)
     .eq('brand_code', payload.brand_code)
-    .maybeSingle()
+    .eq('is_joint_recount', false)
 
-  const updateData = {
+  if (delError) return { error: `Erro ao limpar contagem anterior: ${delError.message}` }
+
+  const { error } = await supabase.from('count_entries').insert({
+    team_id: teamId,
+    counter_role: counterRole,
+    brand_code: payload.brand_code,
+    bin_location: null,
+    is_joint_recount: false,
     pallets: payload.pallets,
     cases: payload.cases,
     units: payload.units,
@@ -203,25 +211,9 @@ export async function lancarContagem(
     final_units,
     is_weight_count,
     entered_at: new Date().toISOString(),
-  }
+  })
 
-  if (existing) {
-    const { error } = await supabase
-      .from('count_entries')
-      .update(updateData)
-      .eq('id', existing.id)
-    if (error) return { error: `Erro ao atualizar: ${error.message}` }
-  } else {
-    const { error } = await supabase.from('count_entries').insert({
-      team_id: teamId,
-      counter_role: counterRole,
-      brand_code: payload.brand_code,
-      bin_location: null,
-      is_joint_recount: false,
-      ...updateData,
-    })
-    if (error) return { error: `Erro ao salvar: ${error.message}` }
-  }
+  if (error) return { error: `Erro ao salvar: ${error.message}` }
 
   return { final_cases, final_units, brand_name: item.brand_name }
 }
