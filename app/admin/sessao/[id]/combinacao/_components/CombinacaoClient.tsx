@@ -299,27 +299,35 @@ export function CombinacaoClient({ sessionId, teams, reconcItems, inventory, isC
             </table>
           </div>
 
-          {/* Confirm bar */}
+          {/* Confirm + Export bar */}
           <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-4 flex-wrap">
-            {confirmed ? (
-              <span className="text-sm font-semibold text-green-700 flex items-center gap-2">
-                ✓ Combinação confirmada e salva
-              </span>
-            ) : (
-              <>
-                <span className="text-sm text-slate-500">
-                  {teams.length} equipe{teams.length !== 1 ? 's' : ''} reconciliada{teams.length !== 1 ? 's' : ''}.
-                  Confirme para salvar.
+            <div className="flex items-center gap-3 flex-wrap">
+              {confirmed ? (
+                <span className="text-sm font-semibold text-green-700 flex items-center gap-2">
+                  ✓ Combinação confirmada e salva
                 </span>
-                <button
-                  onClick={handleConfirmar}
-                  disabled={isPending}
-                  className="bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm hover:bg-blue-800 disabled:opacity-50 whitespace-nowrap"
-                >
-                  {isPending ? 'Salvando...' : 'Confirmar Combinação →'}
-                </button>
-              </>
-            )}
+              ) : (
+                <>
+                  <span className="text-sm text-slate-500">
+                    {teams.length} equipe{teams.length !== 1 ? 's' : ''} reconciliada{teams.length !== 1 ? 's' : ''}.
+                    Confirme para salvar.
+                  </span>
+                  <button
+                    onClick={handleConfirmar}
+                    disabled={isPending}
+                    className="bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm hover:bg-blue-800 disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {isPending ? 'Salvando...' : 'Confirmar Combinação →'}
+                  </button>
+                </>
+              )}
+            </div>
+            <a
+              href={`/api/sessao/${sessionId}/export`}
+              className="text-sm font-semibold text-slate-700 border border-slate-300 bg-white hover:bg-slate-50 rounded-xl px-4 py-2 whitespace-nowrap"
+            >
+              ↓ Exportar Excel
+            </a>
           </div>
           {erro && <div className="px-6 pb-4 text-sm text-red-600">{erro}</div>}
         </div>
