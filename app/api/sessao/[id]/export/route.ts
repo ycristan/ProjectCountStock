@@ -25,7 +25,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const invMap = Object.fromEntries((inventory ?? []).map((i) => [i.brand_code, i]))
   const wb = XLSX.utils.book_new()
 
-  // ── Uma aba por equipe ──────────────────────────────────────────────────────
   for (const team of teams ?? []) {
     const items = (reconcItems ?? []).filter((r) => r.team_id === team.id)
     const codes = [...new Set(items.map((r) => r.brand_code))].sort()
@@ -60,7 +59,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     XLSX.utils.book_append_sheet(wb, ws, team.team_name.slice(0, 31))
   }
 
-  // ── Aba Consolidado ─────────────────────────────────────────────────────────
   const teamList = teams ?? []
   const reconcMap: Record<string, Record<string, typeof reconcItems extends (infer T)[] | null ? T : never>> = {}
   for (const r of reconcItems ?? []) {
@@ -113,8 +111,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const wsConsolidado = XLSX.utils.aoa_to_sheet([h1, h2, h3, ...consolidatedRows])
   XLSX.utils.book_append_sheet(wb, wsConsolidado, 'Consolidado')
 
-  // ponytail: type:'array' retorna Uint8Array, compatível com BodyInit
-  const buf: Uint8Array = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
+  // ponytail: TS 5.7 tornou Uint8Array genérico — cast necessário para BodyInit
+  const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as unknown as BodyInit
 
   return new Response(buf, {
     headers: {
