@@ -68,15 +68,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const allCodes = [...new Set((reconcItems ?? []).map((r) => r.brand_code))].sort()
 
-  const h1 = ['Brand Name', 'BPU',
+  // 5 colunas fixas: Category | Category 1 | Brand Code | Brand Name | BPU
+  const h1 = ['Category', 'Category 1', 'Brand Code', 'Brand Name', 'BPU',
     ...teamList.flatMap((t) => [t.team_name, '', '', '', '', '', '', '']),
     'MERGED COUNT', '',
   ]
-  const h2 = ['', '',
+  const h2 = ['', '', '', '', '',
     ...teamList.flatMap(() => ['INDEPENDENT', '', 'COUNT 1', '', 'COUNT 2', '', 'RECONCILIATION*', '']),
     'CASES', 'UNITS',
   ]
-  const h3 = ['', '',
+  const h3 = ['', '', '', '', '',
     ...teamList.flatMap(() => ['Cases', 'Units', 'Cases', 'Units', 'Cases', 'Units', 'Cases', 'Units']),
     '', '',
   ]
@@ -105,7 +106,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const mergedCases = Math.floor(totalUnits / bpu)
     const mergedUnits = totalUnits % bpu
 
-    return [inv?.brand_name ?? code, bpu, ...teamCols, mergedCases, mergedUnits]
+    return [inv?.category ?? '', inv?.category1 ?? '', code, inv?.brand_name ?? code, bpu, ...teamCols, mergedCases, mergedUnits]
   })
 
   const wsConsolidado = XLSX.utils.aoa_to_sheet([h1, h2, h3, ...consolidatedRows])
