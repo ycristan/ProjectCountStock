@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase-client'
 import type { ReconcItemLista } from '@/actions/reconciliacao'
 import { resolverItemReconciliacao, confirmarReconciliacao } from '@/actions/reconciliacao'
 
@@ -41,34 +42,52 @@ function calcWeight(
 
 export function ReconciliacaoCounterClient({ items }: Props) {
   const router = useRouter()
-  const [inputs, setInputs] = useState<Record<string, { cases: string; units: string }>>({})
+  const [inputs, setInputs] = useState<Record<string, { pallets: string; cases: string; units: string }>>({})
   const [weightInputs, setWeightInputs] = useState<Record<string, { caixas: string; pesoFmt: string }>>({})
   const [savingId, setSavingId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [erro, setErro] = useState<string | null>(null)
 
+  useEffect(() => {
+    const supabase = createClient()
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    supabase.auth.getSession().then(({ data }) => {
+      const token = data.session?.access_token
+      const teamId = data.session?.user?.user_metadata?.team_id as string | undefined
+      if (!token || !teamId) return
+      supabase.realtime.setAuth(token)
+      channel = supabase
+        .channel('reconciliacao-counter')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reconciliation_items', filter: `team_id=eq.${teamId}` }, () => router.refresh())
+        .subscribe()
+    })
+    return () => { if (channel) supabase.removeChannel(channel) }
+  }, [router])
+
   const pendingCount = items.filter((i) => i.status === 'discrepancia').length
   const canConfirm = pendingCount === 0 && items.length > 0
 
   function getInput(id: string) {
-    return inputs[id] ?? { cases: '', units: '' }
+    return inputs[id] ?? { pallets: '', cases: '', units: '' }
   }
 
   function getWeightInput(id: string) {
     return weightInputs[id] ?? { caixas: '', pesoFmt: '' }
   }
 
-  async function handleSalvar(itemId: string) {
-    const inp = getInput(itemId)
-    const cases = parseInt(inp.cases, 10)
-    const units = parseInt(inp.units, 10)
+  async function handleSalvar(item: ReconcItemLista) {
+    const inp = getInput(item.id)
+    const pallets = parseInt(inp.pallets || '0', 10) || 0
+    const cases = parseInt(inp.cases || '0', 10)
+    const units = parseInt(inp.units || '0', 10)
     if (isNaN(cases) || isNaN(units)) {
       setErro('Preencha os valores antes de salvar.')
       return
     }
-    setSavingId(itemId)
+    const reconciliated_cases = pallets * item.pallet_size + cases
+    setSavingId(item.id)
     setErro(null)
-    const result = await resolverItemReconciliacao(itemId, cases, units)
+    const result = await resolverItemReconciliacao(item.id, reconciliated_cases, units)
     setSavingId(null)
     if (result.error) setErro(result.error)
     else router.refresh()
@@ -145,7 +164,6 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                 resolved ? 'border-green-200' : 'border-amber-200'
               }`}
             >
-              {/* Header */}
               <div
                 className={`px-4 py-3 flex items-start justify-between ${
                   resolved ? 'bg-green-50' : 'bg-amber-50'
@@ -172,7 +190,6 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                 </div>
               </div>
 
-              {/* Blind counts */}
               <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100">
                 {[
                   { label: 'C1', cases: item.contador_1_cases, units: item.contador_1_units },
@@ -190,7 +207,6 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                 ))}
               </div>
 
-              {/* Reconciliation area */}
               <div className="px-4 py-3">
                 {resolved ? (
                   <div className="flex items-center justify-between">
@@ -200,7 +216,6 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                     </span>
                   </div>
                 ) : item.is_weight_count ? (
-                  // Weight reconciliation form
                   <div>
                     <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 mb-3">
                       📦 Tara: <strong className="text-slate-700">{item.box_tare_g.toLocaleString('pt-BR')} g/cx</strong>
@@ -262,10 +277,27 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                     )}
                   </div>
                 ) : (
-                  // Normal reconciliation form
                   <div>
                     <div className="text-xs text-slate-500 mb-2">Valor acordado após recontagem</div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-end gap-1 mb-2">
+                      <div className="flex-1">
+                        <div className="text-[10px] text-slate-400 mb-1">Pallets (pt)</div>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="0"
+                          value={inp.pallets}
+                          onChange={(e) =>
+                            setInputs((prev) => ({
+                              ...prev,
+                              [item.id]: { ...getInput(item.id), pallets: e.target.value },
+                            }))
+                          }
+                          placeholder="0"
+                          className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <span className="text-slate-400 text-sm pb-2.5">×</span>
                       <div className="flex-1">
                         <div className="text-[10px] text-slate-400 mb-1">Cases (cx)</div>
                         <input
@@ -283,7 +315,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                           className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
                         />
                       </div>
-                      <span className="text-slate-400 text-lg">+</span>
+                      <span className="text-slate-400 text-sm pb-2.5">+</span>
                       <div className="flex-1">
                         <div className="text-[10px] text-slate-400 mb-1">Units (un)</div>
                         <input
@@ -301,14 +333,14 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                           className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
                         />
                       </div>
-                      <button
-                        onClick={() => handleSalvar(item.id)}
-                        disabled={savingId === item.id}
-                        className="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-60 whitespace-nowrap"
-                      >
-                        {savingId === item.id ? '...' : 'Salvar'}
-                      </button>
                     </div>
+                    <button
+                      onClick={() => handleSalvar(item)}
+                      disabled={savingId === item.id}
+                      className="w-full px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      {savingId === item.id ? '...' : 'Salvar'}
+                    </button>
                   </div>
                 )}
               </div>

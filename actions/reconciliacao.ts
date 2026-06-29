@@ -20,6 +20,7 @@ export type ReconcItemLista = {
   reconciliated_units: number | null
   weight_avg: number
   bpu: number
+  pallet_size: number
   box_tare_g: number
 }
 
@@ -59,7 +60,6 @@ export async function listarDiscrepancias(): Promise<ReconcItemLista[]> {
 
   if (!items?.length) return []
 
-  // box_tare_g da sessão
   const { data: teamRow } = await admin.from('teams').select('session_id').eq('id', teamId).single()
   let box_tare_g = 300
   if (teamRow?.session_id) {
@@ -74,15 +74,16 @@ export async function listarDiscrepancias(): Promise<ReconcItemLista[]> {
   const codes = [...new Set(items.map((i) => i.brand_code))]
   const { data: invItems } = await admin
     .from('inventory_items')
-    .select('brand_code, brand_name, weight_avg, bpu')
+    .select('brand_code, brand_name, weight_avg, bpu, pallet_size')
     .in('brand_code', codes)
 
-  const invMap: Record<string, { brand_name: string; weight_avg: number; bpu: number }> = {}
+  const invMap: Record<string, { brand_name: string; weight_avg: number; bpu: number; pallet_size: number }> = {}
   for (const i of invItems ?? []) {
     invMap[i.brand_code] = {
       brand_name: i.brand_name,
       weight_avg: i.weight_avg ?? 0,
       bpu: i.bpu ?? 1,
+      pallet_size: i.pallet_size ?? 1,
     }
   }
 
@@ -91,6 +92,7 @@ export async function listarDiscrepancias(): Promise<ReconcItemLista[]> {
     brand_name: invMap[i.brand_code]?.brand_name ?? i.brand_code,
     weight_avg: invMap[i.brand_code]?.weight_avg ?? 0,
     bpu: invMap[i.brand_code]?.bpu ?? 1,
+    pallet_size: invMap[i.brand_code]?.pallet_size ?? 1,
     box_tare_g,
     is_weight_count: i.is_weight_count ?? false,
     status: i.status as 'discrepancia' | 'resolvido',
