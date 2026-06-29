@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
@@ -18,24 +19,26 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const teamIds = (teams ?? []).map((t) => t.id)
 
-  const [{ data: reconcItems }, { data: counterAccounts }] = await Promise.all([
+  const [{ data: reconcItems }, { data: { users } }] = await Promise.all([
     supabase
       .from('reconciliation_items')
       .select('team_id, brand_code, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units')
       .in('team_id', teamIds),
-    supabase
-      .from('counter_accounts')
-      .select('team_id, role, username')
-      .in('team_id', teamIds),
+    createAdminClient().auth.admin.listUsers({ perPage: 1000 }),
   ])
 
   const invMap = Object.fromEntries((inventory ?? []).map((i) => [i.brand_code, i]))
 
-  // countersMap[teamId][role] = username
+  // countersMap[teamId][role] = full_name (from auth.users metadata)
   const countersMap: Record<string, Record<string, string>> = {}
-  for (const ca of counterAccounts ?? []) {
-    if (!countersMap[ca.team_id]) countersMap[ca.team_id] = {}
-    countersMap[ca.team_id][ca.role] = ca.username
+  for (const u of users ?? []) {
+    const tid = u.user_metadata?.team_id as string
+    const role = u.user_metadata?.counter_role as string
+    const name = u.user_metadata?.full_name as string
+    if (tid && role && teamIds.includes(tid)) {
+      if (!countersMap[tid]) countersMap[tid] = {}
+      countersMap[tid][role] = name ?? ''
+    }
   }
 
   function roleLabel(teamId: string, role: 'independente' | 'contador_1' | 'contador_2', fallback: string) {
