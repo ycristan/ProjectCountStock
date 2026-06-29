@@ -34,11 +34,17 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
 
   const [modo, setModo] = useState<'normal' | 'peso'>('normal')
   const [rodadas, setRodadas] = useState<Rodada[]>([{ id: 0, caixas: '', pesoFmt: '' }])
+  const [extraCases, setExtraCases] = useState(0)
   const [pallets, setPallets] = useState(String(entry?.pallets ?? 0))
   const [cases, setCases] = useState(String(entry?.cases ?? 0))
   const [units, setUnits] = useState(String(entry?.units ?? 0))
   const [erro, setErro] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  function switchModo(m: 'normal' | 'peso') {
+    setModo(m)
+    setExtraCases(0)
+  }
 
   function addRodada() {
     setRodadas((prev) => [...prev, { id: Date.now(), caixas: '', pesoFmt: '' }])
@@ -66,6 +72,11 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
   const weightQty = raw > 0 ? (decimal >= 0.7 ? Math.ceil(raw) : Math.floor(raw)) : 0
   const hasWeightData = totalPeso > 0
 
+  // preview total com cases visuais
+  const totalWithExtras = weightQty + extraCases * item.bpu
+  const previewCases = item.bpu > 0 ? Math.floor(totalWithExtras / item.bpu) : 0
+  const previewUnits = item.bpu > 0 ? totalWithExtras % item.bpu : 0
+
   const handleSubmit = () => {
     setErro(null)
 
@@ -79,6 +90,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
         setErro('Peso líquido insuficiente — verifique o número de caixas.')
         return
       }
+      c = extraCases
       u = weightQty
     } else {
       p = Math.max(0, parseInt(pallets) || 0)
@@ -134,7 +146,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
       {item.weight_avg > 0 && (
         <div className="grid grid-cols-2 gap-2 mb-4">
           <button
-            onClick={() => setModo('normal')}
+            onClick={() => switchModo('normal')}
             className={`rounded-xl py-3 text-sm font-semibold border-2 transition-colors ${
               modo === 'normal'
                 ? 'border-slate-900 bg-slate-900 text-white'
@@ -144,7 +156,7 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
             🔢 Contagem normal
           </button>
           <button
-            onClick={() => setModo('peso')}
+            onClick={() => switchModo('peso')}
             className={`rounded-xl py-3 text-sm font-semibold border-2 transition-colors ${
               modo === 'peso'
                 ? 'border-slate-900 bg-slate-900 text-white'
@@ -249,6 +261,37 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
             + Nova rodada de pesagem
           </button>
 
+          {/* Cases visuais — somadas à pesagem */}
+          <div className="border-2 border-amber-300 rounded-xl overflow-hidden">
+            <div className="bg-amber-50 border-b border-amber-200 px-3 py-2 text-xs font-semibold text-amber-800">
+              📦 Cases completas (confirmadas visualmente)
+            </div>
+            <div className="p-3 bg-white">
+              <div className="flex items-center rounded-xl border border-amber-300 overflow-hidden">
+                <button
+                  onClick={() => setExtraCases((v) => Math.max(0, v - 1))}
+                  className="w-12 h-12 bg-amber-50 text-amber-700 text-2xl font-bold flex items-center justify-center hover:bg-amber-100 transition-colors"
+                >
+                  −
+                </button>
+                <div className="flex-1 text-center text-2xl font-bold text-amber-800 h-12 flex items-center justify-center">
+                  {extraCases}
+                </div>
+                <button
+                  onClick={() => setExtraCases((v) => v + 1)}
+                  className="w-12 h-12 bg-amber-50 text-amber-700 text-2xl font-bold flex items-center justify-center hover:bg-amber-100 transition-colors"
+                >
+                  +
+                </button>
+              </div>
+              {extraCases > 0 && (
+                <p className="text-xs text-amber-700 text-center mt-2">
+                  {extraCases} case{extraCases > 1 ? 's' : ''} × {item.bpu} un = +{extraCases * item.bpu} un adicionais
+                </p>
+              )}
+            </div>
+          </div>
+
           <div className={`rounded-xl p-4 border ${
             hasWeightData && weightQty > 0 ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'
           }`}>
@@ -261,17 +304,27 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
                 <span>Peso líquido</span>
                 <span>{hasWeightData ? `${Math.max(0, liquido).toLocaleString('pt-BR')} g` : '— g'}</span>
               </div>
+              <div className="flex justify-between text-slate-500">
+                <span>Resultado pesagem</span>
+                <span>{hasWeightData ? `${weightQty} un` : '— un'}</span>
+              </div>
+              {extraCases > 0 && (
+                <div className="flex justify-between text-amber-600 font-semibold">
+                  <span>Cases visuais ({extraCases} × {item.bpu})</span>
+                  <span>+{extraCases * item.bpu} un</span>
+                </div>
+              )}
             </div>
             <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200">
               <span className={`text-sm font-bold ${
                 hasWeightData && weightQty > 0 ? 'text-green-700' : 'text-slate-400'
               }`}>
-                Resultado
+                Total final
               </span>
               <span className={`text-2xl font-bold ${
                 hasWeightData && weightQty > 0 ? 'text-green-700' : 'text-slate-300'
               }`}>
-                {hasWeightData ? `${weightQty} un` : '— un'}
+                {hasWeightData && weightQty > 0 ? `${previewCases}+${previewUnits}` : '—'}
               </span>
             </div>
           </div>
