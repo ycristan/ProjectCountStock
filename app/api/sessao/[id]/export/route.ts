@@ -17,23 +17,47 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   ])
 
   const teamIds = (teams ?? []).map((t) => t.id)
-  const { data: reconcItems } = await supabase
-    .from('reconciliation_items')
-    .select('team_id, brand_code, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units')
-    .in('team_id', teamIds)
+
+  const [{ data: reconcItems }, { data: counterAccounts }] = await Promise.all([
+    supabase
+      .from('reconciliation_items')
+      .select('team_id, brand_code, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units')
+      .in('team_id', teamIds),
+    supabase
+      .from('counter_accounts')
+      .select('team_id, role, username')
+      .in('team_id', teamIds),
+  ])
 
   const invMap = Object.fromEntries((inventory ?? []).map((i) => [i.brand_code, i]))
+
+  // countersMap[teamId][role] = username
+  const countersMap: Record<string, Record<string, string>> = {}
+  for (const ca of counterAccounts ?? []) {
+    if (!countersMap[ca.team_id]) countersMap[ca.team_id] = {}
+    countersMap[ca.team_id][ca.role] = ca.username
+  }
+
+  function roleLabel(teamId: string, role: 'independente' | 'contador_1' | 'contador_2', fallback: string) {
+    const name = countersMap[teamId]?.[role]
+    return name ? `${fallback}: ${name}` : fallback
+  }
+
   const wb = XLSX.utils.book_new()
 
   for (const team of teams ?? []) {
     const items = (reconcItems ?? []).filter((r) => r.team_id === team.id)
     const codes = [...new Set(items.map((r) => r.brand_code))].sort()
 
+    const ind = roleLabel(team.id, 'independente', 'Independent')
+    const c1  = roleLabel(team.id, 'contador_1',   'Count 1')
+    const c2  = roleLabel(team.id, 'contador_2',   'Count 2')
+
     const headers = [
       'Category', 'Category 1', 'Brand Code', 'Brand Name', 'BPU',
-      'Cnt 1 Cases', 'Cnt 1 Units',
-      'Cnt 2 Cases', 'Cnt 2 Units',
-      'Ind Cases', 'Ind Units',
+      `${c1} Cases`, `${c1} Units`,
+      `${c2} Cases`, `${c2} Units`,
+      `${ind} Cases`, `${ind} Units`,
       'Reconciliation Cases', 'Reconciliation Units',
       'Final Cases', 'Final Units',
     ]
@@ -68,13 +92,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const allCodes = [...new Set((reconcItems ?? []).map((r) => r.brand_code))].sort()
 
-  // 5 colunas fixas: Category | Category 1 | Brand Code | Brand Name | BPU
   const h1 = ['Category', 'Category 1', 'Brand Code', 'Brand Name', 'BPU',
     ...teamList.flatMap((t) => [t.team_name, '', '', '', '', '', '', '']),
     'MERGED COUNT', '',
   ]
   const h2 = ['', '', '', '', '',
-    ...teamList.flatMap(() => ['INDEPENDENT', '', 'COUNT 1', '', 'COUNT 2', '', 'RECONCILIATION*', '']),
+    ...teamList.flatMap((t) => [
+      roleLabel(t.id, 'independente', 'Independent'), '',
+      roleLabel(t.id, 'contador_1',   'Count 1'),     '',
+      roleLabel(t.id, 'contador_2',   'Count 2'),     '',
+      'RECONCILIATION*', '',
+    ]),
     'CASES', 'UNITS',
   ]
   const h3 = ['', '', '', '', '',
