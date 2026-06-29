@@ -159,6 +159,7 @@ export function ProgressoClient({
 
   const totalCounters = teams.reduce((s, t) => s + t.counters.length, 0)
   const finalizedCounters = teams.reduce((s, t) => s + t.counters.filter((c) => c.finalized_at).length, 0)
+  const allReconciliada = teams.length > 0 && teams.every((t) => t.status === 'reconciliada')
 
   const mergedMap: Record<string, { brand_name: string; bpu: number; totalUnits: number; teamCount: number }> = {}
   for (const team of teams.filter((t) => t.status === 'reconciliada')) {
@@ -212,12 +213,22 @@ export function ProgressoClient({
             {' · '}Status: {sessionStatus}
           </div>
         </div>
-        <Link
-          href={`/admin/sessao/${sessionId}/equipes`}
-          className="text-sm text-slate-600 hover:text-slate-900 font-medium border border-slate-200 rounded-xl px-3 py-1.5 hover:border-slate-400"
-        >
-          Gerenciar equipes
-        </Link>
+        <div className="flex items-center gap-2">
+          {allReconciliada && (
+            <Link
+              href={`/admin/sessao/${sessionId}/combinacao`}
+              className="text-sm font-semibold text-green-700 border border-green-300 bg-green-50 hover:bg-green-100 rounded-xl px-3 py-1.5"
+            >
+              Ver combinação →
+            </Link>
+          )}
+          <Link
+            href={`/admin/sessao/${sessionId}/equipes`}
+            className="text-sm text-slate-600 hover:text-slate-900 font-medium border border-slate-200 rounded-xl px-3 py-1.5 hover:border-slate-400"
+          >
+            Gerenciar equipes
+          </Link>
+        </div>
       </div>
 
       <div className="mb-5 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
