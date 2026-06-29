@@ -14,6 +14,7 @@ type Props = {
   item: ItemBusca
   onVoltar: () => void
   onSucesso: (result: SucessoResult) => void
+  isAdditive?: boolean
 }
 
 type Rodada = { id: number; caixas: string; pesoFmt: string }
@@ -28,16 +29,17 @@ function formatGrams(raw: string): string {
   return num === 0 ? '' : num.toLocaleString('pt-BR')
 }
 
-export function CountForm({ item, onVoltar, onSucesso }: Props) {
+export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Props) {
   const entry = item.entryExistente
-  const isEdit = !!entry
+  const isEdit = !!entry && !isAdditive
 
   const [modo, setModo] = useState<'normal' | 'peso'>('normal')
   const [rodadas, setRodadas] = useState<Rodada[]>([{ id: 0, caixas: '', pesoFmt: '' }])
   const [extraCases, setExtraCases] = useState(0)
-  const [pallets, setPallets] = useState(String(entry?.pallets ?? 0))
-  const [cases, setCases] = useState(String(entry?.cases ?? 0))
-  const [units, setUnits] = useState(String(entry?.units ?? 0))
+  // additive sempre começa em 0; edit pré-preenche com existente
+  const [pallets, setPallets] = useState(isAdditive ? '0' : String(entry?.pallets ?? 0))
+  const [cases, setCases] = useState(isAdditive ? '0' : String(entry?.cases ?? 0))
+  const [units, setUnits] = useState(isAdditive ? '0' : String(entry?.units ?? 0))
   const [erro, setErro] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -72,10 +74,21 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
   const weightQty = raw > 0 ? (decimal >= 0.7 ? Math.ceil(raw) : Math.floor(raw)) : 0
   const hasWeightData = totalPeso > 0
 
-  // preview total com cases visuais
+  // preview peso + cases visuais
   const totalWithExtras = weightQty + extraCases * item.bpu
   const previewCases = item.bpu > 0 ? Math.floor(totalWithExtras / item.bpu) : 0
   const previewUnits = item.bpu > 0 ? totalWithExtras % item.bpu : 0
+
+  // preview additive (normal mode)
+  const addP = Math.max(0, parseInt(pallets) || 0)
+  const addC = Math.max(0, parseInt(cases) || 0)
+  const addU = Math.max(0, parseInt(units) || 0)
+  const sumP = (entry?.pallets ?? 0) + addP
+  const sumC = (entry?.cases ?? 0) + addC
+  const sumU = (entry?.units ?? 0) + addU
+  const totalRaw = sumP * item.pallet_size * item.bpu + sumC * item.bpu + sumU
+  const previewAddCases = item.bpu > 0 ? Math.floor(totalRaw / item.bpu) : 0
+  const previewAddUnits = item.bpu > 0 ? totalRaw % item.bpu : 0
 
   const handleSubmit = () => {
     setErro(null)
@@ -96,6 +109,11 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
       p = Math.max(0, parseInt(pallets) || 0)
       c = Math.max(0, parseInt(cases) || 0)
       u = Math.max(0, parseInt(units) || 0)
+      if (isAdditive && entry) {
+        p += entry.pallets
+        c += entry.cases
+        u += entry.units
+      }
     }
 
     startTransition(async () => {
@@ -119,7 +137,13 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
     })
   }
 
-  const btnLabel = isPending ? 'Salvando...' : isEdit ? 'Salvar Edição' : 'Confirmar Contagem'
+  const btnLabel = isPending
+    ? 'Salvando...'
+    : isAdditive
+    ? 'Confirmar Adição'
+    : isEdit
+    ? 'Salvar Edição'
+    : 'Confirmar Contagem'
 
   return (
     <div>
@@ -128,6 +152,11 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
             Item selecionado
           </div>
+          {isAdditive && (
+            <span className="text-[11px] font-semibold bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wide">
+              Adicionando
+            </span>
+          )}
           {isEdit && (
             <span className="text-[11px] font-semibold bg-amber-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wide">
               Editável
@@ -143,7 +172,29 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
         </div>
       </div>
 
-      {item.weight_avg > 0 && (
+      {/* Card readonly da contagem existente — só no modo additive */}
+      {isAdditive && entry && (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 mb-4">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-3">
+            Contagem registrada
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: 'Pallets', value: entry.pallets },
+              { label: 'Cases', value: entry.cases },
+              { label: 'Units', value: entry.units },
+            ].map(({ label, value }) => (
+              <div key={label} className="text-center bg-white border border-slate-200 rounded-xl py-3">
+                <div className="text-2xl font-bold text-slate-900">{value}</div>
+                <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Toggle modo peso — oculto no modo additive */}
+      {!isAdditive && item.weight_avg > 0 && (
         <div className="grid grid-cols-2 gap-2 mb-4">
           <button
             onClick={() => switchModo('normal')}
@@ -172,9 +223,9 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
         <>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {[
-              { label: 'Pallets', value: pallets, set: setPallets },
-              { label: 'Cases', value: cases, set: setCases },
-              { label: 'Units', value: units, set: setUnits },
+              { label: isAdditive ? '+ Pallets' : 'Pallets', value: pallets, set: setPallets },
+              { label: isAdditive ? '+ Cases' : 'Cases', value: cases, set: setCases },
+              { label: isAdditive ? '+ Units' : 'Units', value: units, set: setUnits },
             ].map(({ label, value, set }) => (
               <div key={label} className="text-center">
                 <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
@@ -191,7 +242,33 @@ export function CountForm({ item, onVoltar, onSucesso }: Props) {
               </div>
             ))}
           </div>
-          {!isEdit && (
+
+          {/* Preview total — só no modo additive */}
+          {isAdditive && entry && (
+            <div className="rounded-xl bg-slate-900 p-4 mb-4 text-white">
+              <div className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide mb-3">
+                Total após adição
+              </div>
+              <div className="space-y-1.5 text-sm mb-3">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Registrado</span>
+                  <span className="text-slate-300 font-semibold">
+                    {entry.pallets}p · {entry.cases}c · {entry.units}u
+                  </span>
+                </div>
+                <div className="flex justify-between text-blue-400">
+                  <span>+ Adicionando</span>
+                  <span className="font-semibold">{addP}p · {addC}c · {addU}u</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t border-slate-700">
+                <span className="text-sm font-bold text-slate-200">Novo total</span>
+                <span className="text-2xl font-bold">{previewAddCases}+{previewAddUnits}</span>
+              </div>
+            </div>
+          )}
+
+          {!isEdit && !isAdditive && (
             <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 mb-3">
               ℹ️ Zeros são válidos — confirma que o item foi contado e estava zerado.
             </div>
