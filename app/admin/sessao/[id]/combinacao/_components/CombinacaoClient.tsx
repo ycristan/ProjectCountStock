@@ -220,9 +220,12 @@ export function CombinacaoClient({
   const allReconciliada =
     teams.length > 0 && teams.every((t) => t.status === 'reconciliada')
 
-  const totalCounters = teams.reduce((s, t) => s + t.counters.length, 0)
+  const totalCounters = teams.reduce(
+    (s, t) => s + t.counters.filter((c) => c.role !== 'independente').length,
+    0,
+  )
   const finalizedCounters = teams.reduce(
-    (s, t) => s + t.counters.filter((c) => c.finalized_at).length,
+    (s, t) => s + t.counters.filter((c) => c.role !== 'independente' && !!c.finalized_at).length,
     0,
   )
 
@@ -327,7 +330,8 @@ export function CombinacaoClient({
         <div className="flex-none h-12 bg-slate-800 border-b border-slate-700 flex items-center gap-2 px-3 overflow-x-auto">
           {teams.map((team) => {
             const allFin =
-              team.counters.length > 0 && team.counters.every((c) => c.finalized_at)
+              team.counters.filter((c) => c.role !== 'independente').length > 0 &&
+              team.counters.filter((c) => c.role !== 'independente').every((c) => c.finalized_at)
             const isReconciliando = team.status === 'reconciliando'
             const isReconciliada = team.status === 'reconciliada'
             const isLoading = loadingTeam === team.id
@@ -375,7 +379,8 @@ export function CombinacaoClient({
           {teams.map((team) => {
             const isReconciliada = team.status === 'reconciliada'
             const allFin =
-              team.counters.length > 0 && team.counters.every((c) => c.finalized_at)
+              team.counters.filter((c) => c.role !== 'independente').length > 0 &&
+              team.counters.filter((c) => c.role !== 'independente').every((c) => c.finalized_at)
             return (
               <button
                 key={team.id}
@@ -561,7 +566,7 @@ export function CombinacaoClient({
                       <tr className="bg-slate-50 border-b border-slate-200">
                         <td colSpan={5} className="px-4 py-2">
                           <div className="flex gap-2 flex-wrap">
-                            {team.counters.map((c) => (
+                            {team.counters.filter((c) => c.role !== 'independente').map((c) => (
                               <span
                                 key={c.id}
                                 className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1 ${
