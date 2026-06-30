@@ -132,8 +132,10 @@ export default async function CombinacaoPage({
     ]),
   ]
 
+  // ponytail: supabase (SSR client) em vez de admin para evitar conflito de estado
+  // interno quando listUsers + queries de data rodam juntas no mesmo cliente admin
   const { data: inventory } = allCodes.length
-    ? await admin
+    ? await supabase
         .from('inventory_items')
         .select('brand_code, brand_name, bpu, category, category1')
         .in('brand_code', allCodes)
