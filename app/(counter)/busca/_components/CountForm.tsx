@@ -29,6 +29,11 @@ function formatGrams(raw: string): string {
   return num === 0 ? '' : num.toLocaleString('pt-BR')
 }
 
+// ponytail: derivado do valor, sem estado extra
+function isNeg(v: string) {
+  return (parseInt(v) || 0) < 0
+}
+
 export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Props) {
   const entry = item.entryExistente
   const isEdit = !!entry && !isAdditive
@@ -107,6 +112,11 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
       c = extraCases
       u = weightQty
     } else {
+      // Bloqueia negativos antes de qualquer processamento
+      if (isNeg(pallets) || isNeg(cases) || isNeg(units)) {
+        setErro('Números negativos não são permitidos.')
+        return
+      }
       p = Math.max(0, parseInt(pallets) || 0)
       c = Math.max(0, parseInt(cases) || 0)
       u = Math.max(0, parseInt(units) || 0)
@@ -227,28 +237,32 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
               { label: isAdditive ? '+ Pallets' : 'Pallets', value: pallets, set: setPallets, disabled: noPallets },
               { label: isAdditive ? '+ Cases' : 'Cases', value: cases, set: setCases, disabled: false },
               { label: isAdditive ? '+ Units' : 'Units', value: units, set: setUnits, disabled: false },
-            ].map(({ label, value, set, disabled }) => (
-              <div key={label} className="text-center">
-                <div className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${
-                  disabled ? 'text-slate-300' : 'text-slate-500'
-                }`}>
-                  {label}
+            ].map(({ label, value, set, disabled }) => {
+              const negative = !disabled && isNeg(value)
+              return (
+                <div key={label} className="text-center">
+                  <div className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${
+                    disabled ? 'text-slate-300' : negative ? 'text-red-500' : 'text-slate-500'
+                  }`}>
+                    {label}
+                  </div>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={value}
+                    onChange={(e) => { set(e.target.value); setErro(null) }}
+                    disabled={disabled}
+                    className={`w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] focus:outline-none transition-colors ${
+                      disabled
+                        ? 'border-slate-100 bg-slate-100 text-slate-300 cursor-not-allowed'
+                        : negative
+                        ? 'border-red-400 bg-red-50 text-red-600 focus:border-red-500'
+                        : 'border-slate-200 bg-white focus:border-blue-500'
+                    }`}
+                  />
                 </div>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  value={value}
-                  onChange={(e) => set(e.target.value)}
-                  disabled={disabled}
-                  className={`w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] focus:outline-none ${
-                    disabled
-                      ? 'border-slate-100 bg-slate-100 text-slate-300 cursor-not-allowed'
-                      : 'border-slate-200 bg-white focus:border-blue-500'
-                  }`}
-                />
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Preview total — só no modo additive */}
