@@ -29,15 +29,21 @@ function formatGrams(raw: string): string {
   return num === 0 ? '' : num.toLocaleString('pt-BR')
 }
 
+// ponytail: derivado do valor, sem estado extra
+function isNeg(v: string) {
+  return (parseInt(v) || 0) < 0
+}
+
 export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Props) {
   const entry = item.entryExistente
   const isEdit = !!entry && !isAdditive
+  // ponytail: pallet_size=0 → item não tem pallet, campo bloqueado em 0
+  const noPallets = !item.pallet_size
 
   const [modo, setModo] = useState<'normal' | 'peso'>('normal')
   const [rodadas, setRodadas] = useState<Rodada[]>([{ id: 0, caixas: '', pesoFmt: '' }])
   const [extraCases, setExtraCases] = useState(0)
-  // additive sempre começa em 0; edit pré-preenche com existente
-  const [pallets, setPallets] = useState(isAdditive ? '0' : String(entry?.pallets ?? 0))
+  const [pallets, setPallets] = useState(isAdditive || noPallets ? '0' : String(entry?.pallets ?? 0))
   const [cases, setCases] = useState(isAdditive ? '0' : String(entry?.cases ?? 0))
   const [units, setUnits] = useState(isAdditive ? '0' : String(entry?.units ?? 0))
   const [erro, setErro] = useState<string | null>(null)
@@ -79,11 +85,11 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
   const previewCases = item.bpu > 0 ? Math.floor(totalWithExtras / item.bpu) : 0
   const previewUnits = item.bpu > 0 ? totalWithExtras % item.bpu : 0
 
-  // preview additive (normal mode)
+  // preview additive (normal mode) — noPallets: ignora pallets existentes
   const addP = Math.max(0, parseInt(pallets) || 0)
   const addC = Math.max(0, parseInt(cases) || 0)
   const addU = Math.max(0, parseInt(units) || 0)
-  const sumP = (entry?.pallets ?? 0) + addP
+  const sumP = (noPallets ? 0 : (entry?.pallets ?? 0)) + addP
   const sumC = (entry?.cases ?? 0) + addC
   const sumU = (entry?.units ?? 0) + addU
   const totalRaw = sumP * item.pallet_size * item.bpu + sumC * item.bpu + sumU
@@ -106,11 +112,16 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
       c = extraCases
       u = weightQty
     } else {
+      // Bloqueia negativos antes de qualquer processamento
+      if (isNeg(pallets) || isNeg(cases) || isNeg(units)) {
+        setErro('Números negativos não são permitidos.')
+        return
+      }
       p = Math.max(0, parseInt(pallets) || 0)
       c = Math.max(0, parseInt(cases) || 0)
       u = Math.max(0, parseInt(units) || 0)
       if (isAdditive && entry) {
-        p += entry.pallets
+        p += noPallets ? 0 : entry.pallets
         c += entry.cases
         u += entry.units
       }
@@ -223,24 +234,35 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
         <>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {[
-              { label: isAdditive ? '+ Pallets' : 'Pallets', value: pallets, set: setPallets },
-              { label: isAdditive ? '+ Cases' : 'Cases', value: cases, set: setCases },
-              { label: isAdditive ? '+ Units' : 'Units', value: units, set: setUnits },
-            ].map(({ label, value, set }) => (
-              <div key={label} className="text-center">
-                <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                  {label}
+              { label: isAdditive ? '+ Pallets' : 'Pallets', value: pallets, set: setPallets, disabled: noPallets },
+              { label: isAdditive ? '+ Cases' : 'Cases', value: cases, set: setCases, disabled: false },
+              { label: isAdditive ? '+ Units' : 'Units', value: units, set: setUnits, disabled: false },
+            ].map(({ label, value, set, disabled }) => {
+              const negative = !disabled && isNeg(value)
+              return (
+                <div key={label} className="text-center">
+                  <div className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${
+                    disabled ? 'text-slate-300' : negative ? 'text-red-500' : 'text-slate-500'
+                  }`}>
+                    {label}
+                  </div>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={value}
+                    onChange={(e) => { set(e.target.value); setErro(null) }}
+                    disabled={disabled}
+                    className={`w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] focus:outline-none transition-colors ${
+                      disabled
+                        ? 'border-slate-100 bg-slate-100 text-slate-300 cursor-not-allowed'
+                        : negative
+                        ? 'border-red-400 bg-red-50 text-red-600 focus:border-red-500'
+                        : 'border-slate-200 bg-white focus:border-blue-500'
+                    }`}
+                  />
                 </div>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  value={value}
-                  onChange={(e) => set(e.target.value)}
-                  className="w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Preview total — só no modo additive */}
