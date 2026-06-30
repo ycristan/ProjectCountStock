@@ -55,13 +55,28 @@ export async function uploadInventory(
   )
   if (itemsError) return { error: `Erro ao salvar itens: ${itemsError.message}` }
 
-  // ponytail: delete + insert garante replace limpo dos BINs por item
-  const affectedCodes = items.map((i) => i.brand_code)
-  const { error: delError } = await supabase
+  // Sync completo: a lista nova é a fonte da verdade — remove o que não está nela
+  const newCodes = items.map((i) => i.brand_code)
+  const notIn = `(${newCodes.join(',')})`
+
+  const { error: delItemsError } = await supabase
+    .from('inventory_items')
+    .delete()
+    .not('brand_code', 'in', notIn)
+  if (delItemsError) return { error: `Erro ao remover itens antigos: ${delItemsError.message}` }
+
+  const { error: delOldBinsError } = await supabase
     .from('item_bin_locations')
     .delete()
-    .in('brand_code', affectedCodes)
-  if (delError) return { error: `Erro ao atualizar BINs: ${delError.message}` }
+    .not('brand_code', 'in', notIn)
+  if (delOldBinsError) return { error: `Erro ao remover BINs antigos: ${delOldBinsError.message}` }
+
+  // ponytail: delete + insert garante replace limpo dos BINs por item
+  const { error: delBinsError } = await supabase
+    .from('item_bin_locations')
+    .delete()
+    .in('brand_code', newCodes)
+  if (delBinsError) return { error: `Erro ao atualizar BINs: ${delBinsError.message}` }
 
   const binRows = items.flatMap(({ brand_code, bins }) =>
     bins.map((bin_location) => ({ brand_code, bin_location }))
