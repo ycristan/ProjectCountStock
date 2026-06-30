@@ -37,12 +37,9 @@ export type LancarContagemResult = {
   brand_name?: string
 }
 
-// ─── buscarItens ───────────────────────────────────────────────────────────────
-
-export async function buscarItens(termo: string): Promise<ItemBusca[]> {
-  const termoTrimmed = termo.trim()
-  if (!termoTrimmed) return []
-
+// ─── carregarInventario ────────────────────────────────────────────────────────
+// ponytail: loads all items once server-side; client filters in memory (eliminates per-keystroke round trips)
+export async function carregarInventario(): Promise<ItemBusca[]> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -52,51 +49,23 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
   const teamId = user.user_metadata?.team_id as string
   const counterRole = user.user_metadata?.counter_role as string
 
-  type RawItem = { brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number }
-  let items: RawItem[] = []
-
-  const { data: exactMatch } = await supabase
-    .from('inventory_items')
-    .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
-    .ilike('brand_code', termoTrimmed)
-    .limit(1)
-
-  if (exactMatch && exactMatch.length > 0) {
-    items = exactMatch
-  } else {
-    const { data: binMatch } = await supabase
-      .from('item_bin_locations')
-      .select('brand_code, bin_location')
-      .ilike('bin_location', `${termoTrimmed}%`)
-      .limit(20)
-
-    if (binMatch && binMatch.length > 0) {
-      const codes = [...new Set(binMatch.map((b) => b.brand_code))]
-      const { data: binItems } = await supabase
+  const [{ data: items }, { data: binData }, { data: entries }, { data: teamRow }] =
+    await Promise.all([
+      supabase
         .from('inventory_items')
         .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
-        .in('brand_code', codes)
-      items = binItems ?? []
-    } else {
-      const { data: nameMatch } = await supabase
-        .from('inventory_items')
-        .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
-        .ilike('brand_name', `%${termoTrimmed}%`)
-        .limit(20)
-      items = nameMatch ?? []
-    }
-  }
-
-  if (items.length === 0) return []
-
-  const codes = items.map((i) => i.brand_code)
+        .order('brand_code', { ascending: true }),
+      supabase.from('item_bin_locations').select('brand_code, bin_location'),
+      supabase
+        .from('count_entries')
+        .select('brand_code, pallets, cases, units')
+        .eq('team_id', teamId)
+        .eq('counter_role', counterRole)
+        .eq('is_joint_recount', false),
+      supabase.from('teams').select('session_id').eq('id', teamId).single(),
+    ])
 
   let box_tare_g = 300
-  const { data: teamRow } = await supabase
-    .from('teams')
-    .select('session_id')
-    .eq('id', teamId)
-    .single()
   if (teamRow?.session_id) {
     const { data: sessionRow } = await supabase
       .from('count_sessions')
@@ -106,25 +75,15 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
     if (sessionRow?.box_tare_g) box_tare_g = sessionRow.box_tare_g
   }
 
-  const { data: binData } = await supabase
-    .from('item_bin_locations')
-    .select('brand_code, bin_location')
-    .in('brand_code', codes)
+  const entryMap = Object.fromEntries((entries ?? []).map((e) => [e.brand_code, e]))
+  const binMap: Record<string, string[]> = {}
+  for (const b of binData ?? []) {
+    if (!binMap[b.brand_code]) binMap[b.brand_code] = []
+    binMap[b.brand_code].push(b.bin_location as string)
+  }
 
-  const { data: entries } = await supabase
-    .from('count_entries')
-    .select('brand_code, pallets, cases, units')
-    .eq('team_id', teamId)
-    .eq('counter_role', counterRole)
-    .in('brand_code', codes)
-
-  return items.map((item) => {
-    const bins = (binData ?? [])
-      .filter((b) => b.brand_code === item.brand_code)
-      .map((b) => b.bin_location as string)
-
-    const entry = (entries ?? []).find((e) => e.brand_code === item.brand_code)
-
+  return (items ?? []).map((item) => {
+    const entry = entryMap[item.brand_code]
     return {
       brand_code: item.brand_code,
       brand_name: item.brand_name,
@@ -132,7 +91,7 @@ export async function buscarItens(termo: string): Promise<ItemBusca[]> {
       pallet_size: item.pallet_size,
       weight_avg: item.weight_avg ?? 0,
       box_tare_g,
-      bins,
+      bins: binMap[item.brand_code] ?? [],
       jaContado: !!entry,
       entryExistente: entry
         ? { pallets: entry.pallets, cases: entry.cases, units: entry.units }
@@ -149,7 +108,11 @@ export async function lancarContagem(
   if (payload.pallets < 0 || payload.cases < 0 || payload.units < 0) {
     return { error: 'Values cannot be negative.' }
   }
-  if (!Number.isInteger(payload.pallets) || !Number.isInteger(payload.cases) || !Number.isInteger(payload.units)) {
+  if (
+    !Number.isInteger(payload.pallets) ||
+    !Number.isInteger(payload.cases) ||
+    !Number.isInteger(payload.units)
+  ) {
     return { error: 'Count values must be integers.' }
   }
 

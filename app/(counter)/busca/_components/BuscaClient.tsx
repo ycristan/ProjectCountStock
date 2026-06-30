@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { buscarItens } from '@/actions/contagem'
+import { useState, useCallback, useMemo } from 'react'
 import type { ItemBusca, LancarContagemResult } from '@/actions/contagem'
 import { SearchInput } from './SearchInput'
 import { ResultList } from './ResultList'
@@ -23,39 +22,53 @@ type SucessoResult = {
   brand_name: string
 }
 
-export function BuscaClient() {
+function filterItems(items: ItemBusca[], q: string): ItemBusca[] {
+  const ql = q.trim().toLowerCase()
+  if (!ql) return []
+
+  if (/^\d+$/.test(ql)) {
+    // Pure digits → brand_code prefix + BIN prefix combined, sorted ascending
+    const byCode = items.filter((i) => i.brand_code.toLowerCase().startsWith(ql))
+    const codeSet = new Set(byCode.map((i) => i.brand_code))
+    const byBin = items.filter(
+      (i) => !codeSet.has(i.brand_code) && i.bins.some((b) => b.toLowerCase().startsWith(ql))
+    )
+    return [...byCode, ...byBin].sort((a, b) => a.brand_code.localeCompare(b.brand_code))
+  }
+
+  if (/^\d/.test(ql)) {
+    // Starts with digit, has letters → BIN prefix only (e.g. "40A")
+    return items
+      .filter((i) => i.bins.some((b) => b.toLowerCase().startsWith(ql)))
+      .sort((a, b) => a.brand_code.localeCompare(b.brand_code))
+  }
+
+  // Starts with letter → brand_name contains, case-insensitive, sorted alphabetically
+  return items
+    .filter((i) => i.brand_name.toLowerCase().includes(ql))
+    .sort((a, b) => a.brand_name.localeCompare(b.brand_name))
+}
+
+type Props = { items: ItemBusca[] }
+
+export function BuscaClient({ items: initialItems }: Props) {
   const [tela, setTela] = useState<Tela>('busca')
   const [termo, setTermo] = useState('')
-  const [resultados, setResultados] = useState<ItemBusca[]>([])
-  const [loading, setLoading] = useState(false)
   const [itemSelecionado, setItemSelecionado] = useState<ItemBusca | null>(null)
   const [isAdditive, setIsAdditive] = useState(false)
   const [modalItem, setModalItem] = useState<ItemBusca | null>(null)
   const [sucesso, setSucesso] = useState<SucessoData | null>(null)
+  // ponytail: track counted codes locally — avoids router.refresh() on every save
+  const [countedCodes, setCountedCodes] = useState<Set<string>>(
+    () => new Set(initialItems.filter((i) => i.jaContado).map((i) => i.brand_code))
+  )
 
-  useEffect(() => {
-    if (!termo.trim()) {
-      setResultados([])
-      return
-    }
-    setLoading(true)
-    let active = true
-    const timer = setTimeout(async () => {
-      try {
-        const items = await buscarItens(termo)
-        if (active) setResultados(items)
-      } catch (_e) {
-        if (active) setResultados([])
-      } finally {
-        if (active) setLoading(false)
-      }
-    }, 300)
-    return () => {
-      active = false
-      clearTimeout(timer)
-      setLoading(false)
-    }
-  }, [termo])
+  const items = useMemo(
+    () => initialItems.map((i) => ({ ...i, jaContado: countedCodes.has(i.brand_code) })),
+    [initialItems, countedCodes]
+  )
+
+  const resultados = useMemo(() => filterItems(items, termo), [items, termo])
 
   const handleVoltar = useCallback(() => {
     setTela('busca')
@@ -66,6 +79,7 @@ export function BuscaClient() {
   const handleSucesso = useCallback(
     (result: SucessoResult) => {
       if (!itemSelecionado) return
+      setCountedCodes((prev) => new Set([...prev, itemSelecionado.brand_code]))
       setSucesso({
         brandCode: itemSelecionado.brand_code,
         brandName: result.brand_name,
@@ -80,7 +94,6 @@ export function BuscaClient() {
   const handleDone = useCallback(() => {
     setTela('busca')
     setTermo('')
-    setResultados([])
     setItemSelecionado(null)
     setIsAdditive(false)
     setSucesso(null)
@@ -119,9 +132,9 @@ export function BuscaClient() {
   return (
     <div>
       <h2 className="text-xl font-semibold text-slate-900 mb-4">Search Item</h2>
-      <SearchInput value={termo} onChange={setTermo} loading={loading} />
+      <SearchInput value={termo} onChange={setTermo} />
 
-      {termo.trim() && resultados.length === 0 && !loading && (
+      {termo.trim() && resultados.length === 0 && (
         <p className="text-sm text-slate-400 mt-3 text-center">
           No items found for &ldquo;{termo}&rdquo;.
         </p>
@@ -140,11 +153,10 @@ export function BuscaClient() {
 
       {!termo && (
         <p className="text-sm text-slate-400 mt-4 text-center">
-          Search by code (e.g. 6323), product name or BIN (e.g. A-01)
+          Search by code (e.g. 6323), product name or BIN (e.g. 40A02)
         </p>
       )}
 
-      {/* Choice modal — item already counted */}
       {modalItem && (
         <div
           className="fixed inset-0 bg-slate-900/60 z-50 flex flex-col justify-end p-4"
@@ -154,7 +166,6 @@ export function BuscaClient() {
             className="bg-white rounded-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Item info */}
             <div className="px-5 py-4 border-b border-slate-100">
               <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                 {modalItem.brand_code}
@@ -164,13 +175,12 @@ export function BuscaClient() {
                 <div className="mt-3 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-sm text-green-800">
                   Registered Count:{' '}
                   <span className="font-bold">
-                    {modalItem.entryExistente.pallets}p · {modalItem.entryExistente.cases}c · {modalItem.entryExistente.units}u
+                    {modalItem.entryExistente.pallets}p · {modalItem.entryExistente.cases}c ·{' '}
+                    {modalItem.entryExistente.units}u
                   </span>
                 </div>
               )}
             </div>
-
-            {/* Actions */}
             <div className="p-4 flex flex-col gap-2">
               <button
                 onClick={() => abrirForm(modalItem, true)}
