@@ -7,9 +7,9 @@ import type { ContadorComCredencial } from '@/actions/sessao'
 import Link from 'next/link'
 
 const ROLE_LABEL: Record<string, string> = {
-  contador_1: 'Contador 1',
-  contador_2: 'Contador 2',
-  independente: 'Independente',
+  contador_1: 'Counter 1',
+  contador_2: 'Counter 2',
+  independente: 'Independent',
 }
 
 export function EquipesGerenciar({
@@ -64,21 +64,21 @@ export function EquipesGerenciar({
           >
             ← Dashboard
           </Link>
-          <h2 className="text-xl font-semibold text-slate-900">Gerenciar Equipes</h2>
-          <p className="text-sm text-slate-500 mt-0.5">{contadores.length} contadores · {teams.length} equipes</p>
+          <h2 className="text-xl font-semibold text-slate-900">Manage Teams</h2>
+          <p className="text-sm text-slate-500 mt-0.5">{contadores.length} counters · {teams.length} teams</p>
         </div>
         <div className="flex gap-2 print:hidden">
           <Link
             href={`/admin/sessao/${sessaoId}/imprimir`}
             className="px-3 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 text-sm"
           >
-            Cartões QR
+            QR Cards
           </Link>
           <Link
             href={`/admin/sessao/${sessaoId}/progresso`}
             className="px-3 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-sm"
           >
-            Ver progresso →
+            View Progress →
           </Link>
         </div>
       </div>
@@ -93,15 +93,15 @@ export function EquipesGerenciar({
               <div className="bg-slate-50 px-4 py-3 flex items-center justify-between border-b border-slate-100">
                 <span className="font-semibold text-slate-900">{first.team_name}</span>
                 <span className="font-mono text-blue-700 font-bold text-sm bg-blue-50 border border-blue-200 rounded-lg px-3 py-1">
-                  Cód. Equipe: {first.team_pin}
+                  Team Code: {first.team_pin}
                 </span>
               </div>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-slate-400 text-xs uppercase tracking-wide border-b border-slate-100">
-                    <th className="px-4 py-2 text-left font-medium">Função</th>
-                    <th className="px-4 py-2 text-left font-medium">Nome</th>
-                    <th className="px-4 py-2 text-left font-medium">PIN pessoal</th>
+                    <th className="px-4 py-2 text-left font-medium">Role</th>
+                    <th className="px-4 py-2 text-left font-medium">Name</th>
+                    <th className="px-4 py-2 text-left font-medium">Personal PIN</th>
                     <th className="px-4 py-2 print:hidden" />
                   </tr>
                 </thead>
@@ -136,14 +136,14 @@ export function EquipesGerenciar({
                                 disabled={isPending || !editName.trim()}
                                 className="px-3 py-1 bg-slate-900 text-white rounded-lg text-xs disabled:opacity-50"
                               >
-                                Salvar
+                                Save
                               </button>
                               <button
                                 onClick={cancelEdit}
                                 disabled={isPending}
                                 className="px-3 py-1 border border-slate-200 text-slate-600 rounded-lg text-xs"
                               >
-                                Cancelar
+                                Cancel
                               </button>
                             </div>
                           ) : (
@@ -151,7 +151,7 @@ export function EquipesGerenciar({
                               onClick={() => startEdit(c)}
                               className="text-xs text-slate-500 hover:text-slate-800 border border-slate-200 rounded-lg px-2 py-1 hover:border-slate-400"
                             >
-                              Renomear
+                              Rename
                             </button>
                           )}
                         </td>
@@ -165,7 +165,7 @@ export function EquipesGerenciar({
       </div>
 
       <p className="mt-4 text-xs text-slate-400 print:hidden">
-        Cód. Equipe é compartilhado por todos da equipe. PIN é individual por contador.
+        Team Code is shared by all team members. PIN is individual per counter.
       </p>
     </div>
   )
