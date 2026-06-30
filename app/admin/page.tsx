@@ -9,29 +9,29 @@ export default function AdminPage() {
           href="/admin/upload"
           className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all"
         >
-          <h3 className="font-semibold text-slate-900 mb-1">Upload Inventário</h3>
-          <p className="text-sm text-slate-500">Importar .xlsx com Brand Codes e BIN Locations</p>
+          <h3 className="font-semibold text-slate-900 mb-1">Upload Inventory</h3>
+          <p className="text-sm text-slate-500">Import .xlsx with Brand Codes and BIN Locations</p>
         </Link>
         <Link
           href="/admin/inventario"
           className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all"
         >
-          <h3 className="font-semibold text-slate-900 mb-1">Ver Inventário</h3>
-          <p className="text-sm text-slate-500">Visualizar e editar itens do inventário</p>
+          <h3 className="font-semibold text-slate-900 mb-1">View Inventory</h3>
+          <p className="text-sm text-slate-500">View and edit inventory items</p>
         </Link>
         <Link
           href="/admin/sessao"
           className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all"
         >
-          <h3 className="font-semibold text-slate-900 mb-1">Nova Sessão</h3>
-          <p className="text-sm text-slate-500">Criar sessão de contagem e configurar equipes</p>
+          <h3 className="font-semibold text-slate-900 mb-1">New Session</h3>
+          <p className="text-sm text-slate-500">Create a count session and configure teams</p>
         </Link>
         <Link
           href="/admin/sessoes"
           className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all"
         >
-          <h3 className="font-semibold text-slate-900 mb-1">Monitorar Contagem</h3>
-          <p className="text-sm text-slate-500">Acompanhar progresso das equipes em tempo real</p>
+          <h3 className="font-semibold text-slate-900 mb-1">Monitor Count</h3>
+          <p className="text-sm text-slate-500">Track team progress in real time</p>
         </Link>
       </div>
     </div>
