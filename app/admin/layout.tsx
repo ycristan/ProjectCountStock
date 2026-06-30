@@ -8,7 +8,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <header className="bg-slate-900 px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-slate-900 px-4 py-3 flex items-center justify-between">
         <span className="font-bold text-white text-base">Count Stock — Admin</span>
         <div className="flex items-center gap-4">
           <span className="text-sm text-slate-300">Olá, {name}</span>
