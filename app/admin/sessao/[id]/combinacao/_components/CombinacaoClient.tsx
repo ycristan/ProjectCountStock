@@ -35,6 +35,7 @@ type Props = {
   reconcItems: ReconcItem[]
   inventory: InvItem[]
   isConfirmed: boolean
+  counters: Record<string, Record<string, string>>
 }
 
 const TD = 'px-3 py-2.5 text-center font-mono text-sm'
@@ -44,7 +45,7 @@ function val(v: number | null) {
   return v === null ? '—' : String(v)
 }
 
-export function CombinacaoClient({ sessionId, teams, reconcItems, inventory, isConfirmed }: Props) {
+export function CombinacaoClient({ sessionId, teams, reconcItems, inventory, isConfirmed, counters }: Props) {
   const [activeTab, setActiveTab] = useState(teams[0]?.id ?? 'combinado')
   const [confirmed, setConfirmed] = useState(isConfirmed)
   const [erro, setErro] = useState<string | null>(null)
@@ -60,6 +61,11 @@ export function CombinacaoClient({ sessionId, teams, reconcItems, inventory, isC
   }
 
   const allCodes = [...new Set(reconcItems.map((r) => r.brand_code))].sort()
+
+  function cName(teamId: string, role: string, fallback: string) {
+    const name = counters[teamId]?.[role]
+    return name ? `${fallback}: ${name}` : fallback
+  }
 
   function getMerged(code: string) {
     const bpu = invMap[code]?.bpu ?? 1
@@ -143,9 +149,9 @@ export function CombinacaoClient({ sessionId, teams, reconcItems, inventory, isC
                     <th rowSpan={2} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[90px]">Brand Code</th>
                     <th rowSpan={2} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[150px]">Brand Name</th>
                     <th rowSpan={2} className="px-3 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-center text-xs font-semibold text-slate-500 uppercase tracking-wide">BPU</th>
-                    <th colSpan={2} className="px-3 py-2 bg-amber-50 border-b border-amber-200 text-center text-[11px] font-semibold text-amber-800 uppercase tracking-wide">Independent</th>
-                    <th colSpan={2} className="px-3 py-2 bg-blue-50 border-b border-blue-200 text-center text-[11px] font-semibold text-blue-800 uppercase tracking-wide">Count 1</th>
-                    <th colSpan={2} className="px-3 py-2 bg-green-50 border-b border-green-200 text-center text-[11px] font-semibold text-green-800 uppercase tracking-wide">Count 2</th>
+                    <th colSpan={2} className="px-3 py-2 bg-amber-50 border-b border-amber-200 text-center text-[11px] font-semibold text-amber-800 uppercase tracking-wide">{cName(team.id, 'independente', 'Independent')}</th>
+                    <th colSpan={2} className="px-3 py-2 bg-blue-50 border-b border-blue-200 text-center text-[11px] font-semibold text-blue-800 uppercase tracking-wide">{cName(team.id, 'contador_1', 'Count 1')}</th>
+                    <th colSpan={2} className="px-3 py-2 bg-green-50 border-b border-green-200 text-center text-[11px] font-semibold text-green-800 uppercase tracking-wide">{cName(team.id, 'contador_2', 'Count 2')}</th>
                     <th colSpan={2} className="px-3 py-2 bg-orange-50 border-b border-orange-200 text-center text-[11px] font-semibold text-orange-800 uppercase tracking-wide">Reconciliation*</th>
                   </tr>
                   <tr>
@@ -235,9 +241,9 @@ export function CombinacaoClient({ sessionId, teams, reconcItems, inventory, isC
                 <tr>
                   {teams.map((team) => (
                     <Fragment key={team.id}>
-                      <th colSpan={2} className="px-2 py-1 border-l-2 border-slate-300 border-b bg-amber-50 text-amber-700 text-center text-[10px] font-semibold uppercase tracking-wide">Independent</th>
-                      <th colSpan={2} className="px-2 py-1 border-b bg-blue-50 text-blue-700 text-center text-[10px] font-semibold uppercase tracking-wide">Count 1</th>
-                      <th colSpan={2} className="px-2 py-1 border-b bg-green-50 text-green-700 text-center text-[10px] font-semibold uppercase tracking-wide">Count 2</th>
+                      <th colSpan={2} className="px-2 py-1 border-l-2 border-slate-300 border-b bg-amber-50 text-amber-700 text-center text-[10px] font-semibold uppercase tracking-wide">{cName(team.id, 'independente', 'Independent')}</th>
+                      <th colSpan={2} className="px-2 py-1 border-b bg-blue-50 text-blue-700 text-center text-[10px] font-semibold uppercase tracking-wide">{cName(team.id, 'contador_1', 'Count 1')}</th>
+                      <th colSpan={2} className="px-2 py-1 border-b bg-green-50 text-green-700 text-center text-[10px] font-semibold uppercase tracking-wide">{cName(team.id, 'contador_2', 'Count 2')}</th>
                       <th colSpan={2} className="px-2 py-1 border-b bg-orange-50 text-orange-700 text-center text-[10px] font-semibold uppercase tracking-wide">Reconciliation*</th>
                     </Fragment>
                   ))}
