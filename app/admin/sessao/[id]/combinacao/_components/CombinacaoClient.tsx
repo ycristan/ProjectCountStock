@@ -268,7 +268,7 @@ export function CombinacaoClient({
   }
 
   const dateStr = sessionCreatedAt
-    ? new Date(sessionCreatedAt).toLocaleDateString('pt-BR', {
+    ? new Date(sessionCreatedAt).toLocaleDateString('en-GB', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -282,12 +282,6 @@ export function CombinacaoClient({
         .row-flash { animation: rowFlash 1.5s ease-out forwards; }
       `}</style>
 
-      {/*
-        Fixed overlay: escapes AdminLayout max-w-7xl and py-6 entirely.
-        top-[48px] = admin sticky header height (py-3 * 2 + text ~= 48px).
-        Both scrollbars live inside flex-1 min-h-0 overflow-auto — horizontal
-        scrollbar is always at viewport bottom regardless of vertical scroll.
-      */}
       <div className="fixed inset-x-0 bottom-0 flex flex-col bg-slate-50" style={{ top: '48px' }}>
 
         {/* ── Page header bar ──────────────────────────────────────────── */}
@@ -300,7 +294,7 @@ export function CombinacaoClient({
               ← Dashboard
             </Link>
             <span className="text-slate-600 flex-shrink-0">|</span>
-            <span className="font-bold text-white text-sm truncate">Contagem ao Vivo</span>
+            <span className="font-bold text-white text-sm truncate">Live Count</span>
             <span className="text-slate-500 text-xs hidden sm:inline flex-shrink-0">
               {dateStr} · {sessionStatus}
             </span>
@@ -309,8 +303,8 @@ export function CombinacaoClient({
             <div className="flex items-center gap-1.5 text-blue-400 text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
               {allReconciliada
-                ? '✓ Todas reconciliadas'
-                : `${finalizedCounters}/${totalCounters} finalizaram`}
+                ? '✓ All teams reconciled'
+                : `${finalizedCounters}/${totalCounters} finalised`}
             </div>
             {hasReconciliada && (
               <a
@@ -324,7 +318,7 @@ export function CombinacaoClient({
               href={`/admin/sessao/${sessionId}/equipes`}
               className="text-xs text-slate-400 hover:text-white border border-slate-700 rounded-lg px-3 py-1.5 whitespace-nowrap hidden sm:inline-flex"
             >
-              Equipes
+              Teams
             </Link>
           </div>
         </div>
@@ -356,7 +350,7 @@ export function CombinacaoClient({
                     href={`/admin/sessao/${sessionId}/reconciliacao/${team.id}`}
                     className="text-[10px] font-bold bg-amber-500 text-amber-950 rounded px-1.5 py-0.5"
                   >
-                    Acompanhar →
+                    Monitor →
                   </Link>
                 )}
                 {!isReconciliando && !isReconciliada && allFin && (
@@ -365,14 +359,14 @@ export function CombinacaoClient({
                     disabled={isLoading}
                     className="text-[10px] font-bold bg-amber-500 text-amber-950 rounded px-1.5 py-0.5 disabled:opacity-50"
                   >
-                    {isLoading ? '...' : 'Checar →'}
+                    {isLoading ? '...' : 'Check →'}
                   </button>
                 )}
               </div>
             )
           })}
           {teams.length === 0 && (
-            <span className="text-xs text-slate-500">Nenhuma equipe criada.</span>
+            <span className="text-xs text-slate-500">No teams created.</span>
           )}
         </div>
 
@@ -414,7 +408,7 @@ export function CombinacaoClient({
                   : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
-              Combinado
+              Merged
             </button>
           )}
         </div>
@@ -424,7 +418,7 @@ export function CombinacaoClient({
 
           {teams.length === 0 && (
             <div className="px-4 py-12 text-sm text-slate-400 text-center">
-              Nenhuma equipe criada nesta sessão.
+              No teams created in this session.
             </div>
           )}
 
@@ -564,7 +558,6 @@ export function CombinacaoClient({
                   /* ── Live count view (counting / reconciliando teams) ─── */
                   <table className="w-full text-sm border-collapse">
                     <thead className="sticky top-0 z-10">
-                      {/* Counter badges as first header row */}
                       <tr className="bg-slate-50 border-b border-slate-200">
                         <td colSpan={5} className="px-4 py-2">
                           <div className="flex gap-2 flex-wrap">
@@ -586,7 +579,7 @@ export function CombinacaoClient({
                                     ? ' ✓'
                                     : ` · ${
                                         te.filter((e) => e.counter_role === c.role).length
-                                      } itens`}
+                                      } items`}
                                 </span>
                               </span>
                             ))}
@@ -616,7 +609,7 @@ export function CombinacaoClient({
                             colSpan={5}
                             className="px-4 py-12 text-xs text-slate-400 text-center"
                           >
-                            Aguardando primeiras contagens...
+                            Waiting for first counts...
                           </td>
                         </tr>
                       ) : (
@@ -689,7 +682,7 @@ export function CombinacaoClient({
             )
           })}
 
-          {/* ── Combinado tab ────────────────────────────────────────────── */}
+          {/* ── Merged tab ────────────────────────────────────────────── */}
           <div style={{ display: activeTab === 'combinado' ? 'block' : 'none' }}>
             <table className="text-sm border-collapse w-full">
               <thead className="sticky top-0 z-10">
@@ -915,26 +908,24 @@ export function CombinacaoClient({
               </tbody>
             </table>
 
-            {/* Confirm + export bar — sticky at container bottom */}
+            {/* Confirm + export bar */}
             <div className="sticky bottom-0 px-4 py-3 border-t border-slate-200 bg-white flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3 flex-wrap">
                 {confirmed ? (
                   <span className="text-sm font-semibold text-green-700">
-                    ✓ Combinação confirmada e salva
+                    ✓ Merge confirmed and saved
                   </span>
                 ) : (
                   <>
                     <span className="text-sm text-slate-500">
-                      {reconcilidaTeams.length} equipe
-                      {reconcilidaTeams.length !== 1 ? 's' : ''} reconciliada
-                      {reconcilidaTeams.length !== 1 ? 's' : ''}. Confirme para salvar.
+                      {reconcilidaTeams.length} team{reconcilidaTeams.length !== 1 ? 's' : ''} reconciled. Confirm to save.
                     </span>
                     <button
                       onClick={handleConfirmar}
                       disabled={isPending || !allReconciliada}
                       className="bg-blue-700 text-white font-bold px-5 py-2 rounded-xl text-sm hover:bg-blue-800 disabled:opacity-50 whitespace-nowrap"
                     >
-                      {isPending ? 'Salvando...' : 'Confirmar Combinação →'}
+                      {isPending ? 'Saving...' : 'Confirm Merge →'}
                     </button>
                   </>
                 )}
@@ -943,7 +934,7 @@ export function CombinacaoClient({
                 href={`/api/sessao/${sessionId}/export`}
                 className="text-sm font-semibold text-slate-700 border border-slate-300 hover:bg-slate-50 rounded-xl px-4 py-2 whitespace-nowrap"
               >
-                ↓ Exportar Excel
+                ↓ Export Excel
               </a>
             </div>
             {erro && <div className="px-4 pb-3 text-sm text-red-600">{erro}</div>}
