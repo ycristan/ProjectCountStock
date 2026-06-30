@@ -30,20 +30,20 @@ export function FinalizarClient({ jaFinalizado, finalizadoEm }: Props) {
     return (
       <div className="text-center py-12 max-w-sm mx-auto">
         <div className="text-5xl mb-4">✅</div>
-        <div className="text-xl font-bold text-slate-900 mb-2">Contagem finalizada!</div>
+        <div className="text-xl font-bold text-slate-900 mb-2">Count Finalised!</div>
         {finalizadoEm && (
           <div className="text-sm text-slate-500 mb-2">
-            {new Date(finalizadoEm).toLocaleString('pt-BR')}
+            {new Date(finalizadoEm).toLocaleString('en-GB')}
           </div>
         )}
         <div className="text-sm text-slate-500 mb-8">
-          O admin foi notificado. Você ainda pode lançar mais itens se necessário.
+          The admin has been notified. You can still add more items if necessary.
         </div>
         <Link
           href="/busca"
           className="block w-full py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold text-center"
         >
-          Continuar contando
+          Continue Counting
         </Link>
       </div>
     )
@@ -52,9 +52,9 @@ export function FinalizarClient({ jaFinalizado, finalizadoEm }: Props) {
   return (
     <div className="text-center py-12 max-w-sm mx-auto">
       <div className="text-5xl mb-4">🏁</div>
-      <div className="text-xl font-bold text-slate-900 mb-2">Finalizar Contagem</div>
+      <div className="text-xl font-bold text-slate-900 mb-2">Finalise Count</div>
       <div className="text-sm text-slate-500 mb-8">
-        Confirma que terminou de contar todos os itens da sua responsabilidade?
+        Confirm that you have finished counting all items under your responsibility?
       </div>
       {error && <div className="text-sm text-red-600 mb-4">{error}</div>}
       <button
@@ -62,10 +62,10 @@ export function FinalizarClient({ jaFinalizado, finalizadoEm }: Props) {
         disabled={loading}
         className="w-full py-4 bg-amber-500 text-white font-semibold rounded-xl text-base mb-3 disabled:opacity-50"
       >
-        {loading ? 'Finalizando...' : 'Confirmar — terminei!'}
+        {loading ? 'Finalising...' : "Confirm — I'm done!"}
       </button>
       <Link href="/busca" className="block text-sm text-slate-500">
-        ← Voltar à busca
+        ← Back to Search
       </Link>
     </div>
   )
