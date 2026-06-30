@@ -132,7 +132,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
         href="/busca"
         className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4"
       >
-        ← Back to Search
+        ← Back to Monitor
       </Link>
 
       <h2 className="text-xl font-semibold text-slate-900 mb-1">Reconciliation</h2>
@@ -190,11 +190,11 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100">
+              {/* C1 vs C2 comparison — independente no longer counts, Ind column removed */}
+              <div className="grid grid-cols-2 divide-x divide-slate-100 border-b border-slate-100">
                 {[
                   { label: 'C1', cases: item.contador_1_cases, units: item.contador_1_units },
                   { label: 'C2', cases: item.contador_2_cases, units: item.contador_2_units },
-                  { label: 'Ind', cases: item.independente_cases, units: item.independente_units },
                 ].map(({ label, cases, units }) => (
                   <div key={label} className="px-3 py-2 text-center">
                     <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-0.5">

@@ -12,20 +12,25 @@ export default async function CounterLayout({ children }: { children: React.Reac
   const role = user?.user_metadata?.counter_role as string | undefined
   const teamId = user?.user_metadata?.team_id as string | undefined
 
-  let bannerType: 'pending' | 'confirm' | null = null
+  let bannerType: 'pending' | 'confirm' | 'reconciliando' | null = null
   let pendingCount = 0
 
-  if (role === 'independente' && teamId) {
+  if (teamId) {
     const admin = createAdminClient()
     const { data: team } = await admin.from('teams').select('status').eq('id', teamId).single()
+
     if (team?.status === 'reconciliando') {
-      const { count } = await admin
-        .from('reconciliation_items')
-        .select('id', { count: 'exact', head: true })
-        .eq('team_id', teamId)
-        .eq('status', 'discrepancia')
-      pendingCount = count ?? 0
-      bannerType = pendingCount > 0 ? 'pending' : 'confirm'
+      if (role === 'independente') {
+        const { count } = await admin
+          .from('reconciliation_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('team_id', teamId)
+          .eq('status', 'discrepancia')
+        pendingCount = count ?? 0
+        bannerType = pendingCount > 0 ? 'pending' : 'confirm'
+      } else {
+        bannerType = 'reconciliando'
+      }
     }
   }
 
@@ -35,9 +40,11 @@ export default async function CounterLayout({ children }: { children: React.Reac
         <span className="font-bold text-white text-base">Count Stock</span>
         <div className="flex items-center gap-3">
           <span className="text-sm text-slate-300">Hello, {name}</span>
-          <Link href="/finalizar" className="text-sm text-amber-400 font-medium">
-            Finalise
-          </Link>
+          {role !== 'independente' && (
+            <Link href="/finalizar" className="text-sm text-amber-400 font-medium">
+              Finalise
+            </Link>
+          )}
           <form action={logout}>
             <button type="submit" className="text-sm text-slate-400 hover:text-white">
               Log out
@@ -45,17 +52,26 @@ export default async function CounterLayout({ children }: { children: React.Reac
           </form>
         </div>
       </header>
-      {bannerType && (
+      {bannerType === 'pending' && (
         <Link
           href="/reconciliacao"
-          className={`block px-4 py-3 text-center text-sm font-semibold text-white ${
-            bannerType === 'pending' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-600 hover:bg-green-700'
-          }`}
+          className="block px-4 py-3 text-center text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600"
         >
-          {bannerType === 'pending'
-            ? `⚠️ ${pendingCount} ${pendingCount === 1 ? 'item needs' : 'items need'} reconciliation → View list`
-            : '✓ All items reconciled — click here to confirm'}
+          ⚠️ {pendingCount} {pendingCount === 1 ? 'item needs' : 'items need'} reconciliation → View list
         </Link>
+      )}
+      {bannerType === 'confirm' && (
+        <Link
+          href="/reconciliacao"
+          className="block px-4 py-3 text-center text-sm font-semibold text-white bg-green-600 hover:bg-green-700"
+        >
+          ✓ All items reconciled — click here to confirm
+        </Link>
+      )}
+      {bannerType === 'reconciliando' && (
+        <div className="block px-4 py-3 text-center text-sm font-semibold text-white bg-blue-600">
+          ℹ️ Reconciliation in progress — the independent counter is reviewing discrepancies
+        </div>
       )}
       <main className="px-4 py-6 max-w-lg mx-auto">{children}</main>
     </div>

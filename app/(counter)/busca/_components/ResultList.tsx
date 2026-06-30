@@ -16,6 +16,8 @@ export function ResultList({ items, onSelect }: Props) {
         <button
           key={item.brand_code}
           onClick={() => onSelect(item)}
+          // ponytail: content-visibility:auto skips off-screen paint — handles 500+ rows without a JS virtualiser
+          style={{ contentVisibility: 'auto', containIntrinsicSize: '0 56px' }}
           className="w-full text-left px-4 py-4 border-b border-slate-100 last:border-b-0 flex justify-between items-center active:bg-slate-50 min-h-[56px]"
         >
           <div>
