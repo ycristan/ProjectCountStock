@@ -12,7 +12,7 @@ type Props = { items: ReconcItemLista[] }
 function formatGrams(raw: string): string {
   const digits = raw.replace(/\D/g, '')
   const num = parseInt(digits || '0', 10)
-  return num === 0 ? '' : num.toLocaleString('pt-BR')
+  return num === 0 ? '' : num.toLocaleString('en-GB')
 }
 
 function calcWeight(
@@ -81,7 +81,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
     const cases = parseInt(inp.cases || '0', 10)
     const units = parseInt(inp.units || '0', 10)
     if (isNaN(cases) || isNaN(units)) {
-      setErro('Preencha os valores antes de salvar.')
+      setErro('Please fill in the values before saving.')
       return
     }
     const reconciliated_cases = pallets * item.pallet_size + cases
@@ -102,7 +102,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
     const wi = getWeightInput(itemId)
     const calc = calcWeight(wi.caixas, wi.pesoFmt, weight_avg, box_tare_g, bpu)
     if (!calc.valid) {
-      setErro('Peso insuficiente — verifique os valores.')
+      setErro('Insufficient weight — please check the values.')
       return
     }
     setSavingId(itemId)
@@ -121,7 +121,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
         if (result.error) setErro(result.error)
         else router.push('/busca')
       } catch {
-        setErro('Erro de conexão — recarregue a página e tente novamente.')
+        setErro('Connection error — please reload the page and try again.')
       }
     })
   }
@@ -132,14 +132,14 @@ export function ReconciliacaoCounterClient({ items }: Props) {
         href="/busca"
         className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4"
       >
-        ← Voltar à busca
+        ← Back to Search
       </Link>
 
-      <h2 className="text-xl font-semibold text-slate-900 mb-1">Reconciliação</h2>
+      <h2 className="text-xl font-semibold text-slate-900 mb-1">Reconciliation</h2>
       <p className="text-sm text-slate-500 mb-5">
         {pendingCount > 0
-          ? `${pendingCount} ${pendingCount === 1 ? 'item pendente' : 'itens pendentes'} — faça a recontagem física com a equipe e registre o valor acordado.`
-          : 'Todos os itens foram reconciliados. Confirme para finalizar.'}
+          ? `${pendingCount} ${pendingCount === 1 ? 'item pending' : 'items pending'} — carry out a physical recount with the team and record the agreed value.`
+          : 'All items have been reconciled. Confirm to finalise.'}
       </p>
 
       {erro && (
@@ -179,12 +179,12 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                 <div className="flex items-center gap-2">
                   {item.is_weight_count && (
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                      ⚖️ Peso
+                      ⚖️ Weight
                     </span>
                   )}
                   {resolved && (
                     <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                      ✓ Reconciliado
+                      ✓ Reconciled
                     </span>
                   )}
                 </div>
@@ -210,22 +210,22 @@ export function ReconciliacaoCounterClient({ items }: Props) {
               <div className="px-4 py-3">
                 {resolved ? (
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">Contagem reconciliada</span>
+                    <span className="text-xs text-slate-500">Reconciled Count</span>
                     <span className="font-bold text-green-700 text-sm">
-                      {item.reconciliated_cases} cx + {item.reconciliated_units} un
+                      {item.reconciliated_cases} cases + {item.reconciliated_units} units
                     </span>
                   </div>
                 ) : item.is_weight_count ? (
                   <div>
                     <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 mb-3">
-                      📦 Tara: <strong className="text-slate-700">{item.box_tare_g.toLocaleString('pt-BR')} g/cx</strong>
+                      📦 Tare: <strong className="text-slate-700">{item.box_tare_g.toLocaleString('en-GB')} g/box</strong>
                       <span className="text-slate-300">·</span>
-                      ⚖️ <strong className="text-slate-700">{item.weight_avg} g/un</strong>
+                      ⚖️ <strong className="text-slate-700">{item.weight_avg} g/unit</strong>
                     </div>
-                    <div className="text-xs text-slate-500 mb-2">Valor acordado após recontagem</div>
+                    <div className="text-xs text-slate-500 mb-2">Agreed value after recount</div>
                     <div className="flex items-end gap-2">
                       <div className="flex-1">
-                        <div className="text-[10px] text-slate-400 mb-1">Nº de caixas</div>
+                        <div className="text-[10px] text-slate-400 mb-1">No. of Boxes</div>
                         <input
                           type="number"
                           inputMode="numeric"
@@ -242,7 +242,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                         />
                       </div>
                       <div className="flex-1">
-                        <div className="text-[10px] text-slate-400 mb-1">Peso (g)</div>
+                        <div className="text-[10px] text-slate-400 mb-1">Weight (g)</div>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -267,21 +267,21 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                         disabled={savingId === item.id || !wCalc?.valid}
                         className="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-60 whitespace-nowrap"
                       >
-                        {savingId === item.id ? '...' : 'Salvar'}
+                        {savingId === item.id ? '...' : 'Save'}
                       </button>
                     </div>
                     {wCalc && wCalc.valid && (
                       <div className="mt-2 text-xs text-green-700 font-medium">
-                        → {wCalc.units_total} un ({wCalc.final_cases} cx + {wCalc.final_units} un)
+                        → {wCalc.units_total} units ({wCalc.final_cases} cases + {wCalc.final_units} units)
                       </div>
                     )}
                   </div>
                 ) : (
                   <div>
-                    <div className="text-xs text-slate-500 mb-2">Valor acordado após recontagem</div>
+                    <div className="text-xs text-slate-500 mb-2">Agreed value after recount</div>
                     <div className="flex items-end gap-1 mb-2">
                       <div className="flex-1">
-                        <div className="text-[10px] text-slate-400 mb-1">Pallets (pt)</div>
+                        <div className="text-[10px] text-slate-400 mb-1">Pallets</div>
                         <input
                           type="number"
                           inputMode="numeric"
@@ -299,7 +299,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                       </div>
                       <span className="text-slate-400 text-sm pb-2.5">×</span>
                       <div className="flex-1">
-                        <div className="text-[10px] text-slate-400 mb-1">Cases (cx)</div>
+                        <div className="text-[10px] text-slate-400 mb-1">Cases</div>
                         <input
                           type="number"
                           inputMode="numeric"
@@ -317,7 +317,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                       </div>
                       <span className="text-slate-400 text-sm pb-2.5">+</span>
                       <div className="flex-1">
-                        <div className="text-[10px] text-slate-400 mb-1">Units (un)</div>
+                        <div className="text-[10px] text-slate-400 mb-1">Units</div>
                         <input
                           type="number"
                           inputMode="numeric"
@@ -339,7 +339,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                       disabled={savingId === item.id}
                       className="w-full px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-60"
                     >
-                      {savingId === item.id ? '...' : 'Salvar'}
+                      {savingId === item.id ? '...' : 'Save'}
                     </button>
                   </div>
                 )}
@@ -350,7 +350,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
       </div>
 
       {items.length === 0 && (
-        <div className="text-center text-slate-400 py-12 text-sm">Nenhum item para reconciliar.</div>
+        <div className="text-center text-slate-400 py-12 text-sm">No items to reconcile.</div>
       )}
 
       <button
@@ -358,7 +358,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
         disabled={!canConfirm || isPending}
         className="w-full py-4 rounded-xl text-base font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {isPending ? 'Confirmando...' : 'Finalizar e Confirmar Reconciliação'}
+        {isPending ? 'Confirming...' : 'Finalise and Confirm Reconciliation'}
       </button>
     </div>
   )

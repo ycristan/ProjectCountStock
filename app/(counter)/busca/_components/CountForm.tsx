@@ -26,10 +26,10 @@ function parseGrams(fmt: string): number {
 function formatGrams(raw: string): string {
   const digits = raw.replace(/\D/g, '')
   const num = parseInt(digits || '0', 10)
-  return num === 0 ? '' : num.toLocaleString('pt-BR')
+  return num === 0 ? '' : num.toLocaleString('en-GB')
 }
 
-// ponytail: derivado do valor, sem estado extra
+// ponytail: derived from value, no extra state
 function isNeg(v: string) {
   return (parseInt(v) || 0) < 0
 }
@@ -37,7 +37,7 @@ function isNeg(v: string) {
 export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Props) {
   const entry = item.entryExistente
   const isEdit = !!entry && !isAdditive
-  // ponytail: pallet_size=0 → item não tem pallet, campo bloqueado em 0
+  // ponytail: pallet_size=0 → item has no pallets, field locked at 0
   const noPallets = !item.pallet_size
 
   const [modo, setModo] = useState<'normal' | 'peso'>('normal')
@@ -71,7 +71,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
     )
   }
 
-  // ponytail: inline — evita 2 reduces extras vs função separada
+  // ponytail: inline — avoids 2 extra reduces vs separate function
   const totalTara = rodadas.reduce((s, r) => s + parseInt(r.caixas || '0', 10) * item.box_tare_g, 0)
   const totalPeso = rodadas.reduce((s, r) => s + parseGrams(r.pesoFmt), 0)
   const liquido = totalPeso - totalTara
@@ -80,12 +80,12 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
   const weightQty = raw > 0 ? (decimal >= 0.7 ? Math.ceil(raw) : Math.floor(raw)) : 0
   const hasWeightData = totalPeso > 0
 
-  // preview peso + cases visuais
+  // weight + visual cases preview
   const totalWithExtras = weightQty + extraCases * item.bpu
   const previewCases = item.bpu > 0 ? Math.floor(totalWithExtras / item.bpu) : 0
   const previewUnits = item.bpu > 0 ? totalWithExtras % item.bpu : 0
 
-  // preview additive (normal mode) — noPallets: ignora pallets existentes
+  // additive preview (normal mode) — noPallets: ignore existing pallets
   const addP = Math.max(0, parseInt(pallets) || 0)
   const addC = Math.max(0, parseInt(cases) || 0)
   const addU = Math.max(0, parseInt(units) || 0)
@@ -102,19 +102,18 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
     let p = 0, c = 0, u = 0
     if (modo === 'peso') {
       if (!hasWeightData) {
-        setErro('Informe o peso para calcular a quantidade.')
+        setErro('Enter the weight to calculate the quantity.')
         return
       }
       if (weightQty <= 0) {
-        setErro('Peso líquido insuficiente — verifique o número de caixas.')
+        setErro('Insufficient net weight — check the number of boxes.')
         return
       }
       c = extraCases
       u = weightQty
     } else {
-      // Bloqueia negativos antes de qualquer processamento
       if (isNeg(pallets) || isNeg(cases) || isNeg(units)) {
-        setErro('Números negativos não são permitidos.')
+        setErro('Negative numbers are not permitted.')
         return
       }
       p = Math.max(0, parseInt(pallets) || 0)
@@ -142,35 +141,35 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
           onSucesso({ final_cases: result.final_cases!, final_units: result.final_units!, brand_name: result.brand_name! })
         }
       } catch {
-        // ponytail: action ID fica stale após novo deploy — Next.js vai recarregar a página
-        setErro('Aplicação atualizada — feche e reabra o app e tente novamente.')
+        // ponytail: action ID goes stale after new deploy — Next.js will reload the page
+        setErro('Application updated — please close and reopen the app and try again.')
       }
     })
   }
 
   const btnLabel = isPending
-    ? 'Salvando...'
+    ? 'Saving...'
     : isAdditive
-    ? 'Confirmar Adição'
+    ? 'Confirm Addition'
     : isEdit
-    ? 'Salvar Edição'
-    : 'Confirmar Contagem'
+    ? 'Save Edit'
+    : 'Confirm Count'
 
   return (
     <div>
       <div className="rounded-xl p-4 mb-4 bg-slate-900 text-white">
         <div className="flex items-start justify-between">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            Item selecionado
+            Selected Item
           </div>
           {isAdditive && (
             <span className="text-[11px] font-semibold bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wide">
-              Adicionando
+              Adding
             </span>
           )}
           {isEdit && (
             <span className="text-[11px] font-semibold bg-amber-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wide">
-              Editável
+              Editable
             </span>
           )}
         </div>
@@ -179,15 +178,15 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
         <div className="text-xs text-slate-400 mt-1">
           {item.bins.length > 0 ? `BIN: ${item.bins.join(', ')} · ` : ''}
           BPU: {item.bpu} · Pallet: {item.pallet_size}
-          {item.weight_avg > 0 && ` · ⚖️ ${item.weight_avg}g/un`}
+          {item.weight_avg > 0 && ` · ⚖️ ${item.weight_avg}g/unit`}
         </div>
       </div>
 
-      {/* Card readonly da contagem existente — só no modo additive */}
+      {/* Readonly card of existing count — additive mode only */}
       {isAdditive && entry && (
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 mb-4">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-3">
-            Contagem registrada
+            Registered Count
           </div>
           <div className="grid grid-cols-3 gap-2">
             {[
@@ -204,7 +203,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
         </div>
       )}
 
-      {/* Toggle modo peso — oculto no modo additive */}
+      {/* Weight mode toggle — hidden in additive mode */}
       {!isAdditive && item.weight_avg > 0 && (
         <div className="grid grid-cols-2 gap-2 mb-4">
           <button
@@ -215,7 +214,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
                 : 'border-slate-200 text-slate-600 bg-white'
             }`}
           >
-            🔢 Contagem normal
+            🔢 Normal Count
           </button>
           <button
             onClick={() => switchModo('peso')}
@@ -225,7 +224,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
                 : 'border-slate-200 text-slate-600 bg-white'
             }`}
           >
-            ⚖️ Contar por peso
+            ⚖️ Count by Weight
           </button>
         </div>
       )}
@@ -265,26 +264,26 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
             })}
           </div>
 
-          {/* Preview total — só no modo additive */}
+          {/* Total preview — additive mode only */}
           {isAdditive && entry && (
             <div className="rounded-xl bg-slate-900 p-4 mb-4 text-white">
               <div className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide mb-3">
-                Total após adição
+                Total After Addition
               </div>
               <div className="space-y-1.5 text-sm mb-3">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Registrado</span>
+                  <span className="text-slate-400">Registered</span>
                   <span className="text-slate-300 font-semibold">
                     {entry.pallets}p · {entry.cases}c · {entry.units}u
                   </span>
                 </div>
                 <div className="flex justify-between text-blue-400">
-                  <span>+ Adicionando</span>
+                  <span>+ Adding</span>
                   <span className="font-semibold">{addP}p · {addC}c · {addU}u</span>
                 </div>
               </div>
               <div className="flex justify-between items-center pt-3 border-t border-slate-700">
-                <span className="text-sm font-bold text-slate-200">Novo total</span>
+                <span className="text-sm font-bold text-slate-200">New Total</span>
                 <span className="text-2xl font-bold">{previewAddCases}+{previewAddUnits}</span>
               </div>
             </div>
@@ -292,7 +291,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
 
           {!isEdit && !isAdditive && (
             <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 mb-3">
-              ℹ️ Zeros são válidos — confirma que o item foi contado e estava zerado.
+              ℹ️ Zeroes are valid — confirms the item was counted and was empty.
             </div>
           )}
         </>
@@ -301,16 +300,16 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
       {modo === 'peso' && (
         <div className="mb-4 space-y-3">
           <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-            📦 Tara: <strong className="text-slate-700">{item.box_tare_g.toLocaleString('pt-BR')} g/cx</strong>
+            📦 Tare: <strong className="text-slate-700">{item.box_tare_g.toLocaleString('en-GB')} g/box</strong>
             <span className="text-slate-300">·</span>
-            ⚖️ Peso/un: <strong className="text-slate-700">{item.weight_avg} g</strong>
+            ⚖️ Weight/unit: <strong className="text-slate-700">{item.weight_avg} g</strong>
           </div>
 
           {rodadas.map((r, i) => (
             <div key={r.id} className="border border-slate-200 rounded-xl p-3 bg-white">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Rodada {i + 1}
+                  Round {i + 1}
                 </span>
                 {rodadas.length > 1 && (
                   <button
@@ -324,7 +323,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                    Nº de caixas
+                    No. of Boxes
                   </div>
                   <input
                     type="number"
@@ -338,7 +337,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                    Peso (g)
+                    Weight (g)
                   </div>
                   <input
                     type="text"
@@ -357,13 +356,13 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
             onClick={addRodada}
             className="w-full border-2 border-dashed border-slate-200 rounded-xl py-2.5 text-sm font-semibold text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
           >
-            + Nova rodada de pesagem
+            + New Weighing Round
           </button>
 
-          {/* Cases visuais — somadas à pesagem */}
+          {/* Visual cases — added to weighing result */}
           <div className="border-2 border-amber-300 rounded-xl overflow-hidden">
             <div className="bg-amber-50 border-b border-amber-200 px-3 py-2 text-xs font-semibold text-amber-800">
-              📦 Cases completas (confirmadas visualmente)
+              📦 Full Cases (visually confirmed)
             </div>
             <div className="p-3 bg-white">
               <div className="flex items-center rounded-xl border border-amber-300 overflow-hidden">
@@ -385,7 +384,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
               </div>
               {extraCases > 0 && (
                 <p className="text-xs text-amber-700 text-center mt-2">
-                  {extraCases} case{extraCases > 1 ? 's' : ''} × {item.bpu} un = +{extraCases * item.bpu} un adicionais
+                  {extraCases} case{extraCases > 1 ? 's' : ''} × {item.bpu} units = +{extraCases * item.bpu} additional units
                 </p>
               )}
             </div>
@@ -396,21 +395,21 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
           }`}>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between text-slate-500">
-                <span>Tara total</span>
-                <span>{hasWeightData ? `${totalTara.toLocaleString('pt-BR')} g` : '— g'}</span>
+                <span>Total Tare</span>
+                <span>{hasWeightData ? `${totalTara.toLocaleString('en-GB')} g` : '— g'}</span>
               </div>
               <div className="flex justify-between text-slate-500">
-                <span>Peso líquido</span>
-                <span>{hasWeightData ? `${Math.max(0, liquido).toLocaleString('pt-BR')} g` : '— g'}</span>
+                <span>Net Weight</span>
+                <span>{hasWeightData ? `${Math.max(0, liquido).toLocaleString('en-GB')} g` : '— g'}</span>
               </div>
               <div className="flex justify-between text-slate-500">
-                <span>Resultado pesagem</span>
-                <span>{hasWeightData ? `${weightQty} un` : '— un'}</span>
+                <span>Weighing Result</span>
+                <span>{hasWeightData ? `${weightQty} units` : '— units'}</span>
               </div>
               {extraCases > 0 && (
                 <div className="flex justify-between text-amber-600 font-semibold">
-                  <span>Cases visuais ({extraCases} × {item.bpu})</span>
-                  <span>+{extraCases * item.bpu} un</span>
+                  <span>Visual Cases ({extraCases} × {item.bpu})</span>
+                  <span>+{extraCases * item.bpu} units</span>
                 </div>
               )}
             </div>
@@ -418,7 +417,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
               <span className={`text-sm font-bold ${
                 hasWeightData && weightQty > 0 ? 'text-green-700' : 'text-slate-400'
               }`}>
-                Total final
+                Final Total
               </span>
               <span className={`text-2xl font-bold ${
                 hasWeightData && weightQty > 0 ? 'text-green-700' : 'text-slate-300'
@@ -447,7 +446,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
         onClick={onVoltar}
         className="w-full mt-2 text-slate-500 text-sm py-3 rounded-xl border border-slate-200 bg-white"
       >
-        ← Voltar à busca
+        ← Back to Search
       </button>
     </div>
   )
