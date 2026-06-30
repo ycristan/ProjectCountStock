@@ -8,8 +8,9 @@ export default async function ReconciliacaoCounterPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.counter_role !== 'independente') redirect('/busca')
+  const role = user?.user_metadata?.counter_role as string | undefined
+  if (!user || !role) redirect('/busca')
 
   const items = await listarDiscrepancias()
-  return <ReconciliacaoCounterClient items={items} />
+  return <ReconciliacaoCounterClient items={items} readOnly={role !== 'independente'} />
 }
