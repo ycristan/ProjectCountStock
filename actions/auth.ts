@@ -44,7 +44,7 @@ export async function login(
     signInEmail = email
     signInPassword = password
   } else {
-    return { error: 'Preencha todos os campos.' }
+    return { error: 'Please fill in all fields.' }
   }
 
   const supabase = await makeSupabase()
@@ -53,7 +53,7 @@ export async function login(
     password: signInPassword,
   })
 
-  if (error) return { error: 'Código ou PIN inválido.' }
+  if (error) return { error: 'Invalid code or PIN.' }
   redirect('/')
 }
 
