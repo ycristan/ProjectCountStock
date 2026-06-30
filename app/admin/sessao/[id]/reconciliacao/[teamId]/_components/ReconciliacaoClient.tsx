@@ -73,12 +73,12 @@ export function ReconciliacaoClient({
     <div>
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Reconciliação — {teamName}</h2>
-          <div className="text-sm text-slate-500 mt-0.5">Independente: {counterNames.independente}</div>
+          <h2 className="text-xl font-semibold text-slate-900">Reconciliation — {teamName}</h2>
+          <div className="text-sm text-slate-500 mt-0.5">Independent: {counterNames.independente}</div>
         </div>
         {isReconciliada && (
           <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-100 text-green-700">
-            ✓ Reconciliada
+            ✓ Reconciled
           </span>
         )}
       </div>
@@ -87,13 +87,13 @@ export function ReconciliacaoClient({
         href={`/admin/sessao/${sessionId}/progresso`}
         className="text-sm text-blue-600 hover:underline"
       >
-        ← Voltar ao progresso
+        ← Back to Progress
       </Link>
 
       <div className="flex gap-3 mt-5 mb-5">
         <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4">
           <div className="text-3xl font-bold text-green-600">{combinados.length}</div>
-          <div className="text-xs text-slate-500 mt-1">Combinados</div>
+          <div className="text-xs text-slate-500 mt-1">Matched</div>
         </div>
         <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4">
           <div
@@ -103,18 +103,17 @@ export function ReconciliacaoClient({
           >
             {discrepancias.length}
           </div>
-          <div className="text-xs text-slate-500 mt-1">Discrepâncias restantes</div>
+          <div className="text-xs text-slate-500 mt-1">Remaining Discrepancies</div>
         </div>
         <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4">
           <div className="text-3xl font-bold text-indigo-600">{resolvidos.length}</div>
-          <div className="text-xs text-slate-500 mt-1">Reconciliados</div>
+          <div className="text-xs text-slate-500 mt-1">Reconciled</div>
         </div>
       </div>
 
       {!isReconciliada && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800 mb-5">
-          ℹ️ <strong>{counterNames.independente}</strong> está realizando a reconciliação dos
-          itens com discrepância no dispositivo dele.
+          ℹ️ <strong>{counterNames.independente}</strong> is carrying out reconciliation of discrepancy items on their device.
         </div>
       )}
 
@@ -127,7 +126,7 @@ export function ReconciliacaoClient({
               : 'text-slate-500 border-transparent hover:text-slate-700'
           }`}
         >
-          Discrepâncias ({discrepancias.length} restantes)
+          Discrepancies ({discrepancias.length} remaining)
         </button>
         <button
           onClick={() => setActiveTab('combinados')}
@@ -137,7 +136,7 @@ export function ReconciliacaoClient({
               : 'text-slate-500 border-transparent hover:text-slate-700'
           }`}
         >
-          Combinados ({combinados.length})
+          Matched ({combinados.length})
         </button>
       </div>
 
@@ -157,7 +156,7 @@ export function ReconciliacaoClient({
               </th>
               {activeTab === 'discrepancias' && (
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">
-                  Reconciliado
+                  Reconciled
                 </th>
               )}
             </tr>
@@ -188,7 +187,7 @@ export function ReconciliacaoClient({
                         {formatVal(item.reconciliated_cases, item.reconciliated_units)}
                       </span>
                     ) : (
-                      <span className="text-amber-500 text-xs">Pendente</span>
+                      <span className="text-amber-500 text-xs">Pending</span>
                     )}
                   </td>
                 )}
@@ -201,8 +200,8 @@ export function ReconciliacaoClient({
                   className="px-4 py-8 text-center text-slate-400 text-sm"
                 >
                   {activeTab === 'discrepancias'
-                    ? 'Nenhuma discrepância pendente.'
-                    : 'Nenhum item combinado.'}
+                    ? 'No pending discrepancies.'
+                    : 'No matched items.'}
                 </td>
               </tr>
             )}

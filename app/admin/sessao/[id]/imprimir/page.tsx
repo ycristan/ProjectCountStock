@@ -6,9 +6,9 @@ import { PrintButton } from './_components/PrintButton'
 
 const ROLE_ORDER = ['contador_1', 'contador_2', 'independente']
 const ROLE_LABEL: Record<string, string> = {
-  contador_1: 'Contador 1',
-  contador_2: 'Contador 2',
-  independente: 'Independente',
+  contador_1: 'Counter 1',
+  contador_2: 'Counter 2',
+  independente: 'Independent',
 }
 
 export default async function ImprimirPage({
@@ -52,11 +52,11 @@ export default async function ImprimirPage({
           href={`/admin/sessao/${id}/equipes`}
           className="text-sm text-slate-500 hover:text-slate-700"
         >
-          ← Equipes
+          ← Teams
         </Link>
         <PrintButton />
         <span className="text-xs text-slate-400 ml-1">
-          {teams.length} equipe{teams.length !== 1 ? 's' : ''} · {contadores.length} cartões
+          {teams.length} team{teams.length !== 1 ? 's' : ''} · {contadores.length} cards
         </span>
       </div>
 
@@ -81,7 +81,7 @@ export default async function ImprimirPage({
                     key={c.auth_user_id}
                     className={`flex${ci < sorted.length - 1 ? ' border-b-[3px] border-black' : ''}`}
                   >
-                    {/* Credenciais */}
+                    {/* Credentials */}
                     <div className="flex-1 p-5 border-r-[3px] border-black">
                       <div className="font-black uppercase tracking-wide" style={{ fontSize: '1.1rem' }}>
                         {ROLE_LABEL[c.role] ?? c.role}
@@ -92,7 +92,7 @@ export default async function ImprimirPage({
                       <div className="flex gap-4 mt-4">
                         <div className="border-2 border-slate-400 rounded-lg px-4 py-2 bg-slate-50">
                           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                            PIN Equipe
+                            Team PIN
                           </div>
                           <div className="font-black font-mono tracking-[0.25em]" style={{ fontSize: '1.6rem' }}>
                             {c.team_pin}
@@ -100,7 +100,7 @@ export default async function ImprimirPage({
                         </div>
                         <div className="border-2 border-slate-400 rounded-lg px-4 py-2 bg-slate-50">
                           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                            PIN Pessoal
+                            Personal PIN
                           </div>
                           <div className="font-black font-mono tracking-[0.25em]" style={{ fontSize: '1.6rem' }}>
                             {c.user_pin}
@@ -134,7 +134,7 @@ export default async function ImprimirPage({
         })}
 
         {teams.length === 0 && (
-          <p className="text-center text-slate-400 py-20">Nenhuma equipe encontrada.</p>
+          <p className="text-center text-slate-400 py-20">No teams found.</p>
         )}
       </div>
     </>

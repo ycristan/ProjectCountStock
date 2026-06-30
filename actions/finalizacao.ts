@@ -14,11 +14,11 @@ export async function finalizarContagem(): Promise<FinalizacaoResult> {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { error: 'Não autenticado.' }
+  if (!user) return { error: 'Not authenticated.' }
 
   const teamId = user.user_metadata?.team_id as string
   const counterRole = user.user_metadata?.counter_role as string
-  if (!teamId || !counterRole) return { error: 'Dados de sessão inválidos.' }
+  if (!teamId || !counterRole) return { error: 'Invalid session data.' }
 
   const admin = createAdminClient()
 
@@ -29,7 +29,7 @@ export async function finalizarContagem(): Promise<FinalizacaoResult> {
     .eq('role', counterRole)
     .single()
 
-  if (fetchError || !account) return { error: 'Conta não encontrada.' }
+  if (fetchError || !account) return { error: 'Account not found.' }
   if (account.finalized_at) return { success: true, ja_finalizado: true }
 
   const { error } = await admin
@@ -37,7 +37,7 @@ export async function finalizarContagem(): Promise<FinalizacaoResult> {
     .update({ finalized_at: new Date().toISOString() })
     .eq('id', account.id)
 
-  if (error) return { error: `Erro ao finalizar: ${error.message}` }
+  if (error) return { error: `Error finalising: ${error.message}` }
   return { success: true }
 }
 

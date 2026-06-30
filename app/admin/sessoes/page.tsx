@@ -11,9 +11,9 @@ export default async function SessoesPage() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900 mb-6">Sessões de Contagem</h2>
+      <h2 className="text-xl font-semibold text-slate-900 mb-6">Count Sessions</h2>
       {!sessoes || sessoes.length === 0 ? (
-        <p className="text-sm text-slate-500">Nenhuma sessão criada ainda.</p>
+        <p className="text-sm text-slate-500">No sessions created yet.</p>
       ) : (
         <div className="space-y-3">
           {sessoes.map((s) => (
@@ -23,7 +23,7 @@ export default async function SessoesPage() {
             >
               <div>
                 <div className="text-sm font-medium text-slate-900">
-                  {new Date(s.created_at).toLocaleDateString('pt-BR', {
+                  {new Date(s.created_at).toLocaleDateString('en-GB', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -37,7 +37,7 @@ export default async function SessoesPage() {
                 href={`/admin/sessao/${s.id}/progresso`}
                 className="text-sm font-medium text-blue-600 hover:text-blue-800"
               >
-                Ver progresso →
+                View Progress →
               </Link>
             </div>
           ))}

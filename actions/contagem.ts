@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server'
 
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type EntryExistente = {
   pallets: number
@@ -147,17 +147,17 @@ export async function lancarContagem(
   payload: LancarContagemPayload
 ): Promise<LancarContagemResult> {
   if (payload.pallets < 0 || payload.cases < 0 || payload.units < 0) {
-    return { error: 'Valores não podem ser negativos.' }
+    return { error: 'Values cannot be negative.' }
   }
   if (!Number.isInteger(payload.pallets) || !Number.isInteger(payload.cases) || !Number.isInteger(payload.units)) {
-    return { error: 'Valores de contagem devem ser números inteiros' }
+    return { error: 'Count values must be integers.' }
   }
 
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { error: 'Não autenticado.' }
+  if (!user) return { error: 'Not authenticated.' }
 
   const teamId = user.user_metadata?.team_id as string
   const counterRole = user.user_metadata?.counter_role as string
@@ -168,9 +168,9 @@ export async function lancarContagem(
     .eq('brand_code', payload.brand_code)
     .single()
 
-  if (itemError || !item) return { error: 'Item não encontrado.' }
+  if (itemError || !item) return { error: 'Item not found.' }
   // ponytail: apenas bpu=0 bloqueia (divide por zero no RPC); pallet_size=0 é válido
-  if (!item.bpu) return { error: 'Item com dados incompletos — contate o admin.' }
+  if (!item.bpu) return { error: 'Item has incomplete data — please contact the admin.' }
 
   const { data: converted, error: convError } = await supabase.rpc('convert_count', {
     p_pallets: payload.pallets,
@@ -180,7 +180,7 @@ export async function lancarContagem(
     p_pallet_size: item.pallet_size,
   })
 
-  if (convError || !converted) return { error: 'Erro ao converter contagem.' }
+  if (convError || !converted) return { error: 'Error converting count.' }
 
   const row = Array.isArray(converted) ? converted[0] : converted
   const final_cases = row.final_cases as number
@@ -196,7 +196,7 @@ export async function lancarContagem(
     .eq('brand_code', payload.brand_code)
     .eq('is_joint_recount', false)
 
-  if (delError) return { error: `Erro ao limpar contagem anterior: ${delError.message}` }
+  if (delError) return { error: `Error clearing previous count: ${delError.message}` }
 
   const { error } = await supabase.from('count_entries').insert({
     team_id: teamId,
@@ -213,7 +213,7 @@ export async function lancarContagem(
     entered_at: new Date().toISOString(),
   })
 
-  if (error) return { error: `Erro ao salvar: ${error.message}` }
+  if (error) return { error: `Error saving: ${error.message}` }
 
   return { final_cases, final_units, brand_name: item.brand_name }
 }

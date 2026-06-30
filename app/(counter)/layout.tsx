@@ -8,7 +8,7 @@ export default async function CounterLayout({ children }: { children: React.Reac
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const name = user?.user_metadata?.full_name ?? 'Contador'
+  const name = user?.user_metadata?.full_name ?? 'Counter'
   const role = user?.user_metadata?.counter_role as string | undefined
   const teamId = user?.user_metadata?.team_id as string | undefined
 
@@ -34,13 +34,13 @@ export default async function CounterLayout({ children }: { children: React.Reac
       <header className="bg-slate-900 px-4 py-3 flex items-center justify-between">
         <span className="font-bold text-white text-base">Count Stock</span>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-slate-300">Olá, {name}</span>
+          <span className="text-sm text-slate-300">Hello, {name}</span>
           <Link href="/finalizar" className="text-sm text-amber-400 font-medium">
-            Finalizar
+            Finalise
           </Link>
           <form action={logout}>
             <button type="submit" className="text-sm text-slate-400 hover:text-white">
-              Sair
+              Log out
             </button>
           </form>
         </div>
@@ -53,8 +53,8 @@ export default async function CounterLayout({ children }: { children: React.Reac
           }`}
         >
           {bannerType === 'pending'
-            ? `⚠️ ${pendingCount} ${pendingCount === 1 ? 'item precisa' : 'itens precisam'} de reconciliação → Ver lista`
-            : '✓ Todos reconciliados — clique aqui para confirmar'}
+            ? `⚠️ ${pendingCount} ${pendingCount === 1 ? 'item needs' : 'items need'} reconciliation → View list`
+            : '✓ All items reconciled — click here to confirm'}
         </Link>
       )}
       <main className="px-4 py-6 max-w-lg mx-auto">{children}</main>

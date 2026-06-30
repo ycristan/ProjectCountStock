@@ -18,14 +18,14 @@ export default function UploadPage() {
       if (!data?.length) return
       const ws = XLSX.utils.json_to_sheet(data)
       const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Inventário')
-      // ponytail: cast necessario — XLSX retorna Uint8Array<ArrayBufferLike> mas TS5 exige ArrayBuffer
+      XLSX.utils.book_append_sheet(wb, ws, 'Inventory')
+      // ponytail: cast needed — XLSX returns Uint8Array<ArrayBufferLike> but TS5 requires ArrayBuffer
       const arr = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as unknown as Uint8Array<ArrayBuffer>
       const blob = new Blob([arr], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'inventario.xlsx'
+      a.download = 'inventory.xlsx'
       a.click()
       URL.revokeObjectURL(url)
     } finally {
@@ -36,22 +36,22 @@ export default function UploadPage() {
   if (state?.success) {
     return (
       <div>
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">Upload Inventário</h2>
+        <h2 className="text-xl font-semibold text-slate-900 mb-4">Upload Inventory</h2>
         <div className="p-4 bg-green-50 border border-green-200 rounded-xl mb-4">
           <p className="text-green-800 font-medium">
-            {state.count} {state.count === 1 ? 'item importado' : 'itens importados'} com sucesso.
+            {state.count} {state.count === 1 ? 'item' : 'items'} imported successfully.
           </p>
         </div>
         {state.skipped != null && state.skipped > 0 && (
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl mb-4">
             <p className="text-amber-800 text-sm">
-              {state.skipped} {state.skipped === 1 ? 'linha ignorada' : 'linhas ignoradas'} — Brand Code ausente.
+              {state.skipped} {state.skipped === 1 ? 'row' : 'rows'} skipped — Brand Code missing.
             </p>
           </div>
         )}
         <div className="flex gap-3">
-          <Link href="/admin" className="px-4 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl hover:bg-slate-50">Voltar ao Dashboard</Link>
-          <Link href="/admin/sessao" className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800">Criar Sessão de Contagem</Link>
+          <Link href="/admin" className="px-4 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl hover:bg-slate-50">Back to Dashboard</Link>
+          <Link href="/admin/sessao" className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800">Create Count Session</Link>
         </div>
       </div>
     )
@@ -63,22 +63,22 @@ export default function UploadPage() {
         ← Dashboard
       </Link>
       <div className="flex items-start justify-between mb-2">
-        <h2 className="text-xl font-semibold text-slate-900">Upload Inventário</h2>
+        <h2 className="text-xl font-semibold text-slate-900">Upload Inventory</h2>
         <button onClick={handleDownload} disabled={downloading} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-50">
-          {downloading ? 'Baixando...' : '⬇️ Baixar atual'}
+          {downloading ? 'Downloading...' : '⬇️ Download Current'}
         </button>
       </div>
       <p className="text-sm text-slate-500 mb-6">
-        Arquivo .xlsx com colunas: Brand Code, Brand Name, Brand Purchase Unit, Pallet Size, Weight AVG, Category, Category1, BIN Location 1–4.
+        .xlsx file with columns: Brand Code, Brand Name, Brand Purchase Unit, Pallet Size, Weight AVG, Category, Category1, BIN Location 1–4.
       </p>
       <form action={formAction} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Arquivo</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">File</label>
           <input type="file" name="file" accept=".xlsx,.xls" required className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
         </div>
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button type="submit" disabled={pending} className="px-6 py-2 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 disabled:opacity-50">
-          {pending ? 'Importando...' : 'Importar'}
+          {pending ? 'Importing...' : 'Import'}
         </button>
       </form>
     </div>

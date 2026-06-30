@@ -26,7 +26,7 @@ export function SuccessScreen({ brandCode, brandName, finalCases, finalUnits, on
   return (
     <div className="text-center py-6">
       <div className="text-5xl mb-3">✅</div>
-      <div className="text-xl font-bold text-slate-900">Contagem salva!</div>
+      <div className="text-xl font-bold text-slate-900">Count saved!</div>
 
       <div className="mt-4 rounded-xl bg-slate-900 text-white p-4 text-left">
         <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Item</div>
@@ -36,16 +36,16 @@ export function SuccessScreen({ brandCode, brandName, finalCases, finalUnits, on
       </div>
 
       <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
-        <div className="text-sm text-slate-600">Voltando para busca em...</div>
+        <div className="text-sm text-slate-600">Returning to search in...</div>
         <div className="text-4xl font-bold text-green-600 leading-tight mt-1">{seconds}</div>
-        <div className="text-xs text-slate-500">segundos</div>
+        <div className="text-xs text-slate-500">seconds</div>
       </div>
 
       <button
         onClick={onDone}
         className="mt-4 w-full text-sm py-3 rounded-xl bg-white text-slate-700 border border-slate-200 font-medium"
       >
-        Buscar agora →
+        Search now →
       </button>
     </div>
   )

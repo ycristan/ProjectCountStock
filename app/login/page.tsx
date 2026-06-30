@@ -17,7 +17,7 @@ export default function LoginPage() {
           {adminMode ? (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
                   name="email"
                   type="email"
@@ -28,7 +28,7 @@ export default function LoginPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input
                   name="password"
                   type="password"
@@ -42,7 +42,7 @@ export default function LoginPage() {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Código da Equipe
+                  Team Code
                 </label>
                 <input
                   name="team_pin"
@@ -57,7 +57,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Seu PIN
+                  Your PIN
                 </label>
                 <input
                   name="user_pin"
@@ -80,7 +80,7 @@ export default function LoginPage() {
             disabled={pending}
             className="w-full py-4 px-4 bg-blue-600 text-white text-xl font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {pending ? 'Entrando...' : 'Entrar'}
+            {pending ? 'Logging in...' : 'Log In'}
           </button>
         </form>
         <button
@@ -88,7 +88,7 @@ export default function LoginPage() {
           onClick={() => setAdminMode(!adminMode)}
           className="mt-6 w-full text-sm text-gray-400 hover:text-gray-600 text-center transition-colors"
         >
-          {adminMode ? '← Login de contador' : 'Entrar como Admin'}
+          {adminMode ? '← Counter Login' : 'Log In as Admin'}
         </button>
       </div>
     </main>

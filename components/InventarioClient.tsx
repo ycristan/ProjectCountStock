@@ -123,10 +123,10 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
                       <td className="px-4 py-2 whitespace-nowrap">
                         <div className="flex gap-2">
                           <button onClick={save} disabled={isPending} className="px-3 py-1 bg-slate-900 text-white text-xs font-semibold rounded-lg disabled:opacity-50">
-                            {isPending ? '...' : 'Salvar'}
+                            {isPending ? '...' : 'Save'}
                           </button>
                           <button onClick={cancel} disabled={isPending} className="px-3 py-1 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-100">
-                            Cancelar
+                            Cancel
                           </button>
                         </div>
                       </td>
@@ -142,7 +142,7 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
                       <td className="px-4 py-2 text-slate-500 text-xs whitespace-nowrap">{item.bins.length > 0 ? item.bins.join(', ') : <span className="text-slate-300">—</span>}</td>
                       <td className="px-4 py-2 whitespace-nowrap">
                         <button onClick={() => startEdit(item)} className="px-3 py-1 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-100">
-                          Editar
+                          Edit
                         </button>
                       </td>
                     </>
@@ -153,7 +153,7 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
             {items.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-4 py-10 text-center text-slate-400 text-sm">
-                  Nenhum item no inventário. Faça o upload de um arquivo .xlsx.
+                  No items in inventory. Please upload an .xlsx file.
                 </td>
               </tr>
             )}

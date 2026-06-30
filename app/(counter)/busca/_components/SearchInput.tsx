@@ -23,7 +23,7 @@ export function SearchInput({ value, onChange, loading }: Props) {
         inputMode="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Código, nome ou BIN..."
+        placeholder="Code, name or BIN..."
         className="w-full text-base px-4 py-3 pr-10 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
       />
       <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">

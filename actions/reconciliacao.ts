@@ -31,7 +31,7 @@ export async function finalizarEquipe(
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') return { error: 'Não autorizado.' }
+  if (!user || user.user_metadata?.role !== 'admin') return { error: 'Not authorised.' }
 
   const admin = createAdminClient()
   const { error } = await admin.rpc('finalize_team_count', { p_team_id: teamId })
@@ -108,10 +108,10 @@ export async function resolverItemReconciliacao(
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { error: 'Não autenticado.' }
+  if (!user) return { error: 'Not authenticated.' }
 
   const role = user.user_metadata?.counter_role
-  if (role !== 'independente') return { error: 'Apenas o contador independente pode registrar reconciliações.' }
+  if (role !== 'independente') return { error: 'Only the independent counter can record reconciliations.' }
 
   const admin = createAdminClient()
   const { error } = await admin
@@ -131,10 +131,10 @@ export async function confirmarReconciliacao(): Promise<{ error?: string }> {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { error: 'Não autenticado.' }
+  if (!user) return { error: 'Not authenticated.' }
 
   const role = user.user_metadata?.counter_role
-  if (role !== 'independente') return { error: 'Apenas o contador independente pode confirmar a reconciliação.' }
+  if (role !== 'independente') return { error: 'Only the independent counter can confirm the reconciliation.' }
 
   const teamId = user.user_metadata?.team_id as string
   const admin = createAdminClient()
@@ -145,7 +145,7 @@ export async function confirmarReconciliacao(): Promise<{ error?: string }> {
     .eq('team_id', teamId)
     .eq('status', 'discrepancia')
 
-  if (remaining && remaining.length > 0) return { error: 'Ainda há discrepâncias pendentes.' }
+  if (remaining && remaining.length > 0) return { error: 'There are still pending discrepancies.' }
 
   const { error } = await admin
     .from('teams')

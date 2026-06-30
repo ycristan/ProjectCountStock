@@ -11,8 +11,8 @@ export default async function InventarioPage() {
       </Link>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Inventário</h2>
-          <p className="text-sm text-slate-500 mt-0.5">{items.length} {items.length === 1 ? 'item' : 'itens'}</p>
+          <h2 className="text-xl font-semibold text-slate-900">Inventory</h2>
+          <p className="text-sm text-slate-500 mt-0.5">{items.length} {items.length === 1 ? 'item' : 'items'}</p>
         </div>
         <Link href="/admin/upload" className="text-sm font-medium text-blue-600 hover:text-blue-800">
           Upload .xlsx →

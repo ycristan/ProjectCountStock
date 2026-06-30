@@ -13,7 +13,7 @@ export async function uploadInventory(
   formData: FormData
 ): Promise<UploadState> {
   const file = formData.get('file') as File | null
-  if (!file || file.size === 0) return { error: 'Nenhum arquivo selecionado.' }
+  if (!file || file.size === 0) return { error: 'No file selected.' }
 
   const buffer = await file.arrayBuffer()
   const workbook = XLSX.read(buffer)
@@ -38,7 +38,7 @@ export async function uploadInventory(
   const skipped = allItems.length - items.length
 
   if (items.length === 0)
-    return { error: 'Nenhum item com Brand Code encontrado no arquivo.' }
+    return { error: 'No items with Brand Code found in the file.' }
 
   const supabase = await createClient()
 
@@ -53,7 +53,7 @@ export async function uploadInventory(
       category1,
     }))
   )
-  if (itemsError) return { error: `Erro ao salvar itens: ${itemsError.message}` }
+  if (itemsError) return { error: `Error saving items: ${itemsError.message}` }
 
   // Sync completo: a lista nova é a fonte da verdade — remove o que não está nela
   const newCodes = items.map((i) => i.brand_code)
@@ -63,27 +63,27 @@ export async function uploadInventory(
     .from('inventory_items')
     .delete()
     .not('brand_code', 'in', notIn)
-  if (delItemsError) return { error: `Erro ao remover itens antigos: ${delItemsError.message}` }
+  if (delItemsError) return { error: `Error removing old items: ${delItemsError.message}` }
 
   const { error: delOldBinsError } = await supabase
     .from('item_bin_locations')
     .delete()
     .not('brand_code', 'in', notIn)
-  if (delOldBinsError) return { error: `Erro ao remover BINs antigos: ${delOldBinsError.message}` }
+  if (delOldBinsError) return { error: `Error removing old BINs: ${delOldBinsError.message}` }
 
   // ponytail: delete + insert garante replace limpo dos BINs por item
   const { error: delBinsError } = await supabase
     .from('item_bin_locations')
     .delete()
     .in('brand_code', newCodes)
-  if (delBinsError) return { error: `Erro ao atualizar BINs: ${delBinsError.message}` }
+  if (delBinsError) return { error: `Error updating BINs: ${delBinsError.message}` }
 
   const binRows = items.flatMap(({ brand_code, bins }) =>
     bins.map((bin_location) => ({ brand_code, bin_location }))
   )
   if (binRows.length > 0) {
     const { error: binsError } = await supabase.from('item_bin_locations').insert(binRows)
-    if (binsError) return { error: `Erro ao salvar BINs: ${binsError.message}` }
+    if (binsError) return { error: `Error saving BINs: ${binsError.message}` }
   }
 
   return { success: true, count: items.length, skipped: skipped > 0 ? skipped : undefined }
@@ -94,7 +94,7 @@ export async function criarSessao(
   formData: FormData
 ): Promise<SessaoState> {
   const numEquipes = parseInt(formData.get('num_equipes') as string)
-  if (!numEquipes || numEquipes < 1) return { error: 'Número de equipes inválido.' }
+  if (!numEquipes || numEquipes < 1) return { error: 'Invalid number of teams.' }
 
   const box_tare_g = Math.max(1, parseInt(formData.get('box_tare_g') as string) || 300)
 
@@ -105,7 +105,7 @@ export async function criarSessao(
     .select('id')
     .single()
 
-  if (error || !data) return { error: 'Erro ao criar sessão.' }
+  if (error || !data) return { error: 'Error creating session.' }
 
   redirect(`/admin/sessao/${data.id}/equipes?n=${numEquipes}`)
 }
@@ -194,7 +194,7 @@ export async function criarEquipes(
       .single()
 
     if (teamError || !teamData) {
-      return { error: `Erro ao criar equipe "${equipe.team_name}".` }
+      return { error: `Error creating team "${equipe.team_name}".` }
     }
 
     const usedUserPins = new Set<string>()
@@ -216,7 +216,7 @@ export async function criarEquipes(
       })
 
       if (userError || !userData.user) {
-        return { error: `Erro ao criar usuário: ${userError?.message}` }
+        return { error: `Error creating user: ${userError?.message}` }
       }
 
       const { error: accountError } = await supabase.from('counter_accounts').insert({
@@ -228,7 +228,7 @@ export async function criarEquipes(
       })
 
       if (accountError) {
-        return { error: `Erro ao salvar conta: ${accountError.message}` }
+        return { error: `Error saving account: ${accountError.message}` }
       }
 
       credenciais.push({ team: equipe.team_name, team_pin: teamPin, role: pessoa.role, name: pessoa.nome, user_pin: userPin })
@@ -238,7 +238,7 @@ export async function criarEquipes(
   return { credenciais }
 }
 
-// ─── Gerenciamento de equipes ────────────────────────────────────────────────
+// ─── Team management ────────────────────────────────────────────────────────
 
 export type ContadorComCredencial = {
   auth_user_id: string
