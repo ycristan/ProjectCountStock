@@ -22,7 +22,7 @@ export function ResultList({ items, onSelect }: Props) {
             <div className="text-sm font-semibold text-slate-900">{item.brand_code}</div>
             <div className="text-xs text-slate-500">{item.brand_name}</div>
             {item.jaContado && (
-              <div className="text-xs text-green-600 font-semibold mt-0.5">✓ Já contado</div>
+              <div className="text-xs text-green-600 font-semibold mt-0.5">✓ Already counted</div>
             )}
           </div>
           <div className="text-slate-400 text-lg">›</div>
