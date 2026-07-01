@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { ItemBusca } from '@/actions/contagem'
+import type { ItemBusca, LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
 import { lancarContagem } from '@/actions/contagem'
 
 type SucessoResult = {
@@ -15,6 +15,8 @@ type Props = {
   onVoltar: () => void
   onSucesso: (result: SucessoResult) => void
   isAdditive?: boolean
+  // ponytail: solo count injeta seu próprio submit; padrão é o fluxo de equipe
+  onSubmit?: (payload: LancarContagemPayload) => Promise<LancarContagemResult>
 }
 
 type Rodada = { id: number; caixas: string; pesoFmt: string }
@@ -34,7 +36,7 @@ function isNeg(v: string) {
   return (parseInt(v) || 0) < 0
 }
 
-export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Props) {
+export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSubmit }: Props) {
   const entry = item.entryExistente
   const isEdit = !!entry && !isAdditive
   // ponytail: pallet_size=0 → item has no pallets, field locked at 0
@@ -135,7 +137,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
 
     startTransition(async () => {
       try {
-        const result = await lancarContagem({
+        const result = await (onSubmit ?? lancarContagem)({
           brand_code: item.brand_code,
           pallets: p,
           cases: c,

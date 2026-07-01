@@ -10,8 +10,12 @@ CREATE TABLE solo_entries (
   session_id UUID NOT NULL REFERENCES solo_sessions(id) ON DELETE CASCADE,
   brand_code TEXT NOT NULL,
   brand_name TEXT,
+  pallets INT NOT NULL DEFAULT 0,
+  cases INT NOT NULL DEFAULT 0,
+  units INT NOT NULL DEFAULT 0,
   final_cases INT NOT NULL DEFAULT 0,
   final_units INT NOT NULL DEFAULT 0,
+  is_weight_count BOOLEAN NOT NULL DEFAULT false,
   counted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(session_id, brand_code)
 );
