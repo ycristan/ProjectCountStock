@@ -91,10 +91,6 @@ function sumRole(
   return { cases: Math.floor(t / bpu), units: t % bpu }
 }
 
-function fmtVal(v: { cases: number; units: number } | null) {
-  return v ? `${v.cases}+${v.units}` : '—'
-}
-
 export function CombinacaoClient({
   sessionId,
   sessionStatus,
@@ -544,7 +540,7 @@ export function CombinacaoClient({
                   <table className="w-full text-sm border-collapse">
                     <thead className="sticky top-0 z-10">
                       <tr className="bg-slate-50 border-b border-slate-200">
-                        <td colSpan={5} className="px-4 py-2">
+                        <td colSpan={12} className="px-4 py-2">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex gap-2 flex-wrap">
                               {team.counters.filter((c) => c.role !== 'independente').map((c) => (
@@ -576,24 +572,37 @@ export function CombinacaoClient({
                           </div>
                         </td>
                       </tr>
-                      <tr className="bg-slate-50 border-b-2 border-slate-300">
-                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">Item</th>
-                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">C1</th>
-                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">C2</th>
-                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">Ind</th>
-                        <th className="w-10" />
+                      <tr>
+                        <th rowSpan={2} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[100px]">Category</th>
+                        <th rowSpan={2} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[100px]">Category 1</th>
+                        <th rowSpan={2} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[80px]">Brand Code</th>
+                        <th rowSpan={2} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[140px]">Brand Name</th>
+                        <th rowSpan={2} className="px-3 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-center text-xs font-semibold text-slate-500 uppercase">BPU</th>
+                        <th colSpan={2} className="px-3 py-2 bg-amber-50 border-b border-amber-200 text-center text-[11px] font-semibold text-amber-800 uppercase">{cName(team.id, 'independente', 'Independent')}</th>
+                        <th colSpan={2} className="px-3 py-2 bg-blue-50 border-b border-blue-200 text-center text-[11px] font-semibold text-blue-800 uppercase">{cName(team.id, 'contador_1', 'Count 1')}</th>
+                        <th colSpan={2} className="px-3 py-2 bg-green-50 border-b border-green-200 text-center text-[11px] font-semibold text-green-800 uppercase">{cName(team.id, 'contador_2', 'Count 2')}</th>
+                        <th rowSpan={2} className="w-8 bg-slate-50 border-b-2 border-slate-300" />
+                      </tr>
+                      <tr>
+                        <th className={`${TH_SUB} bg-amber-50 text-amber-700`}>Cases</th>
+                        <th className={`${TH_SUB} bg-amber-50 text-amber-700`}>Units</th>
+                        <th className={`${TH_SUB} bg-blue-50 text-blue-700`}>Cases</th>
+                        <th className={`${TH_SUB} bg-blue-50 text-blue-700`}>Units</th>
+                        <th className={`${TH_SUB} bg-green-50 text-green-700`}>Cases</th>
+                        <th className={`${TH_SUB} bg-green-50 text-green-700`}>Units</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {liveCodes.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-4 py-12 text-xs text-slate-400 text-center">
+                          <td colSpan={12} className="px-4 py-12 text-xs text-slate-400 text-center">
                             Waiting for first counts...
                           </td>
                         </tr>
                       ) : (
                         liveCodes.map((code) => {
                           const bpu = invMap[code]?.bpu ?? 1
+                          const inv = invMap[code]
                           const c1 = sumRole(te, code, 'contador_1', bpu)
                           const c2 = sumRole(te, code, 'contador_2', bpu)
                           const ind = sumRole(te, code, 'independente', bpu)
@@ -621,22 +630,17 @@ export function CombinacaoClient({
                                       : 'hover:bg-slate-50'
                               }`}
                             >
-                              <td className="px-4 py-2.5">
-                                <div className="font-semibold text-slate-800 text-xs">{code}</div>
-                                <div className="text-xs text-slate-400 truncate max-w-[200px] lg:max-w-none">
-                                  {invMap[code]?.brand_name ?? ''}
-                                </div>
-                              </td>
-                              {[c1, c2, ind].map((v, i) => (
-                                <td
-                                  key={i}
-                                  className={`px-3 py-2.5 text-center font-mono text-sm ${
-                                    v ? 'text-slate-800 font-semibold' : 'text-slate-300'
-                                  }`}
-                                >
-                                  {fmtVal(v)}
-                                </td>
-                              ))}
+                              <td className="px-4 py-2.5 text-xs text-slate-500">{inv?.category ?? '—'}</td>
+                              <td className="px-4 py-2.5 text-xs text-slate-500">{inv?.category1 ?? '—'}</td>
+                              <td className="px-4 py-2.5 text-xs font-bold text-slate-700">{code}</td>
+                              <td className="px-4 py-2.5 text-xs text-slate-600">{inv?.brand_name ?? '—'}</td>
+                              <td className="px-3 py-2.5 text-center text-xs font-semibold text-slate-500">{inv?.bpu ?? '—'}</td>
+                              <td className={TD}>{val(ind?.cases ?? null)}</td>
+                              <td className={TD}>{val(ind?.units ?? null)}</td>
+                              <td className={TD}>{val(c1?.cases ?? null)}</td>
+                              <td className={TD}>{val(c1?.units ?? null)}</td>
+                              <td className={TD}>{val(c2?.cases ?? null)}</td>
+                              <td className={TD}>{val(c2?.units ?? null)}</td>
                               <td className="px-3 py-2.5 text-center text-base">
                                 {rStatus === 'combinado' && <span className="text-green-500">✓</span>}
                                 {rStatus === 'resolvido' && <span className="text-green-500 text-xs font-bold">OK</span>}
