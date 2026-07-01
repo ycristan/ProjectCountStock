@@ -53,6 +53,13 @@ export default async function AdminPage() {
           <h3 className="font-semibold text-slate-900 mb-1">Manage Teams</h3>
           <p className="text-sm text-slate-500">View counters, rename or delete teams</p>
         </Link>
+        <Link
+          href="/admin/solo"
+          className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all"
+        >
+          <h3 className="font-semibold text-slate-900 mb-1">Solo Count</h3>
+          <p className="text-sm text-slate-500">Single-counter free count with PIN access, no reconciliation</p>
+        </Link>
       </div>
     </div>
   )
