@@ -7,8 +7,6 @@ import { criarSoloSessao } from '@/actions/solo'
 export function SoloCreateForm() {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
-  const [counterName, setCounterName] = useState('')
-  const [pin, setPin] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
@@ -17,7 +15,7 @@ export function SoloCreateForm() {
     e.preventDefault()
     setErro(null)
     startTransition(async () => {
-      const res = await criarSoloSessao(title, counterName, pin)
+      const res = await criarSoloSessao(title)
       if (res.error) { setErro(res.error); return }
       router.push(`/admin/solo/${res.id}`)
     })
@@ -43,27 +41,8 @@ export function SoloCreateForm() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Aisle 3 spot check"
+          autoFocus
           className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-slate-900"
-        />
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-          Counter Name <span className="text-slate-400 normal-case font-normal">(optional)</span>
-        </label>
-        <input
-          value={counterName}
-          onChange={(e) => setCounterName(e.target.value)}
-          placeholder="e.g. João"
-          className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-slate-900"
-        />
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Access PIN</label>
-        <input
-          value={pin}
-          onChange={(e) => setPin(e.target.value)}
-          placeholder="e.g. 1234"
-          className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-slate-900"
         />
       </div>
       {erro && (
@@ -72,7 +51,7 @@ export function SoloCreateForm() {
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={isPending || !title.trim() || !pin.trim()}
+          disabled={isPending || !title.trim()}
           className="flex-1 bg-slate-900 text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-40"
         >
           {isPending ? 'Creating...' : 'Create →'}

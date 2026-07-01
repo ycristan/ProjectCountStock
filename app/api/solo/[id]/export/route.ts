@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const admin = createAdminClient()
 
   const [{ data: session }, { data: entries }, { data: inventory }] = await Promise.all([
-    admin.from('solo_sessions').select('title, counter_name').eq('id', id).single(),
+    admin.from('solo_sessions').select('title').eq('id', id).single(),
     admin.from('solo_entries').select('brand_code, brand_name, final_cases, final_units').eq('session_id', id).order('brand_code'),
     admin.from('inventory_items').select('brand_code, category, category1, bpu'),
   ])
@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, (session?.counter_name ?? session?.title ?? 'Solo').slice(0, 31))
+  XLSX.utils.book_append_sheet(wb, ws, (session?.title ?? 'Solo').slice(0, 31))
 
   // ponytail: TS 5.7 Uint8Array cast — same pattern as existing export route
   const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as unknown as BodyInit

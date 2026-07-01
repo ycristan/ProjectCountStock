@@ -6,7 +6,7 @@ export default async function AdminSoloPage() {
   const admin = createAdminClient()
   const { data: sessions } = await admin
     .from('solo_sessions')
-    .select('id, title, counter_name, access_pin, status, created_at')
+    .select('id, title, status, created_at')
     .order('created_at', { ascending: false })
 
   return (
@@ -26,10 +26,7 @@ export default async function AdminSoloPage() {
           >
             <div>
               <div className="font-semibold text-slate-900">{s.title}</div>
-              {s.counter_name && <div className="text-sm text-slate-500">{s.counter_name}</div>}
               <div className="text-xs text-slate-400 mt-1">
-                PIN: <span className="font-mono font-bold">{s.access_pin}</span>
-                {' · '}
                 {new Date(s.created_at).toLocaleDateString('en-GB')}
               </div>
             </div>
@@ -45,13 +42,13 @@ export default async function AdminSoloPage() {
                 href={`/admin/solo/${s.id}`}
                 className="text-xs font-semibold text-blue-700 border border-blue-200 rounded-lg px-3 py-1.5 hover:bg-blue-50"
               >
-                View →
+                {s.status === 'open' ? 'Count →' : 'View →'}
               </Link>
             </div>
           </div>
         ))}
         {!(sessions ?? []).length && (
-          <p className="text-sm text-slate-400 text-center py-8">No solo sessions yet.</p>
+          <p className="text-sm text-slate-400 text-center py-8">No solo counts yet.</p>
         )}
       </div>
     </div>

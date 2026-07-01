@@ -1,8 +1,6 @@
 CREATE TABLE solo_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
-  counter_name TEXT,
-  access_pin TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'open',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
