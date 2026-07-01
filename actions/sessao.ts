@@ -55,7 +55,6 @@ export async function uploadInventory(
   )
   if (itemsError) return { error: `Error saving items: ${itemsError.message}` }
 
-  // Sync completo: a lista nova é a fonte da verdade — remove o que não está nela
   const newCodes = items.map((i) => i.brand_code)
   const notIn = `(${newCodes.join(',')})`
 
@@ -329,11 +328,34 @@ export async function limparContagens(teamId: string): Promise<{ error?: string 
 
   await admin.from('count_entries').delete().eq('team_id', teamId)
   await admin.from('reconciliation_items').delete().eq('team_id', teamId)
-  await admin.from('teams').update({ status: 'contando' }).eq('id', teamId)
+  await admin
+    .from('teams')
+    .update({ status: 'contando', independente_confirmed_at: null })
+    .eq('id', teamId)
   const { error } = await admin
     .from('counter_accounts')
     .update({ finalized_at: null })
     .eq('team_id', teamId)
+
+  return error ? { error: error.message } : {}
+}
+
+export async function confirmarIndependente(teamId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user || user.user_metadata?.counter_role !== 'independente') {
+    return { error: 'Unauthorized' }
+  }
+  if (user.user_metadata?.team_id !== teamId) {
+    return { error: 'Unauthorized' }
+  }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('teams')
+    .update({ independente_confirmed_at: new Date().toISOString() })
+    .eq('id', teamId)
 
   return error ? { error: error.message } : {}
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
+import { confirmarIndependente } from '@/actions/sessao'
 
 type Entry = {
   brand_code: string
@@ -17,6 +18,7 @@ type InvItem = {
 }
 
 type Counter = {
+  id: string
   role: string
   finalized_at: string | null
 }
@@ -26,10 +28,20 @@ type Props = {
   initialEntries: Entry[]
   inventory: InvItem[]
   counters: Counter[]
+  initialIndConfirmed: boolean
 }
 
-export function MonitorClient({ teamId, initialEntries, inventory, counters }: Props) {
+export function MonitorClient({
+  teamId,
+  initialEntries,
+  inventory,
+  counters: initCounters,
+  initialIndConfirmed,
+}: Props) {
   const [entries, setEntries] = useState(initialEntries)
+  const [countersState, setCountersState] = useState(initCounters)
+  const [indConfirmed, setIndConfirmed] = useState(initialIndConfirmed)
+  const [confirming, setConfirming] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -57,6 +69,21 @@ export function MonitorClient({ teamId, initialEntries, inventory, counters }: P
         )
         .on(
           'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'counter_accounts',
+            filter: `team_id=eq.${teamId}`,
+          },
+          ({ new: row }) => {
+            const r = row as { id: string; role: string; finalized_at: string | null }
+            setCountersState((prev) =>
+              prev.map((c) => (c.id === r.id ? { ...c, finalized_at: r.finalized_at } : c))
+            )
+          }
+        )
+        .on(
+          'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'teams', filter: `id=eq.${teamId}` },
           () => router.refresh()
         )
@@ -67,6 +94,13 @@ export function MonitorClient({ teamId, initialEntries, inventory, counters }: P
       if (channel) supabase.removeChannel(channel)
     }
   }, [teamId, router])
+
+  async function handleConfirm() {
+    setConfirming(true)
+    await confirmarIndependente(teamId)
+    setIndConfirmed(true)
+    setConfirming(false)
+  }
 
   const invMap = Object.fromEntries(inventory.map((i) => [i.brand_code, i.brand_name]))
 
@@ -81,8 +115,8 @@ export function MonitorClient({ teamId, initialEntries, inventory, counters }: P
     return e ? `${e.final_cases}+${e.final_units}` : '—'
   }
 
-  const c1 = counters.find((c) => c.role === 'contador_1')
-  const c2 = counters.find((c) => c.role === 'contador_2')
+  const c1 = countersState.find((c) => c.role === 'contador_1')
+  const c2 = countersState.find((c) => c.role === 'contador_2')
   const bothFinalized = !!c1?.finalized_at && !!c2?.finalized_at
 
   return (
@@ -106,9 +140,33 @@ export function MonitorClient({ teamId, initialEntries, inventory, counters }: P
         ))}
       </div>
 
-      {bothFinalized && (
-        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
-          Both counters have finalised. Waiting for the admin to trigger reconciliation.
+      {bothFinalized && !indConfirmed && (
+        <div className="mb-5 bg-amber-50 border-2 border-amber-300 rounded-2xl p-6 text-center">
+          <p className="text-amber-900 font-semibold text-base mb-1">
+            Both counters have finalised their count.
+          </p>
+          <p className="text-amber-700 text-sm mb-4">
+            Review the results below, then confirm the count is complete.
+          </p>
+          <button
+            onClick={handleConfirm}
+            disabled={confirming}
+            className="bg-slate-900 text-white font-bold px-8 py-3 rounded-xl text-base hover:bg-slate-700 disabled:opacity-50"
+          >
+            {confirming ? '…' : '✓ Confirm Count Complete →'}
+          </button>
+        </div>
+      )}
+
+      {indConfirmed && (
+        <div className="mb-5 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 font-semibold">
+          ✓ Count confirmed. Admin has been notified to check for discrepancies.
+        </div>
+      )}
+
+      {!bothFinalized && (
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+          Waiting for Counter 1 and Counter 2 to finalise their counts…
         </div>
       )}
 
