@@ -195,7 +195,7 @@ export function CombinacaoClient({
                 counters: t.counters.map((c) =>
                   c.id === r.id ? { ...c, finalized_at: r.finalized_at } : c,
                 ),
-              })),
+              }))
             )
           },
         )
@@ -247,9 +247,14 @@ export function CombinacaoClient({
     const total = reconcilidaTeams.reduce((s, t) => {
       const ri = reconcMap[t.id]?.[code]
       if (!ri) return s
-      return ri.status === 'resolvido'
-        ? s + (ri.reconciliated_cases ?? 0) * bpu + (ri.reconciliated_units ?? 0)
-        : s + (ri.independente_cases ?? 0) * bpu + (ri.independente_units ?? 0)
+      if (ri.status === 'resolvido') {
+        return s + (ri.reconciliated_cases ?? 0) * bpu + (ri.reconciliated_units ?? 0)
+      }
+      if (ri.independente_cases !== null) {
+        return s + ri.independente_cases * bpu + (ri.independente_units ?? 0)
+      }
+      // ponytail: C1=C2, no discrepancy — C1 is official
+      return s + (ri.contador_1_cases ?? 0) * bpu + (ri.contador_1_units ?? 0)
     }, 0)
     return { cases: Math.floor(total / bpu), units: total % bpu }
   }
