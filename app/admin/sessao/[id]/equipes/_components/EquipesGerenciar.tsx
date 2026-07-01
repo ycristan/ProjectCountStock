@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { renomearContador } from '@/actions/sessao'
+import { renomearContador, deletarEquipe } from '@/actions/sessao'
 import type { ContadorComCredencial } from '@/actions/sessao'
 import Link from 'next/link'
 
@@ -24,6 +24,8 @@ export function EquipesGerenciar({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null)
+  const [isDeletingTeam, setIsDeletingTeam] = useState(false)
 
   const teamMap = new Map<string, ContadorComCredencial[]>()
   for (const c of contadores) {
@@ -54,6 +56,16 @@ export function EquipesGerenciar({
     })
   }
 
+  async function handleDeleteTeam(teamId: string) {
+    setIsDeletingTeam(true)
+    setError(null)
+    const res = await deletarEquipe(teamId)
+    setIsDeletingTeam(false)
+    if (res.error) { setError(res.error); return }
+    setDeletingTeamId(null)
+    router.refresh()
+  }
+
   return (
     <div>
       <div className="flex items-start justify-between mb-6">
@@ -75,10 +87,10 @@ export function EquipesGerenciar({
             QR Cards
           </Link>
           <Link
-            href={`/admin/sessao/${sessaoId}/progresso`}
+            href={`/admin/sessao/${sessaoId}/combinacao`}
             className="px-3 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-sm"
           >
-            View Progress →
+            Live Count →
           </Link>
         </div>
       </div>
@@ -92,9 +104,37 @@ export function EquipesGerenciar({
             <div key={first.team_id} className="border border-slate-200 rounded-xl overflow-hidden">
               <div className="bg-slate-50 px-4 py-3 flex items-center justify-between border-b border-slate-100">
                 <span className="font-semibold text-slate-900">{first.team_name}</span>
-                <span className="font-mono text-blue-700 font-bold text-sm bg-blue-50 border border-blue-200 rounded-lg px-3 py-1">
-                  Team Code: {first.team_pin}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-blue-700 font-bold text-sm bg-blue-50 border border-blue-200 rounded-lg px-3 py-1">
+                    Team Code: {first.team_pin}
+                  </span>
+                  {deletingTeamId === first.team_id ? (
+                    <>
+                      <span className="text-xs text-slate-500">Delete team?</span>
+                      <button
+                        onClick={() => handleDeleteTeam(first.team_id)}
+                        disabled={isDeletingTeam}
+                        className="text-xs text-white bg-red-600 hover:bg-red-700 rounded-lg px-2 py-1 disabled:opacity-50"
+                      >
+                        {isDeletingTeam ? '...' : 'Confirm'}
+                      </button>
+                      <button
+                        onClick={() => setDeletingTeamId(null)}
+                        disabled={isDeletingTeam}
+                        className="text-xs border border-slate-200 text-slate-600 rounded-lg px-2 py-1"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setDeletingTeamId(first.team_id)}
+                      className="text-xs text-red-500 border border-red-200 rounded-lg px-2 py-1 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
               </div>
               <table className="w-full text-sm">
                 <thead>

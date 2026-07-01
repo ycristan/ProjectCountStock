@@ -303,3 +303,37 @@ export async function renomearContador(
   })
   return error ? { error: error.message } : {}
 }
+
+export async function deletarEquipe(teamId: string): Promise<{ error?: string }> {
+  const admin = createAdminClient()
+
+  const { data: accounts } = await admin
+    .from('counter_accounts')
+    .select('auth_user_id')
+    .eq('team_id', teamId)
+
+  for (const acc of accounts ?? []) {
+    await admin.auth.admin.deleteUser(acc.auth_user_id)
+  }
+
+  await admin.from('count_entries').delete().eq('team_id', teamId)
+  await admin.from('reconciliation_items').delete().eq('team_id', teamId)
+  await admin.from('counter_accounts').delete().eq('team_id', teamId)
+  const { error } = await admin.from('teams').delete().eq('id', teamId)
+
+  return error ? { error: error.message } : {}
+}
+
+export async function limparContagens(teamId: string): Promise<{ error?: string }> {
+  const admin = createAdminClient()
+
+  await admin.from('count_entries').delete().eq('team_id', teamId)
+  await admin.from('reconciliation_items').delete().eq('team_id', teamId)
+  await admin.from('teams').update({ status: 'contando' }).eq('id', teamId)
+  const { error } = await admin
+    .from('counter_accounts')
+    .update({ finalized_at: null })
+    .eq('team_id', teamId)
+
+  return error ? { error: error.message } : {}
+}
