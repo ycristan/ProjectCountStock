@@ -3,6 +3,27 @@ import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 
+// ponytail: mesma regra da tela (CombinacaoClient.getMerged) — valor oficial do item
+// por equipe: resolvido → reconciliação; senão → Contador 1 (C1=C2, independente não conta mais).
+// independente_cases só é usado se preenchido (fluxo legado); hoje vem NULL.
+type ReconcRow = {
+  status: string
+  contador_1_cases: number | null
+  contador_1_units: number | null
+  independente_cases: number | null
+  independente_units: number | null
+  reconciliated_cases: number | null
+  reconciliated_units: number | null
+}
+
+function official(r: ReconcRow): { cases: number; units: number } {
+  if (r.status === 'resolvido')
+    return { cases: r.reconciliated_cases ?? 0, units: r.reconciliated_units ?? 0 }
+  if (r.independente_cases !== null)
+    return { cases: r.independente_cases, units: r.independente_units ?? 0 }
+  return { cases: r.contador_1_cases ?? 0, units: r.contador_1_units ?? 0 }
+}
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -69,8 +90,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       const r = items.find((i) => i.brand_code === code)
       const inv = invMap[code]
       const isResolvido = r?.status === 'resolvido'
-      const finalCases = isResolvido ? (r?.reconciliated_cases ?? r?.independente_cases) : r?.independente_cases
-      const finalUnits = isResolvido ? (r?.reconciliated_units ?? r?.independente_units) : r?.independente_units
+      const fin = r ? official(r) : null
       return [
         inv?.category ?? '', inv?.category1 ?? '', code, inv?.brand_name ?? code, inv?.bpu ?? '',
         r?.contador_1_cases ?? '', r?.contador_1_units ?? '',
@@ -78,7 +98,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         r?.independente_cases ?? '', r?.independente_units ?? '',
         isResolvido ? (r?.reconciliated_cases ?? '') : '',
         isResolvido ? (r?.reconciliated_units ?? '') : '',
-        finalCases ?? '', finalUnits ?? '',
+        fin?.cases ?? '', fin?.units ?? '',
       ]
     })
 
@@ -94,6 +114,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const allCodes = [...new Set((reconcItems ?? []).map((r) => r.brand_code))].sort()
+
+  // ponytail: merged de todas as equipes por item — soma o valor oficial em unidades e re-normaliza pelo BPU
+  function mergedForCode(code: string): { cases: number; units: number } {
+    const bpu = invMap[code]?.bpu ?? 1
+    let totalUnits = 0
+    for (const t of teamList) {
+      const r = reconcMap[t.id]?.[code]
+      if (!r) continue
+      const off = official(r)
+      totalUnits += off.cases * bpu + off.units
+    }
+    return { cases: Math.floor(totalUnits / bpu), units: totalUnits % bpu }
+  }
 
   const h1 = ['Category', 'Category 1', 'Brand Code', 'Brand Name', 'BPU',
     ...teamList.flatMap((t) => [t.team_name, '', '', '', '', '', '', '']),
@@ -115,16 +148,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const consolidatedRows = allCodes.map((code) => {
     const inv = invMap[code]
-    const bpu = inv?.bpu ?? 1
-    let totalUnits = 0
 
     const teamCols = teamList.flatMap((t) => {
       const r = reconcMap[t.id]?.[code]
       if (!r) return ['', '', '', '', '', '', '', '']
       const isResolvido = r.status === 'resolvido'
-      const contribCases = isResolvido ? (r.reconciliated_cases ?? r.independente_cases ?? 0) : (r.independente_cases ?? 0)
-      const contribUnits = isResolvido ? (r.reconciliated_units ?? r.independente_units ?? 0) : (r.independente_units ?? 0)
-      totalUnits += contribCases * bpu + contribUnits
       return [
         r.independente_cases ?? '—', r.independente_units ?? '—',
         r.contador_1_cases ?? '—', r.contador_1_units ?? '—',
@@ -134,14 +162,24 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       ]
     })
 
-    const mergedCases = Math.floor(totalUnits / bpu)
-    const mergedUnits = totalUnits % bpu
+    const merged = mergedForCode(code)
 
-    return [inv?.category ?? '', inv?.category1 ?? '', code, inv?.brand_name ?? code, bpu, ...teamCols, mergedCases, mergedUnits]
+    return [inv?.category ?? '', inv?.category1 ?? '', code, inv?.brand_name ?? code, inv?.bpu ?? 1, ...teamCols, merged.cases, merged.units]
   })
 
   const wsConsolidado = XLSX.utils.aoa_to_sheet([h1, h2, h3, ...consolidatedRows])
   XLSX.utils.book_append_sheet(wb, wsConsolidado, 'Consolidado')
+
+  // Template Import Reconc: Brand Code | Outer (qty) | Units (qty) | Status="Avl"
+  const templateRows = allCodes.map((code) => {
+    const merged = mergedForCode(code)
+    return [code, merged.cases, merged.units, 'Avl']
+  })
+  const wsTemplate = XLSX.utils.aoa_to_sheet([
+    ['Brand Code', 'Outer (qty)', 'Units (qty)', 'Status'],
+    ...templateRows,
+  ])
+  XLSX.utils.book_append_sheet(wb, wsTemplate, 'Template Import Reconc')
 
   // ponytail: TS 5.7 tornou Uint8Array genérico — cast necessário para BodyInit
   const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as unknown as BodyInit
