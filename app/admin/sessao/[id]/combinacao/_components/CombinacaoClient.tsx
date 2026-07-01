@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 import { combinarSessao } from '@/actions/combinacao'
 import { finalizarEquipe } from '@/actions/reconciliacao'
+import { limparContagens } from '@/actions/sessao'
 
 type EntryRow = {
   team_id: string
@@ -109,6 +110,7 @@ export function CombinacaoClient({
   const [reconc, setReconc] = useState(initialReconc)
   const [newKeys, setNewKeys] = useState<Set<string>>(new Set())
   const [loadingTeam, setLoadingTeam] = useState<string | null>(null)
+  const [clearingTeamId, setClearingTeamId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState(initTeams[0]?.id ?? 'combinado')
   const [confirmed, setConfirmed] = useState(isConfirmed)
   const [erro, setErro] = useState<string | null>(null)
@@ -256,6 +258,21 @@ export function CombinacaoClient({
     setLoadingTeam(teamId)
     await finalizarEquipe(teamId)
     setLoadingTeam(null)
+  }
+
+  async function handleClearCounts(teamId: string) {
+    setClearingTeamId(teamId)
+    await limparContagens(teamId)
+    setEntries((p) => p.filter((e) => e.team_id !== teamId))
+    setReconc((p) => p.filter((r) => r.team_id !== teamId))
+    setTeams((p) =>
+      p.map((t) =>
+        t.id === teamId
+          ? { ...t, status: 'contando', counters: t.counters.map((c) => ({ ...c, finalized_at: null })) }
+          : t,
+      ),
+    )
+    setClearingTeamId(null)
   }
 
   function handleConfirmar() {
@@ -565,29 +582,38 @@ export function CombinacaoClient({
                     <thead className="sticky top-0 z-10">
                       <tr className="bg-slate-50 border-b border-slate-200">
                         <td colSpan={5} className="px-4 py-2">
-                          <div className="flex gap-2 flex-wrap">
-                            {team.counters.filter((c) => c.role !== 'independente').map((c) => (
-                              <span
-                                key={c.id}
-                                className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1 ${
-                                  c.finalized_at
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-slate-100 text-slate-500'
-                                }`}
-                              >
-                                <span className="font-bold">
-                                  {roleLabel[c.role] ?? c.role}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                              {team.counters.filter((c) => c.role !== 'independente').map((c) => (
+                                <span
+                                  key={c.id}
+                                  className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1 ${
+                                    c.finalized_at
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-slate-100 text-slate-500'
+                                  }`}
+                                >
+                                  <span className="font-bold">
+                                    {roleLabel[c.role] ?? c.role}
+                                  </span>
+                                  {c.full_name && <span>{c.full_name}</span>}
+                                  <span>
+                                    {c.finalized_at
+                                      ? ' ✓'
+                                      : ` · ${
+                                          te.filter((e) => e.counter_role === c.role).length
+                                        } items`}
+                                  </span>
                                 </span>
-                                {c.full_name && <span>{c.full_name}</span>}
-                                <span>
-                                  {c.finalized_at
-                                    ? ' ✓'
-                                    : ` · ${
-                                        te.filter((e) => e.counter_role === c.role).length
-                                      } items`}
-                                </span>
-                              </span>
-                            ))}
+                              ))}
+                            </div>
+                            <button
+                              onClick={() => handleClearCounts(team.id)}
+                              disabled={clearingTeamId === team.id}
+                              className="text-xs text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-300 rounded-lg px-2 py-1 whitespace-nowrap flex-shrink-0 disabled:opacity-50"
+                            >
+                              {clearingTeamId === team.id ? '...' : 'Clear Counts'}
+                            </button>
                           </div>
                         </td>
                       </tr>

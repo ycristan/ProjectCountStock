@@ -54,18 +54,18 @@ export function EquipesForm({
             >
               Manage Teams
             </Link>
-            <Link
-              href={`/admin/sessao/${sessaoId}/progresso`}
-              className="px-4 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl hover:bg-slate-50 text-sm"
-            >
-              View Progress →
-            </Link>
             <button
               onClick={() => window.print()}
-              className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-sm"
+              className="px-4 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl hover:bg-slate-50 text-sm"
             >
               Print
             </button>
+            <Link
+              href={`/admin/sessao/${sessaoId}/combinacao`}
+              className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-sm font-semibold"
+            >
+              Live Count →
+            </Link>
           </div>
         </div>
         <table className="w-full border-collapse text-sm">

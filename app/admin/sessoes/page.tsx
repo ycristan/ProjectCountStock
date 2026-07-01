@@ -34,10 +34,10 @@ export default async function SessoesPage() {
                 <div className="text-xs text-slate-500 mt-0.5">Status: {s.status}</div>
               </div>
               <Link
-                href={`/admin/sessao/${s.id}/progresso`}
+                href={`/admin/sessao/${s.id}/combinacao`}
                 className="text-sm font-medium text-blue-600 hover:text-blue-800"
               >
-                View Progress →
+                Live Count →
               </Link>
             </div>
           ))}
