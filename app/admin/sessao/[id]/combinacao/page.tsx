@@ -67,6 +67,7 @@ export default async function CombinacaoPage({
     { data: reconcItems },
     { data: { users } },
     { data: existing },
+    { data: inventory },
   ] = await Promise.all([
     admin
       .from('counter_accounts')
@@ -89,6 +90,11 @@ export default async function CombinacaoPage({
       .select('brand_code')
       .eq('session_id', sessionId)
       .limit(1),
+    // ponytail: fetch all inventory upfront so invMap is always populated,
+    // even when admin opens the page before counters submit any entries
+    supabase
+      .from('inventory_items')
+      .select('brand_code, brand_name, bpu, category, category1'),
   ])
 
   const nameMap: Record<string, string> = {}
@@ -126,22 +132,6 @@ export default async function CombinacaoPage({
       }))
       .sort((a, b) => a.role.localeCompare(b.role)),
   }))
-
-  const allCodes = [
-    ...new Set([
-      ...(entries ?? []).map((e) => e.brand_code),
-      ...(reconcItems ?? []).map((r) => r.brand_code),
-    ]),
-  ]
-
-  // ponytail: supabase (SSR client) em vez de admin para evitar conflito de estado
-  // interno quando listUsers + queries de data rodam juntas no mesmo cliente admin
-  const { data: inventory } = allCodes.length
-    ? await supabase
-        .from('inventory_items')
-        .select('brand_code, brand_name, bpu, category, category1')
-        .in('brand_code', allCodes)
-    : { data: [] }
 
   return (
     <CombinacaoClient
