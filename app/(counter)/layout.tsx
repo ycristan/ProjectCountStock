@@ -29,6 +29,11 @@ export default async function CounterLayout({ children }: { children: React.Reac
         pendingCount = count ?? 0
         bannerType = pendingCount > 0 ? 'pending' : 'confirm'
       } else {
+        const { count } = await admin
+          .from('reconciliation_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('team_id', teamId)
+        pendingCount = count ?? 0
         bannerType = 'reconciliando'
       }
     }
@@ -69,9 +74,12 @@ export default async function CounterLayout({ children }: { children: React.Reac
         </Link>
       )}
       {bannerType === 'reconciliando' && (
-        <div className="block px-4 py-3 text-center text-sm font-semibold text-white bg-blue-600">
-          ℹ️ Reconciliation in progress — the independent counter is reviewing discrepancies
-        </div>
+        <Link
+          href="/reconciliacao"
+          className="block px-4 py-3 text-center text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
+        >
+          ℹ️ {pendingCount} {pendingCount === 1 ? 'item needs' : 'items need'} reconciliation → View list
+        </Link>
       )}
       <main className="px-4 py-6 max-w-lg mx-auto">{children}</main>
     </div>

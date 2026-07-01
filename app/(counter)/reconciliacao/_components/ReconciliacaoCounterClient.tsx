@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase-client'
 import type { ReconcItemLista } from '@/actions/reconciliacao'
 import { resolverItemReconciliacao, confirmarReconciliacao } from '@/actions/reconciliacao'
 
-type Props = { items: ReconcItemLista[] }
+type Props = { items: ReconcItemLista[]; readOnly?: boolean }
 
 function formatGrams(raw: string): string {
   const digits = raw.replace(/\D/g, '')
@@ -40,7 +40,7 @@ function calcWeight(
   }
 }
 
-export function ReconciliacaoCounterClient({ items }: Props) {
+export function ReconciliacaoCounterClient({ items, readOnly = false }: Props) {
   const router = useRouter()
   const [inputs, setInputs] = useState<Record<string, { pallets: string; cases: string; units: string }>>({})
   const [weightInputs, setWeightInputs] = useState<Record<string, { caixas: string; pesoFmt: string }>>({})
@@ -132,12 +132,14 @@ export function ReconciliacaoCounterClient({ items }: Props) {
         href="/busca"
         className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4"
       >
-        ← Back to Monitor
+        ← Back
       </Link>
 
       <h2 className="text-xl font-semibold text-slate-900 mb-1">Reconciliation</h2>
       <p className="text-sm text-slate-500 mb-5">
-        {pendingCount > 0
+        {readOnly
+          ? `${items.length} ${items.length === 1 ? 'item is' : 'items are'} being reconciled by the independent counter.`
+          : pendingCount > 0
           ? `${pendingCount} ${pendingCount === 1 ? 'item pending' : 'items pending'} — carry out a physical recount with the team and record the agreed value.`
           : 'All items have been reconciled. Confirm to finalise.'}
       </p>
@@ -190,7 +192,7 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                 </div>
               </div>
 
-              {/* C1 vs C2 comparison — independente no longer counts, Ind column removed */}
+              {/* C1 vs C2 comparison */}
               <div className="grid grid-cols-2 divide-x divide-slate-100 border-b border-slate-100">
                 {[
                   { label: 'C1', cases: item.contador_1_cases, units: item.contador_1_units },
@@ -214,6 +216,10 @@ export function ReconciliacaoCounterClient({ items }: Props) {
                     <span className="font-bold text-green-700 text-sm">
                       {item.reconciliated_cases} cases + {item.reconciliated_units} units
                     </span>
+                  </div>
+                ) : readOnly ? (
+                  <div className="text-xs text-slate-400 italic">
+                    Pending — the independent counter is reviewing this item.
                   </div>
                 ) : item.is_weight_count ? (
                   <div>
@@ -353,13 +359,15 @@ export function ReconciliacaoCounterClient({ items }: Props) {
         <div className="text-center text-slate-400 py-12 text-sm">No items to reconcile.</div>
       )}
 
-      <button
-        onClick={handleConfirmar}
-        disabled={!canConfirm || isPending}
-        className="w-full py-4 rounded-xl text-base font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        {isPending ? 'Confirming...' : 'Finalise and Confirm Reconciliation'}
-      </button>
+      {!readOnly && (
+        <button
+          onClick={handleConfirmar}
+          disabled={!canConfirm || isPending}
+          className="w-full py-4 rounded-xl text-base font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {isPending ? 'Confirming...' : 'Finalise and Confirm Reconciliation'}
+        </button>
+      )}
     </div>
   )
 }
