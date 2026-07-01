@@ -3,6 +3,27 @@ import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 
+// ponytail: mesma regra da tela (CombinacaoClient.getMerged) — valor oficial do item
+// por equipe: resolvido → reconciliação; senão → Contador 1 (C1=C2, independente não conta mais).
+// independente_cases só é usado se preenchido (fluxo legado); hoje vem NULL.
+type ReconcRow = {
+  status: string
+  contador_1_cases: number | null
+  contador_1_units: number | null
+  independente_cases: number | null
+  independente_units: number | null
+  reconciliated_cases: number | null
+  reconciliated_units: number | null
+}
+
+function official(r: ReconcRow): { cases: number; units: number } {
+  if (r.status === 'resolvido')
+    return { cases: r.reconciliated_cases ?? 0, units: r.reconciliated_units ?? 0 }
+  if (r.independente_cases !== null)
+    return { cases: r.independente_cases, units: r.independente_units ?? 0 }
+  return { cases: r.contador_1_cases ?? 0, units: r.contador_1_units ?? 0 }
+}
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -69,8 +90,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       const r = items.find((i) => i.brand_code === code)
       const inv = invMap[code]
       const isResolvido = r?.status === 'resolvido'
-      const finalCases = isResolvido ? (r?.reconciliated_cases ?? r?.independente_cases) : r?.independente_cases
-      const finalUnits = isResolvido ? (r?.reconciliated_units ?? r?.independente_units) : r?.independente_units
+      const fin = r ? official(r) : null
       return [
         inv?.category ?? '', inv?.category1 ?? '', code, inv?.brand_name ?? code, inv?.bpu ?? '',
         r?.contador_1_cases ?? '', r?.contador_1_units ?? '',
@@ -78,7 +98,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         r?.independente_cases ?? '', r?.independente_units ?? '',
         isResolvido ? (r?.reconciliated_cases ?? '') : '',
         isResolvido ? (r?.reconciliated_units ?? '') : '',
-        finalCases ?? '', finalUnits ?? '',
+        fin?.cases ?? '', fin?.units ?? '',
       ]
     })
 
@@ -122,9 +142,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       const r = reconcMap[t.id]?.[code]
       if (!r) return ['', '', '', '', '', '', '', '']
       const isResolvido = r.status === 'resolvido'
-      const contribCases = isResolvido ? (r.reconciliated_cases ?? r.independente_cases ?? 0) : (r.independente_cases ?? 0)
-      const contribUnits = isResolvido ? (r.reconciliated_units ?? r.independente_units ?? 0) : (r.independente_units ?? 0)
-      totalUnits += contribCases * bpu + contribUnits
+      const off = official(r)
+      totalUnits += off.cases * bpu + off.units
       return [
         r.independente_cases ?? '—', r.independente_units ?? '—',
         r.contador_1_cases ?? '—', r.contador_1_units ?? '—',
