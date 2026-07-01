@@ -359,3 +359,63 @@ export async function confirmarIndependente(teamId: string): Promise<{ error?: s
 
   return error ? { error: error.message } : {}
 }
+
+// ─── Session management ──────────────────────────────────────────────────────
+
+export async function forcarFecharSessao(sessionId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.user_metadata?.role !== 'admin') return { error: 'Not authorised.' }
+
+  const admin = createAdminClient()
+  const { data: teams } = await admin
+    .from('teams')
+    .select('id')
+    .eq('session_id', sessionId)
+    .eq('status', 'contando')
+
+  for (const team of teams ?? []) {
+    await admin.rpc('finalize_team_count', { p_team_id: team.id })
+  }
+  return {}
+}
+
+export async function deletarSessao(
+  sessionId: string,
+  deleteTeams: boolean,
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.user_metadata?.role !== 'admin') return { error: 'Not authorised.' }
+
+  const admin = createAdminClient()
+
+  const { data: teams } = await admin
+    .from('teams')
+    .select('id')
+    .eq('session_id', sessionId)
+
+  const teamIds = (teams ?? []).map((t) => t.id)
+
+  await admin.from('combined_results').delete().eq('session_id', sessionId)
+
+  if (teamIds.length) {
+    await admin.from('reconciliation_items').delete().in('team_id', teamIds)
+    await admin.from('count_entries').delete().in('team_id', teamIds)
+  }
+
+  if (deleteTeams && teamIds.length) {
+    const { data: accounts } = await admin
+      .from('counter_accounts')
+      .select('auth_user_id')
+      .in('team_id', teamIds)
+    for (const acc of accounts ?? []) {
+      await admin.auth.admin.deleteUser(acc.auth_user_id)
+    }
+    await admin.from('counter_accounts').delete().in('team_id', teamIds)
+    await admin.from('teams').delete().eq('session_id', sessionId)
+  }
+
+  const { error } = await admin.from('count_sessions').delete().eq('id', sessionId)
+  return error ? { error: error.message } : {}
+}
