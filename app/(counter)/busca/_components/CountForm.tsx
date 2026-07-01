@@ -39,13 +39,20 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
   const isEdit = !!entry && !isAdditive
   // ponytail: pallet_size=0 → item has no pallets, field locked at 0
   const noPallets = !item.pallet_size
+  // ponytail: bpu=1 → 1cs=1un, no distinction between cases and units
+  const noBpu = item.bpu === 1
 
   const [modo, setModo] = useState<'normal' | 'peso'>('normal')
   const [rodadas, setRodadas] = useState<Rodada[]>([{ id: 0, caixas: '', pesoFmt: '' }])
   const [extraCases, setExtraCases] = useState(0)
-  const [pallets, setPallets] = useState(isAdditive || noPallets ? '0' : String(entry?.pallets ?? 0))
-  const [cases, setCases] = useState(isAdditive ? '0' : String(entry?.cases ?? 0))
-  const [units, setUnits] = useState(isAdditive ? '0' : String(entry?.units ?? 0))
+  const [pallets, setPallets] = useState(isAdditive || noPallets || noBpu ? '0' : String(entry?.pallets ?? 0))
+  const [cases, setCases] = useState(isAdditive || noBpu ? '0' : String(entry?.cases ?? 0))
+  // ponytail: edit + bpu=1 → collapse existing cases+units into units (bpu=1 normalises all to final_cases)
+  const [units, setUnits] = useState(
+    isAdditive ? '0'
+    : noBpu ? String((entry?.cases ?? 0) + (entry?.units ?? 0))
+    : String(entry?.units ?? 0)
+  )
   const [erro, setErro] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -233,8 +240,8 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false }: Pro
         <>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {[
-              { label: isAdditive ? '+ Pallets' : 'Pallets', value: pallets, set: setPallets, disabled: noPallets },
-              { label: isAdditive ? '+ Cases' : 'Cases', value: cases, set: setCases, disabled: false },
+              { label: isAdditive ? '+ Pallets' : 'Pallets', value: pallets, set: setPallets, disabled: noPallets || noBpu },
+              { label: isAdditive ? '+ Cases' : 'Cases', value: cases, set: setCases, disabled: noBpu },
               { label: isAdditive ? '+ Units' : 'Units', value: units, set: setUnits, disabled: false },
             ].map(({ label, value, set, disabled }) => {
               const negative = !disabled && isNeg(value)
