@@ -16,23 +16,29 @@ export default async function MonitorPage() {
   const teamId = user.user_metadata?.team_id as string
   const admin = createAdminClient()
 
-  const [{ data: entries }, { data: inventory }, { data: counters }] = await Promise.all([
-    admin
-      .from('count_entries')
-      .select('brand_code, counter_role, final_cases, final_units')
-      .eq('team_id', teamId)
-      .in('counter_role', ['contador_1', 'contador_2'])
-      .eq('is_joint_recount', false),
-    admin
-      .from('inventory_items')
-      .select('brand_code, brand_name')
-      .order('brand_code', { ascending: true }),
-    admin
-      .from('counter_accounts')
-      .select('role, finalized_at')
-      .eq('team_id', teamId)
-      .in('role', ['contador_1', 'contador_2']),
-  ])
+  const [{ data: entries }, { data: inventory }, { data: counters }, { data: teamData }] =
+    await Promise.all([
+      admin
+        .from('count_entries')
+        .select('brand_code, counter_role, final_cases, final_units')
+        .eq('team_id', teamId)
+        .in('counter_role', ['contador_1', 'contador_2'])
+        .eq('is_joint_recount', false),
+      admin
+        .from('inventory_items')
+        .select('brand_code, brand_name')
+        .order('brand_code', { ascending: true }),
+      admin
+        .from('counter_accounts')
+        .select('id, role, finalized_at')
+        .eq('team_id', teamId)
+        .in('role', ['contador_1', 'contador_2']),
+      admin
+        .from('teams')
+        .select('independente_confirmed_at')
+        .eq('id', teamId)
+        .single(),
+    ])
 
   return (
     <MonitorClient
@@ -40,6 +46,7 @@ export default async function MonitorPage() {
       initialEntries={entries ?? []}
       inventory={inventory ?? []}
       counters={counters ?? []}
+      initialIndConfirmed={!!teamData?.independente_confirmed_at}
     />
   )
 }

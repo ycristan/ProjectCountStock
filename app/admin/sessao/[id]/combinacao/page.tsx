@@ -15,6 +15,7 @@ type TeamData = {
   id: string
   team_name: string
   status: string
+  independente_confirmed_at: string | null
   counters: Counter[]
 }
 
@@ -38,7 +39,7 @@ export default async function CombinacaoPage({
 
   const { data: teams } = await supabase
     .from('teams')
-    .select('id, team_name, status')
+    .select('id, team_name, status, independente_confirmed_at')
     .eq('session_id', sessionId)
     .order('team_name')
 
@@ -113,6 +114,7 @@ export default async function CombinacaoPage({
     id: t.id,
     team_name: t.team_name,
     status: t.status,
+    independente_confirmed_at: t.independente_confirmed_at ?? null,
     counters: (accounts ?? [])
       .filter((a) => a.team_id === t.id)
       .map((a) => ({

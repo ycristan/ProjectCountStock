@@ -42,6 +42,7 @@ type Team = {
   id: string
   team_name: string
   status: string
+  independente_confirmed_at: string | null
   counters: Counter[]
 }
 
@@ -177,10 +178,18 @@ export function CombinacaoClient({
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'teams' },
           ({ new: row }) => {
-            const r = row as { id: string; status: string }
+            const r = row as {
+              id: string
+              status: string
+              independente_confirmed_at: string | null
+            }
             if (!tids.has(r.id)) return
             setTeams((p) =>
-              p.map((t) => (t.id === r.id ? { ...t, status: r.status } : t)),
+              p.map((t) =>
+                t.id === r.id
+                  ? { ...t, status: r.status, independente_confirmed_at: r.independente_confirmed_at }
+                  : t,
+              ),
             )
           },
         )
@@ -273,7 +282,12 @@ export function CombinacaoClient({
     setTeams((p) =>
       p.map((t) =>
         t.id === teamId
-          ? { ...t, status: 'contando', counters: t.counters.map((c) => ({ ...c, finalized_at: null })) }
+          ? {
+              ...t,
+              status: 'contando',
+              independente_confirmed_at: null,
+              counters: t.counters.map((c) => ({ ...c, finalized_at: null })),
+            }
           : t,
       ),
     )
@@ -349,11 +363,12 @@ export function CombinacaoClient({
         </div>
 
         {/* ── Teams strip ──────────────────────────────────────────────── */}
-        <div className="flex-none h-12 bg-slate-800 border-b border-slate-700 flex items-center gap-2 px-3 overflow-x-auto">
+        <div className="flex-none bg-slate-800 border-b border-slate-700 flex items-center gap-2 px-3 overflow-x-auto min-h-14 py-2">
           {teams.map((team) => {
-            const allFin =
+            const c1c2Fin =
               team.counters.filter((c) => c.role !== 'independente').length > 0 &&
               team.counters.filter((c) => c.role !== 'independente').every((c) => c.finalized_at)
+            const indConfirmed = !!team.independente_confirmed_at
             const isReconciliando = team.status === 'reconciliando'
             const isReconciliada = team.status === 'reconciliada'
             const isLoading = loadingTeam === team.id
@@ -361,10 +376,10 @@ export function CombinacaoClient({
             return (
               <div
                 key={team.id}
-                className={`inline-flex items-center gap-1.5 flex-shrink-0 text-xs rounded-full px-3 py-1.5 border ${
+                className={`inline-flex items-center gap-2 flex-shrink-0 text-sm font-medium rounded-full px-4 py-2 border ${
                   isReconciliada
                     ? 'bg-green-950 border-green-700 text-green-300'
-                    : allFin || isReconciliando
+                    : c1c2Fin || isReconciliando
                       ? 'bg-amber-950 border-amber-700 text-amber-300'
                       : 'bg-slate-900 border-slate-700 text-slate-400'
                 }`}
@@ -374,18 +389,28 @@ export function CombinacaoClient({
                 {isReconciliando && (
                   <Link
                     href={`/admin/sessao/${sessionId}/reconciliacao/${team.id}`}
-                    className="text-[10px] font-bold bg-amber-500 text-amber-950 rounded px-1.5 py-0.5"
+                    className="text-xs font-bold bg-amber-500 text-amber-950 rounded-lg px-2.5 py-1"
                   >
                     Monitor →
                   </Link>
                 )}
-                {!isReconciliando && !isReconciliada && allFin && (
+                {!isReconciliando && !isReconciliada && c1c2Fin && indConfirmed && (
                   <button
                     onClick={() => handleFinalizarEquipe(team.id)}
                     disabled={isLoading}
-                    className="text-[10px] font-bold bg-amber-500 text-amber-950 rounded px-1.5 py-0.5 disabled:opacity-50"
+                    className="text-xs font-bold bg-amber-500 text-amber-950 rounded-lg px-2.5 py-1 disabled:opacity-50"
                   >
                     {isLoading ? '...' : 'Check →'}
+                  </button>
+                )}
+                {!isReconciliando && !isReconciliada && c1c2Fin && !indConfirmed && (
+                  <button
+                    onClick={() => handleFinalizarEquipe(team.id)}
+                    disabled={isLoading}
+                    className="text-xs font-bold bg-slate-600 text-slate-200 rounded-lg px-2.5 py-1 disabled:opacity-50"
+                    title="Independent has not confirmed yet"
+                  >
+                    {isLoading ? '...' : 'Force →'}
                   </button>
                 )}
               </div>
@@ -400,7 +425,7 @@ export function CombinacaoClient({
         <div className="flex-none bg-white border-b-2 border-slate-200 flex overflow-x-auto">
           {teams.map((team) => {
             const isReconciliada = team.status === 'reconciliada'
-            const allFin =
+            const c1c2Fin =
               team.counters.filter((c) => c.role !== 'independente').length > 0 &&
               team.counters.filter((c) => c.role !== 'independente').every((c) => c.finalized_at)
             return (
@@ -417,7 +442,7 @@ export function CombinacaoClient({
                   className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                     isReconciliada
                       ? 'bg-green-500'
-                      : allFin
+                      : c1c2Fin
                         ? 'bg-amber-400 animate-pulse'
                         : 'bg-slate-300'
                   }`}
@@ -467,60 +492,15 @@ export function CombinacaoClient({
                   <table className="w-full text-sm border-collapse">
                     <thead className="sticky top-0 z-10">
                       <tr>
-                        <th
-                          rowSpan={2}
-                          className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[100px]"
-                        >
-                          Category
-                        </th>
-                        <th
-                          rowSpan={2}
-                          className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[100px]"
-                        >
-                          Category 1
-                        </th>
-                        <th
-                          rowSpan={2}
-                          className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[80px]"
-                        >
-                          Brand Code
-                        </th>
-                        <th
-                          rowSpan={2}
-                          className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[140px]"
-                        >
-                          Brand Name
-                        </th>
-                        <th
-                          rowSpan={2}
-                          className="px-3 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-center text-xs font-semibold text-slate-500 uppercase"
-                        >
-                          BPU
-                        </th>
-                        <th
-                          colSpan={2}
-                          className="px-3 py-2 bg-amber-50 border-b border-amber-200 text-center text-[11px] font-semibold text-amber-800 uppercase"
-                        >
-                          {cName(team.id, 'independente', 'Independent')}
-                        </th>
-                        <th
-                          colSpan={2}
-                          className="px-3 py-2 bg-blue-50 border-b border-blue-200 text-center text-[11px] font-semibold text-blue-800 uppercase"
-                        >
-                          {cName(team.id, 'contador_1', 'Count 1')}
-                        </th>
-                        <th
-                          colSpan={2}
-                          className="px-3 py-2 bg-green-50 border-b border-green-200 text-center text-[11px] font-semibold text-green-800 uppercase"
-                        >
-                          {cName(team.id, 'contador_2', 'Count 2')}
-                        </th>
-                        <th
-                          colSpan={2}
-                          className="px-3 py-2 bg-orange-50 border-b border-orange-200 text-center text-[11px] font-semibold text-orange-800 uppercase"
-                        >
-                          Reconciliation*
-                        </th>
+                        <th rowSpan={2} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[100px]">Category</th>
+                        <th rowSpan={2} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[100px]">Category 1</th>
+                        <th rowSpan={2} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[80px]">Brand Code</th>
+                        <th rowSpan={2} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[140px]">Brand Name</th>
+                        <th rowSpan={2} className="px-3 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-center text-xs font-semibold text-slate-500 uppercase">BPU</th>
+                        <th colSpan={2} className="px-3 py-2 bg-amber-50 border-b border-amber-200 text-center text-[11px] font-semibold text-amber-800 uppercase">{cName(team.id, 'independente', 'Independent')}</th>
+                        <th colSpan={2} className="px-3 py-2 bg-blue-50 border-b border-blue-200 text-center text-[11px] font-semibold text-blue-800 uppercase">{cName(team.id, 'contador_1', 'Count 1')}</th>
+                        <th colSpan={2} className="px-3 py-2 bg-green-50 border-b border-green-200 text-center text-[11px] font-semibold text-green-800 uppercase">{cName(team.id, 'contador_2', 'Count 2')}</th>
+                        <th colSpan={2} className="px-3 py-2 bg-orange-50 border-b border-orange-200 text-center text-[11px] font-semibold text-orange-800 uppercase">Reconciliation*</th>
                       </tr>
                       <tr>
                         <th className={`${TH_SUB} bg-amber-50 text-amber-700`}>Cases</th>
@@ -541,41 +521,19 @@ export function CombinacaoClient({
                         const isResolvido = ri.status === 'resolvido'
                         return (
                           <tr key={code} className="hover:bg-slate-50">
-                            <td className="px-4 py-2.5 text-xs text-slate-500">
-                              {inv?.category ?? '—'}
-                            </td>
-                            <td className="px-4 py-2.5 text-xs text-slate-500">
-                              {inv?.category1 ?? '—'}
-                            </td>
-                            <td className="px-4 py-2.5 text-xs font-bold text-slate-700">
-                              {code}
-                            </td>
-                            <td className="px-4 py-2.5 text-xs text-slate-600">
-                              {inv?.brand_name ?? '—'}
-                            </td>
-                            <td className="px-3 py-2.5 text-center text-xs font-semibold text-slate-500">
-                              {inv?.bpu ?? '—'}
-                            </td>
+                            <td className="px-4 py-2.5 text-xs text-slate-500">{inv?.category ?? '—'}</td>
+                            <td className="px-4 py-2.5 text-xs text-slate-500">{inv?.category1 ?? '—'}</td>
+                            <td className="px-4 py-2.5 text-xs font-bold text-slate-700">{code}</td>
+                            <td className="px-4 py-2.5 text-xs text-slate-600">{inv?.brand_name ?? '—'}</td>
+                            <td className="px-3 py-2.5 text-center text-xs font-semibold text-slate-500">{inv?.bpu ?? '—'}</td>
                             <td className={TD}>{val(ri.independente_cases)}</td>
                             <td className={TD}>{val(ri.independente_units)}</td>
                             <td className={TD}>{val(ri.contador_1_cases)}</td>
                             <td className={TD}>{val(ri.contador_1_units)}</td>
                             <td className={TD}>{val(ri.contador_2_cases)}</td>
                             <td className={TD}>{val(ri.contador_2_units)}</td>
-                            <td
-                              className={`${TD} ${
-                                isResolvido ? 'text-orange-600 font-bold' : 'text-slate-300'
-                              }`}
-                            >
-                              {isResolvido ? val(ri.reconciliated_cases) : '—'}
-                            </td>
-                            <td
-                              className={`${TD} ${
-                                isResolvido ? 'text-orange-600 font-bold' : 'text-slate-300'
-                              }`}
-                            >
-                              {isResolvido ? val(ri.reconciliated_units) : '—'}
-                            </td>
+                            <td className={`${TD} ${isResolvido ? 'text-orange-600 font-bold' : 'text-slate-300'}`}>{isResolvido ? val(ri.reconciliated_cases) : '—'}</td>
+                            <td className={`${TD} ${isResolvido ? 'text-orange-600 font-bold' : 'text-slate-300'}`}>{isResolvido ? val(ri.reconciliated_units) : '—'}</td>
                           </tr>
                         )
                       })}
@@ -598,16 +556,12 @@ export function CombinacaoClient({
                                       : 'bg-slate-100 text-slate-500'
                                   }`}
                                 >
-                                  <span className="font-bold">
-                                    {roleLabel[c.role] ?? c.role}
-                                  </span>
+                                  <span className="font-bold">{roleLabel[c.role] ?? c.role}</span>
                                   {c.full_name && <span>{c.full_name}</span>}
                                   <span>
                                     {c.finalized_at
                                       ? ' ✓'
-                                      : ` · ${
-                                          te.filter((e) => e.counter_role === c.role).length
-                                        } items`}
+                                      : ` · ${te.filter((e) => e.counter_role === c.role).length} items`}
                                   </span>
                                 </span>
                               ))}
@@ -623,28 +577,17 @@ export function CombinacaoClient({
                         </td>
                       </tr>
                       <tr className="bg-slate-50 border-b-2 border-slate-300">
-                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                          Item
-                        </th>
-                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                          C1
-                        </th>
-                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                          C2
-                        </th>
-                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                          Ind
-                        </th>
+                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">Item</th>
+                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">C1</th>
+                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">C2</th>
+                        <th className="text-center px-3 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">Ind</th>
                         <th className="w-10" />
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {liveCodes.length === 0 ? (
                         <tr>
-                          <td
-                            colSpan={5}
-                            className="px-4 py-12 text-xs text-slate-400 text-center"
-                          >
+                          <td colSpan={5} className="px-4 py-12 text-xs text-slate-400 text-center">
                             Waiting for first counts...
                           </td>
                         </tr>
@@ -679,9 +622,7 @@ export function CombinacaoClient({
                               }`}
                             >
                               <td className="px-4 py-2.5">
-                                <div className="font-semibold text-slate-800 text-xs">
-                                  {code}
-                                </div>
+                                <div className="font-semibold text-slate-800 text-xs">{code}</div>
                                 <div className="text-xs text-slate-400 truncate max-w-[200px] lg:max-w-none">
                                   {invMap[code]?.brand_name ?? ''}
                                 </div>
@@ -697,15 +638,9 @@ export function CombinacaoClient({
                                 </td>
                               ))}
                               <td className="px-3 py-2.5 text-center text-base">
-                                {rStatus === 'combinado' && (
-                                  <span className="text-green-500">✓</span>
-                                )}
-                                {rStatus === 'resolvido' && (
-                                  <span className="text-green-500 text-xs font-bold">OK</span>
-                                )}
-                                {rStatus === 'discrepancia' && (
-                                  <span className="text-amber-500">⚠</span>
-                                )}
+                                {rStatus === 'combinado' && <span className="text-green-500">✓</span>}
+                                {rStatus === 'resolvido' && <span className="text-green-500 text-xs font-bold">OK</span>}
+                                {rStatus === 'discrepancia' && <span className="text-amber-500">⚠</span>}
                               </td>
                             </tr>
                           )
@@ -723,44 +658,17 @@ export function CombinacaoClient({
             <table className="text-sm border-collapse w-full">
               <thead className="sticky top-0 z-10">
                 <tr>
-                  <th
-                    rowSpan={3}
-                    className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[100px]"
-                  >
-                    Category
-                  </th>
-                  <th
-                    rowSpan={3}
-                    className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[100px]"
-                  >
-                    Category 1
-                  </th>
-                  <th
-                    rowSpan={3}
-                    className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[80px]"
-                  >
-                    Brand Code
-                  </th>
-                  <th
-                    rowSpan={3}
-                    className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[140px]"
-                  >
-                    Brand Name
-                  </th>
-                  <th
-                    rowSpan={3}
-                    className="px-3 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-center text-xs font-semibold text-slate-500 uppercase"
-                  >
-                    BPU
-                  </th>
+                  <th rowSpan={3} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[100px]">Category</th>
+                  <th rowSpan={3} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[100px]">Category 1</th>
+                  <th rowSpan={3} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[80px]">Brand Code</th>
+                  <th rowSpan={3} className="text-left px-4 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide min-w-[140px]">Brand Name</th>
+                  <th rowSpan={3} className="px-3 py-2.5 bg-slate-50 border-b-2 border-slate-300 text-center text-xs font-semibold text-slate-500 uppercase">BPU</th>
                   {reconcilidaTeams.map((team, i) => (
                     <th
                       key={team.id}
                       colSpan={8}
                       className={`px-3 py-2 border-l-2 border-slate-300 border-b text-center text-[11px] font-bold uppercase whitespace-nowrap ${
-                        i % 2 === 0
-                          ? 'bg-blue-50 text-blue-800'
-                          : 'bg-purple-50 text-purple-800'
+                        i % 2 === 0 ? 'bg-blue-50 text-blue-800' : 'bg-purple-50 text-purple-800'
                       }`}
                     >
                       {team.team_name}
@@ -777,41 +685,17 @@ export function CombinacaoClient({
                 <tr>
                   {reconcilidaTeams.map((team) => (
                     <Fragment key={team.id}>
-                      <th
-                        colSpan={2}
-                        className="px-2 py-1 border-l-2 border-slate-300 border-b bg-amber-50 text-amber-700 text-center text-[10px] font-semibold uppercase"
-                      >
-                        {cName(team.id, 'independente', 'Independent')}
-                      </th>
-                      <th
-                        colSpan={2}
-                        className="px-2 py-1 border-b bg-blue-50 text-blue-700 text-center text-[10px] font-semibold uppercase"
-                      >
-                        {cName(team.id, 'contador_1', 'Count 1')}
-                      </th>
-                      <th
-                        colSpan={2}
-                        className="px-2 py-1 border-b bg-green-50 text-green-700 text-center text-[10px] font-semibold uppercase"
-                      >
-                        {cName(team.id, 'contador_2', 'Count 2')}
-                      </th>
-                      <th
-                        colSpan={2}
-                        className="px-2 py-1 border-b bg-orange-50 text-orange-700 text-center text-[10px] font-semibold uppercase"
-                      >
-                        Reconciliation*
-                      </th>
+                      <th colSpan={2} className="px-2 py-1 border-l-2 border-slate-300 border-b bg-amber-50 text-amber-700 text-center text-[10px] font-semibold uppercase">{cName(team.id, 'independente', 'Independent')}</th>
+                      <th colSpan={2} className="px-2 py-1 border-b bg-blue-50 text-blue-700 text-center text-[10px] font-semibold uppercase">{cName(team.id, 'contador_1', 'Count 1')}</th>
+                      <th colSpan={2} className="px-2 py-1 border-b bg-green-50 text-green-700 text-center text-[10px] font-semibold uppercase">{cName(team.id, 'contador_2', 'Count 2')}</th>
+                      <th colSpan={2} className="px-2 py-1 border-b bg-orange-50 text-orange-700 text-center text-[10px] font-semibold uppercase">Reconciliation*</th>
                     </Fragment>
                   ))}
                 </tr>
                 <tr>
                   {reconcilidaTeams.map((team) => (
                     <Fragment key={team.id}>
-                      <th
-                        className={`${TH_SUB} bg-amber-50 text-amber-600 border-l-2 border-slate-300`}
-                      >
-                        Cases
-                      </th>
+                      <th className={`${TH_SUB} bg-amber-50 text-amber-600 border-l-2 border-slate-300`}>Cases</th>
                       <th className={`${TH_SUB} bg-amber-50 text-amber-600`}>Units</th>
                       <th className={`${TH_SUB} bg-blue-50 text-blue-600`}>Cases</th>
                       <th className={`${TH_SUB} bg-blue-50 text-blue-600`}>Units</th>
@@ -831,108 +715,44 @@ export function CombinacaoClient({
                   const merged = getMerged(code)
                   return (
                     <tr key={code} className="hover:bg-slate-50">
-                      <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">
-                        {inv?.category ?? '—'}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">
-                        {inv?.category1 ?? '—'}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs font-bold text-slate-700 whitespace-nowrap">
-                        {code}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-slate-600 whitespace-nowrap">
-                        {inv?.brand_name ?? '—'}
-                      </td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold text-slate-500">
-                        {inv?.bpu ?? '—'}
-                      </td>
+                      <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">{inv?.category ?? '—'}</td>
+                      <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">{inv?.category1 ?? '—'}</td>
+                      <td className="px-4 py-2.5 text-xs font-bold text-slate-700 whitespace-nowrap">{code}</td>
+                      <td className="px-4 py-2.5 text-xs text-slate-600 whitespace-nowrap">{inv?.brand_name ?? '—'}</td>
+                      <td className="px-3 py-2.5 text-center text-xs font-semibold text-slate-500">{inv?.bpu ?? '—'}</td>
                       {reconcilidaTeams.map((team) => {
                         const ri = reconcMap[team.id]?.[code]
                         const isResolvido = ri?.status === 'resolvido'
                         return (
                           <Fragment key={team.id}>
                             <td className={`${TD} border-l-2 border-slate-100`}>
-                              {ri ? (
-                                val(ri.independente_cases)
-                              ) : (
-                                <span className="text-slate-200">—</span>
-                              )}
+                              {ri ? val(ri.independente_cases) : <span className="text-slate-200">—</span>}
                             </td>
                             <td className={TD}>
-                              {ri ? (
-                                val(ri.independente_units)
-                              ) : (
-                                <span className="text-slate-200">—</span>
-                              )}
+                              {ri ? val(ri.independente_units) : <span className="text-slate-200">—</span>}
                             </td>
                             <td className={TD}>
-                              {ri ? (
-                                val(ri.contador_1_cases)
-                              ) : (
-                                <span className="text-slate-200">—</span>
-                              )}
+                              {ri ? val(ri.contador_1_cases) : <span className="text-slate-200">—</span>}
                             </td>
                             <td className={TD}>
-                              {ri ? (
-                                val(ri.contador_1_units)
-                              ) : (
-                                <span className="text-slate-200">—</span>
-                              )}
+                              {ri ? val(ri.contador_1_units) : <span className="text-slate-200">—</span>}
                             </td>
                             <td className={TD}>
-                              {ri ? (
-                                val(ri.contador_2_cases)
-                              ) : (
-                                <span className="text-slate-200">—</span>
-                              )}
+                              {ri ? val(ri.contador_2_cases) : <span className="text-slate-200">—</span>}
                             </td>
                             <td className={TD}>
-                              {ri ? (
-                                val(ri.contador_2_units)
-                              ) : (
-                                <span className="text-slate-200">—</span>
-                              )}
+                              {ri ? val(ri.contador_2_units) : <span className="text-slate-200">—</span>}
                             </td>
-                            <td
-                              className={`${TD} ${
-                                ri && isResolvido
-                                  ? 'text-orange-600 font-bold'
-                                  : 'text-slate-300'
-                              }`}
-                            >
-                              {ri ? (
-                                isResolvido ? (
-                                  val(ri.reconciliated_cases)
-                                ) : (
-                                  '—'
-                                )
-                              ) : (
-                                <span className="text-slate-200">—</span>
-                              )}
+                            <td className={`${TD} ${ri && isResolvido ? 'text-orange-600 font-bold' : 'text-slate-300'}`}>
+                              {ri ? (isResolvido ? val(ri.reconciliated_cases) : '—') : <span className="text-slate-200">—</span>}
                             </td>
-                            <td
-                              className={`${TD} ${
-                                ri && isResolvido
-                                  ? 'text-orange-600 font-bold'
-                                  : 'text-slate-300'
-                              }`}
-                            >
-                              {ri ? (
-                                isResolvido ? (
-                                  val(ri.reconciliated_units)
-                                ) : (
-                                  '—'
-                                )
-                              ) : (
-                                <span className="text-slate-200">—</span>
-                              )}
+                            <td className={`${TD} ${ri && isResolvido ? 'text-orange-600 font-bold' : 'text-slate-300'}`}>
+                              {ri ? (isResolvido ? val(ri.reconciliated_units) : '—') : <span className="text-slate-200">—</span>}
                             </td>
                           </Fragment>
                         )
                       })}
-                      <td
-                        className={`${TD} bg-green-50 border-l-2 border-slate-200 text-green-700 font-bold`}
-                      >
+                      <td className={`${TD} bg-green-50 border-l-2 border-slate-200 text-green-700 font-bold`}>
                         {merged.cases}
                       </td>
                       <td className={`${TD} bg-green-50 text-green-700 font-bold`}>
