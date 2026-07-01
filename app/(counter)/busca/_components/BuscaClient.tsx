@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import type { ItemBusca, LancarContagemResult } from '@/actions/contagem'
+import type { ItemBusca, LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
 import { SearchInput } from './SearchInput'
 import { ResultList } from './ResultList'
 import { CountForm } from './CountForm'
@@ -49,9 +49,14 @@ function filterItems(items: ItemBusca[], q: string): ItemBusca[] {
     .sort((a, b) => a.brand_name.localeCompare(b.brand_name))
 }
 
-type Props = { items: ItemBusca[] }
+type Props = {
+  items: ItemBusca[]
+  // ponytail: solo count injeta submit próprio + header; padrão = fluxo de equipe
+  onSubmit?: (payload: LancarContagemPayload) => Promise<LancarContagemResult>
+  headerSlot?: React.ReactNode
+}
 
-export function BuscaClient({ items: initialItems }: Props) {
+export function BuscaClient({ items: initialItems, onSubmit, headerSlot }: Props) {
   const [tela, setTela] = useState<Tela>('busca')
   const [termo, setTermo] = useState('')
   const [itemSelecionado, setItemSelecionado] = useState<ItemBusca | null>(null)
@@ -125,12 +130,14 @@ export function BuscaClient({ items: initialItems }: Props) {
         isAdditive={isAdditive}
         onVoltar={handleVoltar}
         onSucesso={handleSucesso}
+        onSubmit={onSubmit}
       />
     )
   }
 
   return (
     <div>
+      {headerSlot}
       <h2 className="text-xl font-semibold text-slate-900 mb-4">Search Item</h2>
       <SearchInput value={termo} onChange={setTermo} />
 
