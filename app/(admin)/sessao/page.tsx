@@ -17,14 +17,14 @@ export default function SessaoPage() {
       <Link href="/admin" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
         ← Dashboard
       </Link>
-      <h2 className="text-xl font-semibold text-slate-900 mb-4">Nova Sessão de Contagem</h2>
+      <h2 className="text-xl font-semibold text-slate-900 mb-4">New Count Session</h2>
       <form action={formAction} className="space-y-6 max-w-sm">
         <div>
           <label
             htmlFor="num_equipes"
             className="block text-sm font-medium text-slate-700 mb-1"
           >
-            Número de equipes
+            Number of Teams
           </label>
           <input
             id="num_equipes"
@@ -42,7 +42,7 @@ export default function SessaoPage() {
             htmlFor="box_tare_g"
             className="block text-sm font-medium text-slate-700 mb-1"
           >
-            Tara da caixa (gramas)
+            Box Tare (grams)
           </label>
           <input
             id="box_tare_g"
@@ -53,14 +53,14 @@ export default function SessaoPage() {
             required
             className="w-full px-4 py-3 text-lg border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
           />
-          <p className="text-xs text-slate-400 mt-1">Peso de cada caixa vazia para desconto na pesagem</p>
+          <p className="text-xs text-slate-400 mt-1">Weight of each empty box to be deducted during weighing</p>
         </div>
         <div>
           <label
             htmlFor="tolerance_g"
             className="block text-sm font-medium text-slate-700 mb-1"
           >
-            Tolerância de pesagem (gramas)
+            Weight Tolerance (grams)
           </label>
           <input
             id="tolerance_g"
@@ -71,7 +71,7 @@ export default function SessaoPage() {
             required
             className="w-full px-4 py-3 text-lg border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
           />
-          <p className="text-xs text-slate-400 mt-1">Diferença máxima entre C1 e C2 em itens pesados para considerar &quot;combinado&quot; (0 = exacto)</p>
+          <p className="text-xs text-slate-400 mt-1">Maximum difference between C1 and C2 for weighted items to be considered combined (0 = exact match)</p>
         </div>
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button
@@ -79,7 +79,7 @@ export default function SessaoPage() {
           disabled={pending}
           className="w-full py-3 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 disabled:opacity-50"
         >
-          {pending ? 'Criando...' : 'Criar Sessão'}
+          {pending ? 'Creating...' : 'Create Session'}
         </button>
       </form>
     </div>
