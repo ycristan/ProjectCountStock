@@ -6,7 +6,7 @@ export default async function AdminSoloPage() {
   const admin = createAdminClient()
   const { data: sessions } = await admin
     .from('solo_sessions')
-    .select('id, title, status, created_at')
+    .select('id, title, status, counter_name, created_at')
     .order('created_at', { ascending: false })
 
   return (
@@ -28,6 +28,11 @@ export default async function AdminSoloPage() {
               <div className="font-semibold text-slate-900">{s.title}</div>
               <div className="text-xs text-slate-400 mt-1">
                 {new Date(s.created_at).toLocaleDateString('en-GB')}
+                {s.counter_name && (
+                  <span className="ml-2 text-slate-500">
+                    · {s.counter_name} · <span className="font-mono">/solo/{s.id}</span>
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">

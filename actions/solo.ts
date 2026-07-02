@@ -1,5 +1,6 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { createClient } from '@/lib/supabase-server'
 import type { LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
@@ -10,14 +11,22 @@ async function isAdmin(): Promise<boolean> {
   return user?.user_metadata?.role === 'admin'
 }
 
-export async function criarSoloSessao(title: string): Promise<{ id?: string; error?: string }> {
+export async function criarSoloSessao(
+  title: string,
+  access_pin?: string,
+  counter_name?: string,
+): Promise<{ id?: string; error?: string }> {
   if (!(await isAdmin())) return { error: 'Unauthorized' }
   if (!title.trim()) return { error: 'Title is required.' }
+  if (access_pin && !/^\d{4}$/.test(access_pin)) return { error: 'PIN must be 4 digits.' }
 
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('solo_sessions')
-    .insert({ title: title.trim() })
+    .insert({
+      title: title.trim(),
+      ...(access_pin ? { access_pin, counter_name: counter_name?.trim() || null } : {}),
+    })
     .select('id')
     .single()
 
@@ -25,11 +34,8 @@ export async function criarSoloSessao(title: string): Promise<{ id?: string; err
   return { id: data.id }
 }
 
-// ponytail: mesmo contrato de lancarContagem (payload + convert_count) para reusar o CountForm
-export async function lancarSoloContagem(
-  sessionId: string,
-  payload: LancarContagemPayload,
-): Promise<LancarContagemResult> {
+// ponytail: shared save logic — called by both admin and counter paths
+async function _saveSoloEntry(sessionId: string, payload: LancarContagemPayload): Promise<LancarContagemResult> {
   if (payload.pallets < 0 || payload.cases < 0 || payload.units < 0) {
     return { error: 'Values cannot be negative.' }
   }
@@ -40,10 +46,6 @@ export async function lancarSoloContagem(
   ) {
     return { error: 'Count values must be integers.' }
   }
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user?.user_metadata?.role !== 'admin') return { error: 'Unauthorized' }
 
   const admin = createAdminClient()
   const { data: item, error: itemError } = await admin
@@ -86,6 +88,61 @@ export async function lancarSoloContagem(
   if (error) return { error: `Error saving: ${error.message}` }
 
   return { final_cases, final_units, brand_name: item.brand_name }
+}
+
+// ponytail: mesmo contrato de lancarContagem (payload + convert_count) para reusar o CountForm
+export async function lancarSoloContagem(
+  sessionId: string,
+  payload: LancarContagemPayload,
+): Promise<LancarContagemResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user?.user_metadata?.role !== 'admin') return { error: 'Unauthorized' }
+  return _saveSoloEntry(sessionId, payload)
+}
+
+export async function verificarSoloPin(
+  sessionId: string,
+  pin: string,
+): Promise<{ error?: string }> {
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('solo_sessions')
+    .select('access_pin, status')
+    .eq('id', sessionId)
+    .single()
+  if (error || !data) return { error: 'Session not found.' }
+  if (!data.access_pin) return { error: 'This session is admin-only.' }
+  if (data.status !== 'open') return { error: 'This session is closed.' }
+  if (data.access_pin !== pin.trim()) return { error: 'Incorrect PIN.' }
+
+  const cookieStore = await cookies()
+  cookieStore.set(`solo_pin_${sessionId}`, pin, {
+    httpOnly: true,
+    path: '/',
+    maxAge: 60 * 60 * 24,
+  })
+  return {}
+}
+
+export async function lancarSoloContagemCounter(
+  sessionId: string,
+  payload: LancarContagemPayload,
+): Promise<LancarContagemResult> {
+  const cookieStore = await cookies()
+  const pinCookie = cookieStore.get(`solo_pin_${sessionId}`)
+  if (!pinCookie) return { error: 'Unauthorized.' }
+
+  const admin = createAdminClient()
+  const { data: session } = await admin
+    .from('solo_sessions')
+    .select('access_pin, status')
+    .eq('id', sessionId)
+    .single()
+  if (!session || session.access_pin !== pinCookie.value) return { error: 'Unauthorized.' }
+  if (session.status !== 'open') return { error: 'This session is closed.' }
+
+  return _saveSoloEntry(sessionId, payload)
 }
 
 export async function encerrarSoloSessao(sessionId: string): Promise<{ error?: string }> {

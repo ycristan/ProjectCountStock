@@ -7,6 +7,9 @@ import { criarSoloSessao } from '@/actions/solo'
 export function SoloCreateForm() {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
+  const [isCounter, setIsCounter] = useState(false)
+  const [counterName, setCounterName] = useState('')
+  const [pin, setPin] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
@@ -15,7 +18,11 @@ export function SoloCreateForm() {
     e.preventDefault()
     setErro(null)
     startTransition(async () => {
-      const res = await criarSoloSessao(title)
+      const res = await criarSoloSessao(
+        title,
+        isCounter ? pin : undefined,
+        isCounter ? counterName : undefined,
+      )
       if (res.error) { setErro(res.error); return }
       router.push(`/admin/solo/${res.id}`)
     })
@@ -45,13 +52,49 @@ export function SoloCreateForm() {
           className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-slate-900"
         />
       </div>
+
+      <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={isCounter}
+          onChange={(e) => setIsCounter(e.target.checked)}
+          className="rounded"
+        />
+        Assign to a counter (PIN access)
+      </label>
+
+      {isCounter && (
+        <div className="space-y-3 pl-1">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Counter Name</label>
+            <input
+              value={counterName}
+              onChange={(e) => setCounterName(e.target.value)}
+              placeholder="e.g. João"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-slate-900"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">4-Digit PIN</label>
+            <input
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              placeholder="e.g. 1234"
+              inputMode="numeric"
+              maxLength={4}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-slate-900"
+            />
+          </div>
+        </div>
+      )}
+
       {erro && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">{erro}</div>
       )}
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={isPending || !title.trim()}
+          disabled={isPending || !title.trim() || (isCounter && pin.length !== 4)}
           className="flex-1 bg-slate-900 text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-40"
         >
           {isPending ? 'Creating...' : 'Create →'}
