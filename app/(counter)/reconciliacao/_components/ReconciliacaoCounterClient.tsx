@@ -77,6 +77,7 @@ export function ReconciliacaoCounterClient({ items, readOnly = false }: Props) {
 
   async function handleSalvar(item: ReconcItemLista) {
     const inp = getInput(item.id)
+    const noBpu = item.bpu === 1
     const pallets = parseInt(inp.pallets || '0', 10) || 0
     const cases = parseInt(inp.cases || '0', 10)
     const units = parseInt(inp.units || '0', 10)
@@ -84,10 +85,12 @@ export function ReconciliacaoCounterClient({ items, readOnly = false }: Props) {
       setErro('Please fill in the values before saving.')
       return
     }
-    const reconciliated_cases = pallets * item.pallet_size + cases
+    // BPU=1: everything is stored as cases (units input becomes reconciliated_cases)
+    const reconciliated_cases = noBpu ? units : (pallets * item.pallet_size + cases)
+    const reconciliated_units = noBpu ? 0 : units
     setSavingId(item.id)
     setErro(null)
-    const result = await resolverItemReconciliacao(item.id, reconciliated_cases, units)
+    const result = await resolverItemReconciliacao(item.id, reconciliated_cases, reconciliated_units)
     setSavingId(null)
     if (result.error) setErro(result.error)
     else router.refresh()
@@ -153,6 +156,7 @@ export function ReconciliacaoCounterClient({ items, readOnly = false }: Props) {
       <div className="space-y-3 mb-6">
         {items.map((item) => {
           const resolved = item.status === 'resolvido'
+          const noBpu = item.bpu === 1
           const inp = getInput(item.id)
           const wi = getWeightInput(item.id)
           const wCalc = item.is_weight_count
@@ -300,7 +304,8 @@ export function ReconciliacaoCounterClient({ items, readOnly = false }: Props) {
                             }))
                           }
                           placeholder="0"
-                          className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
+                          disabled={noBpu}
+                          className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500 disabled:opacity-40 disabled:bg-slate-50"
                         />
                       </div>
                       <span className="text-slate-400 text-sm pb-2.5">×</span>
@@ -318,7 +323,8 @@ export function ReconciliacaoCounterClient({ items, readOnly = false }: Props) {
                             }))
                           }
                           placeholder="0"
-                          className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
+                          disabled={noBpu}
+                          className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500 disabled:opacity-40 disabled:bg-slate-50"
                         />
                       </div>
                       <span className="text-slate-400 text-sm pb-2.5">+</span>

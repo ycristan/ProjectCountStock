@@ -96,11 +96,12 @@ export async function criarSessao(
   if (!numEquipes || numEquipes < 1) return { error: 'Invalid number of teams.' }
 
   const box_tare_g = Math.max(1, parseInt(formData.get('box_tare_g') as string) || 300)
+  const tolerance_g = Math.max(0, parseInt(formData.get('tolerance_g') as string) || 0)
 
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('count_sessions')
-    .insert({ status: 'aberta', box_tare_g })
+    .insert({ status: 'aberta', box_tare_g, tolerance_g })
     .select('id')
     .single()
 

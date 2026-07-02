@@ -55,6 +55,24 @@ export default function SessaoPage() {
           />
           <p className="text-xs text-slate-400 mt-1">Peso de cada caixa vazia para desconto na pesagem</p>
         </div>
+        <div>
+          <label
+            htmlFor="tolerance_g"
+            className="block text-sm font-medium text-slate-700 mb-1"
+          >
+            Tolerância de pesagem (gramas)
+          </label>
+          <input
+            id="tolerance_g"
+            name="tolerance_g"
+            type="number"
+            min={0}
+            defaultValue={0}
+            required
+            className="w-full px-4 py-3 text-lg border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
+          />
+          <p className="text-xs text-slate-400 mt-1">Diferença máxima entre C1 e C2 em itens pesados para considerar &quot;combinado&quot; (0 = exacto)</p>
+        </div>
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button
           type="submit"
