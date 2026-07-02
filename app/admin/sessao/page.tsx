@@ -55,6 +55,24 @@ export default function SessaoPage() {
           />
           <p className="text-xs text-slate-400 mt-1">Weight of each empty box to be deducted during weighing</p>
         </div>
+        <div>
+          <label
+            htmlFor="tolerance_g"
+            className="block text-sm font-medium text-slate-700 mb-1"
+          >
+            Weight Tolerance (grams)
+          </label>
+          <input
+            id="tolerance_g"
+            name="tolerance_g"
+            type="number"
+            min={0}
+            defaultValue={0}
+            required
+            className="w-full px-4 py-3 text-lg border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
+          />
+          <p className="text-xs text-slate-400 mt-1">Maximum difference between C1 and C2 for weighted items to be considered combined (0 = exact match)</p>
+        </div>
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button
           type="submit"
