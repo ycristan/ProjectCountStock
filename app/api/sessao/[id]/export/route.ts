@@ -113,7 +113,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     reconcMap[r.team_id][r.brand_code] = r
   }
 
-  const allCodes = [...new Set((reconcItems ?? []).map((r) => r.brand_code))].sort()
+  // ponytail: item não contado por nenhuma equipe entra no merge final como 0 (não imputado a equipe).
+  // Fonte = inventário inteiro; mergedForCode devolve {0,0} para código sem contagem.
+  const allCodes = [...(inventory ?? []).map((i) => i.brand_code)].sort()
 
   // ponytail: merged de todas as equipes por item — soma o valor oficial em unidades e re-normaliza pelo BPU
   function mergedForCode(code: string): { cases: number; units: number } {

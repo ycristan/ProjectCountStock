@@ -222,7 +222,6 @@ export function CombinacaoClient({
   }
 
   const reconcilidaTeams = teams.filter((t) => t.status === 'reconciliada')
-  const reconcilidaIds = new Set(reconcilidaTeams.map((t) => t.id))
   const hasReconciliada = reconcilidaTeams.length > 0
   const allReconciliada =
     teams.length > 0 && teams.every((t) => t.status === 'reconciliada')
@@ -236,11 +235,9 @@ export function CombinacaoClient({
     0,
   )
 
-  const reconcCodes = [
-    ...new Set(
-      reconc.filter((r) => reconcilidaIds.has(r.team_id)).map((r) => r.brand_code),
-    ),
-  ].sort()
+  // ponytail: merge final lista todo o inventário; item não contado por nenhuma equipe = 0
+  // (getMerged devolve {0,0} para código sem reconciliação). Não é imputado a nenhuma equipe.
+  const reconcCodes = [...inventory.map((i) => i.brand_code)].sort()
 
   function cName(teamId: string, role: string, fallback: string) {
     const name = counters[teamId]?.[role]
@@ -319,7 +316,7 @@ export function CombinacaoClient({
 
       <div className="fixed inset-x-0 bottom-0 flex flex-col bg-slate-50" style={{ top: '48px' }}>
 
-        {/* ── Page header bar ──────────────────────────────────────────── */}
+        {/* ── Page header bar ───────────────────────────── */}
         <div className="flex-none h-14 bg-slate-900 flex items-center justify-between px-4 gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Link
@@ -358,7 +355,7 @@ export function CombinacaoClient({
           </div>
         </div>
 
-        {/* ── Teams strip ──────────────────────────────────────────────── */}
+        {/* ── Teams strip ─────────────────────────────── */}
         <div className="flex-none bg-slate-800 border-b border-slate-700 flex items-center gap-2 px-3 overflow-x-auto min-h-14 py-2">
           {teams.map((team) => {
             const c1c2Fin =
@@ -417,7 +414,7 @@ export function CombinacaoClient({
           )}
         </div>
 
-        {/* ── Tabs ─────────────────────────────────────────────────────── */}
+        {/* ── Tabs ────────────────────────────────── */}
         <div className="flex-none bg-white border-b-2 border-slate-200 flex overflow-x-auto">
           {teams.map((team) => {
             const isReconciliada = team.status === 'reconciliada'
@@ -461,7 +458,7 @@ export function CombinacaoClient({
           )}
         </div>
 
-        {/* ── Table container — internal scroll ────────────────────────── */}
+        {/* ── Table container ─ internal scroll ─────────────── */}
         <div className="flex-1 min-h-0 overflow-auto bg-white">
 
           {teams.length === 0 && (
@@ -484,7 +481,7 @@ export function CombinacaoClient({
                 style={{ display: activeTab === team.id ? 'block' : 'none' }}
               >
                 {isReconciliada ? (
-                  /* ── Reconciliation view (reconciliada teams) ─────────── */
+                  /* ── Reconciliation view (reconciliada teams) ───────── */
                   <table className="w-full text-sm border-collapse">
                     <thead className="sticky top-0 z-10">
                       <tr>
@@ -657,7 +654,7 @@ export function CombinacaoClient({
             )
           })}
 
-          {/* ── Merged tab ────────────────────────────────────────────── */}
+          {/* ── Merged tab ───────────────────────────── */}
           <div style={{ display: activeTab === 'combinado' ? 'block' : 'none' }}>
             <table className="text-sm border-collapse w-full">
               <thead className="sticky top-0 z-10">
