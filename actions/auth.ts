@@ -3,6 +3,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase-admin'
 
 async function makeSupabase() {
   const cookieStore = await cookies()
@@ -38,8 +39,30 @@ export async function login(
   let signInPassword: string
 
   if (teamPin && userPin) {
-    signInEmail = `${teamPin}${userPin}@count.local`
-    signInPassword = userPin
+    if (/^\d{4}$/.test(teamPin)) {
+      signInEmail = `${teamPin}${userPin}@count.local`
+      signInPassword = userPin
+    } else {
+      // ponytail: primeiro campo não-numérico = codinome de contador solo; entra pela mesma
+      // tela de login (sem toggle, sem URL). Restrição: codinome não pode ser 4 dígitos puros.
+      const admin = createAdminClient()
+      const { data: session } = await admin
+        .from('solo_sessions')
+        .select('id')
+        .ilike('counter_name', teamPin)
+        .eq('access_pin', userPin)
+        .eq('status', 'open')
+        .limit(1)
+        .maybeSingle()
+      if (!session) return { error: 'Invalid code or PIN.' }
+      const cookieStore = await cookies()
+      cookieStore.set(`solo_pin_${session.id}`, userPin, {
+        httpOnly: true,
+        path: '/',
+        maxAge: 60 * 60 * 24,
+      })
+      redirect(`/solo/${session.id}/contar`)
+    }
   } else if (email && password) {
     signInEmail = email
     signInPassword = password

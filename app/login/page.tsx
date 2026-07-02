@@ -42,16 +42,14 @@ export default function LoginPage() {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Team Code
+                  Team Code or Username
                 </label>
                 <input
                   name="team_pin"
                   type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]{4}"
-                  maxLength={4}
                   required
-                  placeholder="0000"
+                  autoCapitalize="none"
+                  placeholder="0000 or name"
                   className="w-full px-4 py-4 text-3xl text-center tracking-[0.5em] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
