@@ -1,13 +1,19 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { login } from '@/actions/auth'
 
-type LoginState = { error: string } | null
+type LoginState = { error?: string; redirect?: string } | null
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, null)
   const [adminMode, setAdminMode] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    if (state?.redirect) router.push(state.redirect)
+  }, [state, router])
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

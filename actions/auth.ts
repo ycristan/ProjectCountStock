@@ -27,9 +27,9 @@ async function makeSupabase() {
 }
 
 export async function login(
-  _prevState: { error: string } | null,
+  _prevState: { error?: string; redirect?: string } | null,
   formData: FormData
-): Promise<{ error: string } | null> {
+): Promise<{ error?: string; redirect?: string } | null> {
   const teamPin = (formData.get('team_pin') as string | null)?.trim()
   const userPin = (formData.get('user_pin') as string | null)?.trim()
   const email = (formData.get('email') as string | null)?.trim().toLowerCase()
@@ -61,7 +61,9 @@ export async function login(
         path: '/',
         maxAge: 60 * 60 * 24,
       })
-      redirect(`/solo/${session.id}/contar`)
+      // ponytail: set cookie + client-side nav (mesmo fluxo do PinForm). Um redirect() no
+      // servidor aqui perderia o cookie httpOnly na requisição seguinte → /contar rejeitava.
+      return { redirect: `/solo/${session.id}/contar` }
     }
   } else if (email && password) {
     signInEmail = email
