@@ -1,6 +1,6 @@
 ---
 name: project-count-stock
-description: "Count Stock — contagem física cega tripla: stack, fluxo, PRs #1–#45 mergeados, #46 e #47 open; Solo Count admin + PIN counter; tolerance_g; falta: auditoria final"
+description: "Count Stock — contagem física cega tripla: stack, fluxo, PRs #1–#45 e #48 mergeados; #47 (solo PIN login) ABANDONADA; item não contado = 0 no merge; prod resetada"
 metadata: 
   node_type: memory
   type: project
@@ -16,161 +16,68 @@ metadata:
 - **Vercel dashboard**: https://vercel.com/ycristans-projects/project-count-stock-ylmm
 - **App URL produção**: derivado do host do request em runtime (sem env var hardcoded)
 
+## Estado atual (2026-07-02)
+- **Produção foi RESETADA**: apagados todos os dados de contagem/equipes/sessões/solo/audit e todos os usuários contadores. Mantidos APENAS o **admin (1 usuário)** e o **inventário** (`inventory_items` 402 itens + `item_bin_locations` 282). Banco pronto pra uso limpo.
+- Variável importante: **preview e produção usam o MESMO Supabase** (`sktpzvlmeegyuqsvtunx`). Não há banco por branch. Dado de teste em preview vai pra produção também.
+- **Migrations NÃO são aplicadas automaticamente no merge** — aplicar à mão (via Supabase MCP `apply_migration` ou dashboard).
+
 ## Stack
-- Next.js 16.2.9 + React 19 + TypeScript
+- Next.js 16.2.9 + React 19 + TypeScript (strict, sem noUnusedLocals — unused vars pegam no `next build`/ESLint)
 - Tailwind CSS 4 + `@tailwindcss/postcss`
 - Supabase (Postgres + Auth + RLS + Realtime) via `@supabase/ssr`
 - `xlsx` — upload/download de inventário e exportação Excel
-- `qrcode` — geração de QR codes server-side (adicionado PR #23)
+- `qrcode` — QR codes server-side (PR #23)
 
 ## Admin
 - `user_metadata`: `{"role":"admin","full_name":"Yuri"}`
 - Credenciais: ver password manager / Supabase dashboard
 
 ## Auth — padrão 2-PIN (contadores triplos)
-- Email Supabase: `${team_pin}${user_pin}@count.local`
-- Senha Supabase: `user_pin` (4 dígitos)
+- Email Supabase: `${team_pin}${user_pin}@count.local`; Senha: `user_pin` (4 dígitos)
 - `user_metadata.role`: `'admin'` ou `'counter'`
-- `user_metadata.full_name`: nome real do contador (ex: "João", "Maria")
-- `user_metadata.counter_role`: `'contador_1'`, `'contador_2'`, `'independente'`
-- `user_metadata.team_id`: UUID da equipe
+- `user_metadata.full_name`: nome real; `user_metadata.counter_role`: `'contador_1'|'contador_2'|'independente'`; `user_metadata.team_id`
+- Login (`actions/auth.ts`) aceita 2-PIN (contador) ou email+senha (admin). Redireciona pra `/`.
 
-## Solo Count — dois modos
+## Solo Count
+### Modo Admin (PR #43, mergeado)
+- Contagem conduzida pelo próprio admin — sem PIN, sem reconciliação. `/admin/solo` → New (só título) → `/admin/solo/[id]` (SoloCountClient reusa BuscaClient/CountForm) → Finalise → Export.
+### Modo Contador com PIN (PR #47) — ABANDONADO
+- Tentou-se dar acesso a um contador solo. Duas variantes falharam e a **PR #47 foi FECHADA sem merge**. Ver [[project-count-stock-architecture]] (armadilhas) e a lição abaixo. Não reabrir sem repensar do zero.
 
-### Modo Admin (PR #43)
-- Contagem conduzida pelo PRÓPRIO admin — sem PIN, sem cookie, sem reconciliação
-- Fluxo: `/admin/solo` → New Solo Count (só pede título) → `/admin/solo/[id]` JÁ É a tela de contagem (SoloCountClient) → Finalise → Export Excel
-- RLS admin-only (`FOR ALL USING role='admin'`)
-
-### Modo Contador com PIN (PR #47, migration 018)
-- Admin cria sessão com "Assign to a counter" → preenche counter_name + PIN de 4 dígitos
-- Admin compartilha URL `/solo/[id]` + PIN com o contador
-- Contador acessa `/solo/[id]` → digita PIN → cookie httpOnly 24h → redireciona para `/solo/[id]/contar`
-- Tela de contagem: BuscaClient idêntico ao time counter, mas `onSubmit` via `lancarSoloContagemCounter` (cookie-verificado)
-- Admin acompanha resultados em `/admin/solo/[id]` como de costume
-- `solo_sessions`: `access_pin VARCHAR(4)` + `counter_name TEXT` (NULLs em sessões admin-only)
-
-## Nomes dos contadores (tripla contagem)
-- NÃO estão em `counter_accounts.username` (esse campo armazena `team_pin+user_pin`, ex: `41003990`)
-- Estão em `auth.users.raw_user_meta_data->>'full_name'`
-- Para buscar: `createAdminClient().auth.admin.listUsers({ perPage: 1000 })` → filtrar por `team_id` e `counter_role`
-- Padrão nameMap: `nameMap[tid:role] = full_name` (ver `listarEquipes` em `actions/sessao.ts`)
+## Regra: item não contado = 0 no merge final (PR #48, mergeado)
+- Todo item do `inventory_items` que **nenhuma equipe** contou aparece no resultado final como **0** — **não imputado a nenhuma equipe** (regra de sessão).
+- Aplicada nos 3 produtores do merge, iterando o inventário inteiro (não só os códigos contados):
+  1. `app/api/sessao/[id]/export/route.ts` — abas Consolidado + Template.
+  2. `app/admin/sessao/[id]/combinacao/_components/CombinacaoClient.tsx` — aba Merged.
+  3. `combine_session_results` (migration 019, **aplicada no banco**) — loop externo sobre `inventory_items`.
+- Abas/telas por-equipe ficam iguais (zeros são de sessão, nunca de equipe).
 
 ## Regra BPU=1
-- Quando `item.bpu === 1` (1cs = 1un): campos Pallets e Cases são `disabled` no CountForm e SoloBuscaClient
-- Apenas Units é editável
-- Edit mode: pré-carrega `units = entry.cases + entry.units` (BPU=1 normaliza tudo para final_cases)
-- Implementado em `CountForm.tsx` (`const noBpu = item.bpu === 1`) e `SoloBuscaClient.tsx`
+- `item.bpu === 1`: Pallets e Cases `disabled` no CountForm; só Units editável. Edit mode pré-carrega `units = entry.cases + entry.units`.
 
-## Estrutura de pastas chave
-```
-app/
-  admin/
-    sessao/[id]/
-      equipes/          ← EquipesForm.tsx + EquipesGerenciar.tsx (botão "Cartões QR")
-      imprimir/         ← PR #23: cartões com QR code (server component)
-      progresso/        ← redirect para /combinacao (PR #29)
-      reconciliacao/[teamId]/  ← admin acompanha reconciliação ao vivo (Realtime, PR #23)
-      combinacao/       ← tela unificada: progresso ao vivo + reconciliação + combinação (PR #29)
-    solo/               ← PR #43: lista + criar sessão solo; PR #47: checkbox "Assign to a counter" + PIN
-      [id]/             ← SoloCountClient: busca + contagem + Finalise + Export Excel (admin-only)
-  solo/                 ← PR #47: acesso de contador via PIN (sem Supabase auth)
-    [id]/               ← PIN entry page (PinForm.tsx); auto-redirect se cookie válido
-      contar/           ← BuscaClient com onSubmit=lancarSoloContagemCounter; cookie-gated
-  (counter)/
-    busca/              ← tela mobile busca + lançamento cego
-    finalizacao/        ← contador finaliza contagem
-    reconciliacao/      ← independente reconcilia (Realtime + Pallets, PR #23)
-  api/
-    sessao/[id]/export/ ← GET route que gera .xlsx (PR #27)
-    solo/[id]/export/   ← GET route solo .xlsx (PR #43)
-actions/
-  auth.ts | contagem.ts | finalizacao.ts | inventario.ts | reconciliacao.ts | sessao.ts | combinacao.ts
-  solo.ts               ← PR #43+#47: criarSoloSessao(title, access_pin?, counter_name?) | lancarSoloContagem (admin) | verificarSoloPin | lancarSoloContagemCounter (cookie) | encerrarSoloSessao
-                           ↳ _saveSoloEntry: helper privado compartilhado por lancarSoloContagem + lancarSoloContagemCounter
-                           ↳ reutiliza LancarContagemPayload + RPC convert_count — mesmo contrato de contagem.ts
-lib/
-  supabase-client.ts   ← exporta createClient() — browser (NÃO createBrowserClient!)
-  supabase-server.ts   ← exporta createClient() — server
-  supabase-admin.ts    ← exporta createAdminClient() — service_role
-supabase/migrations/
-  001_schema.sql | 002_functions.sql | 003_rls.sql | 004_finalized_at.sql
-  010_remove_bin_from_finalize.sql  ← finalize sem bin_location (PR #22)
-  011_combine_session.sql           ← RPC combine_session_results (PR #25)
-  012_fix_count_entries_duplicates.sql ← UNIQUE INDEX + cleanup duplicatas (PR #26)
-  013_finalize_c1_c2_only.sql       ← independente não finaliza (PR #32)
-  015_independente_confirm.sql      ← independente_confirmed_at + RLS counter_accounts (PR #37)
-  016_solo_sessions.sql             ← solo_sessions(title,status) + solo_entries + RLS admin-only (PR #43)
-  017_tolerance.sql                 ← tolerance_g em count_sessions + lógica tolerância em finalize_team_count (PR #45)
-  018_solo_pin.sql                  ← access_pin VARCHAR(4) + counter_name TEXT em solo_sessions (PR #47)
-```
+## Nomes dos contadores
+- NÃO em `counter_accounts.username` (esse guarda `team_pin+user_pin`). Estão em `auth.users.raw_user_meta_data->>'full_name'`.
+- Buscar via `createAdminClient().auth.admin.listUsers({ perPage: 1000 })` → filtrar por team_id/counter_role.
 
 ## Fluxo completo — Contagem Tripla
-1. Admin cria sessão → define nº equipes e box_tare_g
-2. Admin cria equipes → gera team_pin + user_pin → imprime cartões com QR
-3. Contadores 1 e 2 contam → cegos, lançam via mobile
-4. Independente **não conta** — vai direto para /monitor (tela ao vivo de C1 vs C2)
-5. Admin finaliza equipe (quando C1+C2 finalizaram) → clica "Check →" → RPC `finalize_team_count` → compara C1 vs C2 → gera reconciliation_items
-6. Independente reconcilia discrepâncias → valor acordado (normal: Pallets×pallet_size+Cases+Units; peso: nº caixas+peso bruto)
-7. Admin monitora reconciliação ao vivo (Realtime)
-8. Independente confirma → status 'reconciliada'
-9. Admin acessa Combinação → confirma → RPC `combine_session_results` → `combined_results`
-10. Admin exporta Excel → `/api/sessao/[id]/export` → .xlsx com aba por equipe + Consolidado
+1. Admin cria sessão (nº equipes, box_tare_g, tolerance_g). 2. Cria equipes (team_pin+user_pin, cartões QR). 3. Contadores 1 e 2 contam cego. 4. Independente **não conta** — vai pra /monitor. 5. Admin “Check →” → RPC `finalize_team_count` → gera reconciliation_items. 6. Independente reconcilia discrepâncias. 7. Admin monitora ao vivo. 8. Independente confirma → status 'reconciliada'. 9. Admin → Combinação → Confirm → RPC `combine_session_results` → `combined_results`. 10. Export Excel.
 
-## Fluxo Solo Count (PR #43, admin-only)
-1. Admin → Dashboard → Solo Count → New Solo Count (só pede título)
-2. Abre `/admin/solo/[id]` que JÁ É a tela de contagem (SoloCountClient)
-3. Busca client-side por código ou nome → clica item → form Pallets/Cases/Units (BPU=1 trava pallets/cases; pallet_size=0 trava pallets)
-4. Submit → upsert `solo_entries` (recontar = substitui); lista ao vivo do que foi contado
-5. Finalise Solo Count → encerra sessão
-6. Export Excel → `/api/solo/[id]/export`: Category/Category1/BrandCode/BrandName/BPU/Cases/Units
+## Migrations (supabase/migrations)
+001 schema | 002 functions | 003 rls | 004 finalized_at | 005 weight_avg | 006 category | 007 reconc_recount | 008 weight_marker | 009 realtime+admin_rls | 010 remove_bin_from_finalize | 011 combine_session | 012 fix_count_entries_dup | 013 finalize_c1_c2_only | 014 fix_combine_no_discrepancy | 016 solo_sessions | 017 tolerance | **019 combine_all_inventory (merge inclui inventário inteiro — não contado=0; APLICADA)**
+(015 independente_confirm existe; 018 solo_pin ficou só na branch abandonada #47)
 
-## PRs mergeados
-| PR | O que fez |
-|----|----------|
-| #1–#10 | Bootstrap, schema, upload, auth 2-PIN, layouts, routing, header |
-| #11 | Tela mobile /busca — busca + lançamento cego |
-| #12 | Finalização contador + monitoring admin com Realtime |
-| #13 | Reconciliação de equipe (view estático) |
-| #21 | **Realtime auth fix** no ProgressoClient (getSession → setAuth antes de subscribe) |
-| #22 | Remove BIN do fluxo; admin layout max-w-7xl; tabela `10+21` com bordas |
-| #23 | Realtime admin+counter reconciliação; Pallets no form; cartões impressão QR |
-| #25 | Combinação de equipes: RPC combine_session_results + CombinacaoClient + ProgressoClient link |
-| #26 | Fix bug peso: maybeSingle() com duplicatas → DELETE+INSERT + UNIQUE INDEX |
-| #27 | Excel export: `/api/sessao/[id]/export` + botão "↓ Exportar Excel" na Combinação |
-| #29 | Tela unificada: /progresso → redirect; CombinacaoClient absorve ProgressoClient (Realtime, chips, tabs, flash) |
-| #30 | Inventory upload sync completo; pallet input disabled quando pallet_size=0; negativos bloqueados |
-| #31 | Tradução completa para inglês britânico (26 arquivos) |
-| #32 | Independente vira auditor: /monitor ao vivo; discrepância simplificada C1 vs C2; migration 013 |
-| #33 | fix: allFin excluía independente → botão "Check →" nunca aparecia |
-| #34 | C1/C2 veem lista de reconciliação read-only; Realtime ativo |
-| #37 | Independente confirmation flow: independente_confirmed_at + MonitorClient banner + Check/Force buttons |
-| #38 | (cancelado — conflito) |
-| #39 | Force Close session + Delete Session com modal (deletar equipes?) em /admin/sessoes |
-| #40 | fix: admin abre página antes de contadores submeterem → inventory sempre buscado no Promise.all |
-| #41 | fix: live count table usa mesmo formato rico da reconciliada (Category/BrandCode/BPU + Cases/Units) |
-| #42 | fix: BPU=1 → Pallets e Cases desabilitados no CountForm; apenas Units editável |
-| #43 | feat: Solo Count admin-only (sem PIN, sem reconciliação); SoloCountClient reutiliza BuscaClient/CountForm com `onSubmit` injetado; `/admin/solo` + `/admin/solo/[id]` |
-| #44 | fix: Excel export usa mesma lógica do `getMerged` (resolvido→reconciliation, else C1, não mais independente_cases que é NULL); feat: aba "Template Import Reconc" (Brand Code / Outer / Units / Status="Avl") |
-| #45 | feat: campo tolerance_g no form `/admin/sessao`; migration 017 (tolerance_g em count_sessions + lógica CEIL no finalize_team_count) |
+## PRs
+- Mergeados: #1–#45 e **#48** (item não contado = 0 no merge).
+- **#47 (solo count PIN para contador) — FECHADA/ABANDONADA** (login por codinome+PIN nunca funcionou; ver lição).
+- **#46 (dead code cleanup, ~1471 linhas)** — ainda OPEN.
 
-## PRs pendentes (open)
-- **#46** — dead code cleanup (10 arquivos, 1471 linhas); `app/(admin)/` e componentes legados
-- **#47** — solo count PIN access para contadores; `/solo/[id]` + `/solo/[id]/contar`; migration 018
-
-## Pendências
-1. **MonitorClient badges** — C1/C2 não atualizam em tempo real (aceitável por ora)
-
-## O que FALTA (deferred)
-1. **Auditoria final** — 2 auditores aprovam → tabela `audit_approvals`
+## Lição: solo-PIN login (não repetir)
+Tentativa: contador solo logar pela tela normal com codinome+PIN, achando a sessão solo aberta e setando cookie `solo_pin_<id>` pra cair em `/solo/[id]/contar`. Sintoma: `POST /login → 303` achava a sessão certo, mas `GET /solo/[id]/contar → 307` (cookie httpOnly ausente na requisição seguinte) → bounce pro login. Dado/deploy OK. 2 tentativas (redirect no servidor; depois set-cookie + nav client-side igual ao PinForm) NÃO resolveram. Causa raiz do bounce NÃO foi achada. Se voltar: investigar por que o cookie não sobrevive até /contar, ou repensar (ex.: contador solo como usuário Supabase real).
 
 ## Armadilha crítica: TypeScript 5.7 + xlsx + BodyInit
-- `XLSX.write(wb, { type: 'array' })` retorna `Uint8Array<ArrayBufferLike>`
-- TS 5.7 tornou typed arrays genéricos → não é assignável a `BodyInit`
-- Fix: `as unknown as BodyInit` no cast (runtime correto, apenas issue de tipagem)
+- `XLSX.write(wb,{type:'array'})` → `Uint8Array<ArrayBufferLike>` não assignável a `BodyInit`. Fix: `as unknown as BodyInit`.
 
 ## Workflow
-- Todo código vai ao GitHub via MCP (`mcp__github__*`) — branch + push + PR
-- Mergear com squash
-- Push direto na main APENAS se o usuário disser explicitamente
-- [[project-count-stock-architecture]] para padrões técnicos críticos
+- Todo código via GitHub MCP (`mcp__github__*`) — branch + PR + squash. Push direto na main só se o usuário pedir (docs/memory ok).
+- Editar arquivos grandes: clonar local + Edit cirúrgico (o GitHub MCP não faz patch de linha; reproduzir arquivo inteiro arrisca).
+- [[project-count-stock-architecture]] para padrões técnicos críticos.
