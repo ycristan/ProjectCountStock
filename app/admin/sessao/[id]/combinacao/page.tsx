@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { fetchAllRows } from '@/lib/fetch-all-rows'
 import { redirect } from 'next/navigation'
 import { CombinacaoClient } from './_components/CombinacaoClient'
 
@@ -63,27 +64,51 @@ export default async function CombinacaoPage({
 
   const [
     { data: accounts },
-    { data: entries },
-    { data: reconcItems },
+    entries,
+    reconcItems,
     { data: { users } },
     { data: existing },
-    { data: inventory },
+    inventory,
   ] = await Promise.all([
     admin
       .from('counter_accounts')
       .select('id, team_id, role, finalized_at')
       .in('team_id', teamIds),
-    admin
-      .from('count_entries')
-      .select('team_id, counter_role, brand_code, final_cases, final_units')
-      .in('team_id', teamIds)
-      .eq('is_joint_recount', false),
-    admin
-      .from('reconciliation_items')
-      .select(
-        'team_id, brand_code, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units',
-      )
-      .in('team_id', teamIds),
+    fetchAllRows<{
+      team_id: string
+      counter_role: string
+      brand_code: string
+      final_cases: number
+      final_units: number
+    }>((from, to) =>
+      admin
+        .from('count_entries')
+        .select('team_id, counter_role, brand_code, final_cases, final_units')
+        .in('team_id', teamIds)
+        .eq('is_joint_recount', false)
+        .range(from, to)
+    ),
+    fetchAllRows<{
+      team_id: string
+      brand_code: string
+      status: string
+      contador_1_cases: number | null
+      contador_1_units: number | null
+      contador_2_cases: number | null
+      contador_2_units: number | null
+      independente_cases: number | null
+      independente_units: number | null
+      reconciliated_cases: number | null
+      reconciliated_units: number | null
+    }>((from, to) =>
+      admin
+        .from('reconciliation_items')
+        .select(
+          'team_id, brand_code, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units',
+        )
+        .in('team_id', teamIds)
+        .range(from, to)
+    ),
     admin.auth.admin.listUsers({ perPage: 1000 }),
     supabase
       .from('combined_results')
@@ -92,9 +117,13 @@ export default async function CombinacaoPage({
       .limit(1),
     // ponytail: fetch all inventory upfront so invMap is always populated,
     // even when admin opens the page before counters submit any entries
-    supabase
-      .from('inventory_items')
-      .select('brand_code, brand_name, bpu, category, category1'),
+    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; category: string; category1: string }>(
+      (from, to) =>
+        supabase
+          .from('inventory_items')
+          .select('brand_code, brand_name, bpu, category, category1')
+          .range(from, to)
+    ),
   ])
 
   const nameMap: Record<string, string> = {}
@@ -111,7 +140,7 @@ export default async function CombinacaoPage({
   }
 
   const entryCountMap: Record<string, number> = {}
-  for (const e of entries ?? []) {
+  for (const e of entries) {
     const k = `${e.team_id}:${e.counter_role}`
     entryCountMap[k] = (entryCountMap[k] ?? 0) + 1
   }
@@ -139,14 +168,14 @@ export default async function CombinacaoPage({
       sessionStatus={session?.status ?? 'aberta'}
       sessionCreatedAt={session?.created_at ?? ''}
       teams={teamData}
-      initialEntries={(entries ?? []).map((e) => ({
+      initialEntries={entries.map((e) => ({
         team_id: e.team_id,
         counter_role: e.counter_role,
         brand_code: e.brand_code,
         final_cases: e.final_cases,
         final_units: e.final_units,
       }))}
-      initialReconc={(reconcItems ?? []).map((r) => ({
+      initialReconc={reconcItems.map((r) => ({
         team_id: r.team_id,
         brand_code: r.brand_code,
         status: r.status,
@@ -159,7 +188,7 @@ export default async function CombinacaoPage({
         reconciliated_cases: r.reconciliated_cases,
         reconciliated_units: r.reconciliated_units,
       }))}
-      inventory={inventory ?? []}
+      inventory={inventory}
       isConfirmed={(existing?.length ?? 0) > 0}
       counters={counters}
     />
