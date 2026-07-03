@@ -35,7 +35,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const [{ data: teams }, { data: inventory }] = await Promise.all([
     supabase.from('teams').select('id, team_name').eq('session_id', sessionId).eq('status', 'reconciliada').order('team_name'),
-    supabase.from('inventory_items').select('brand_code, brand_name, bpu, category, category1'),
+    supabase.from('inventory_items').select('brand_code, brand_name, bpu, category, category1').range(0, 9999), // ponytail: PostgREST caps unranged selects at 1000 rows; inventory has 2000+ items, raise if it passes 10k
   ])
 
   const teamIds = (teams ?? []).map((t) => t.id)
@@ -44,7 +44,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     supabase
       .from('reconciliation_items')
       .select('team_id, brand_code, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units')
-      .in('team_id', teamIds),
+      .in('team_id', teamIds)
+      .range(0, 9999), // ponytail: rows scale with team_count × items counted, can pass 1000 on a single fully-counted team
     createAdminClient().auth.admin.listUsers({ perPage: 1000 }),
   ])
 

@@ -54,14 +54,16 @@ export async function carregarInventario(): Promise<ItemBusca[]> {
       supabase
         .from('inventory_items')
         .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
-        .order('brand_code', { ascending: true }),
-      supabase.from('item_bin_locations').select('brand_code, bin_location'),
+        .order('brand_code', { ascending: true })
+        .range(0, 9999), // ponytail: PostgREST caps unranged selects at 1000 rows; inventory has 2000+ items, raise if it passes 10k
+      supabase.from('item_bin_locations').select('brand_code, bin_location').range(0, 9999),
       supabase
         .from('count_entries')
         .select('brand_code, pallets, cases, units')
         .eq('team_id', teamId)
         .eq('counter_role', counterRole)
-        .eq('is_joint_recount', false),
+        .eq('is_joint_recount', false)
+        .range(0, 9999),
       supabase.from('teams').select('session_id').eq('id', teamId).single(),
     ])
 

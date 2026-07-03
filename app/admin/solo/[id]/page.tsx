@@ -9,8 +9,8 @@ export default async function AdminSoloDetailPage({ params }: { params: Promise<
 
   const [{ data: session }, { data: inventory }, { data: entries }] = await Promise.all([
     admin.from('solo_sessions').select('id, title, status').eq('id', id).single(),
-    admin.from('inventory_items').select('brand_code, brand_name, bpu, pallet_size, weight_avg').order('brand_code'),
-    admin.from('solo_entries').select('brand_code, brand_name, pallets, cases, units, final_cases, final_units').eq('session_id', id),
+    admin.from('inventory_items').select('brand_code, brand_name, bpu, pallet_size, weight_avg').order('brand_code').range(0, 9999), // ponytail: PostgREST caps unranged selects at 1000 rows; inventory has 2000+ items, raise if it passes 10k
+    admin.from('solo_entries').select('brand_code, brand_name, pallets, cases, units, final_cases, final_units').eq('session_id', id).range(0, 9999),
   ])
 
   if (!session) notFound()
