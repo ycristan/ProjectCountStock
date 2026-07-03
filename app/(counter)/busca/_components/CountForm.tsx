@@ -8,6 +8,7 @@ type SucessoResult = {
   final_cases: number
   final_units: number
   brand_name: string
+  entry: { pallets: number; cases: number; units: number }
 }
 
 type Props = {
@@ -148,7 +149,14 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
         if (result.error) {
           setErro(result.error)
         } else {
-          onSucesso({ final_cases: result.final_cases!, final_units: result.final_units!, brand_name: result.brand_name! })
+          onSucesso({
+            final_cases: result.final_cases!,
+            final_units: result.final_units!,
+            brand_name: result.brand_name!,
+            // ponytail: reports the exact raw total just saved, so the next "+ Add to
+            // Count" on this item builds on it instead of the page-load snapshot
+            entry: { pallets: p, cases: c, units: u },
+          })
         }
       } catch {
         // ponytail: action ID goes stale after new deploy — Next.js will reload the page
