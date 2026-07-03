@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { fetchAllRows } from '@/lib/fetch-all-rows'
 import { MonitorClient } from './_components/MonitorClient'
 
 export default async function MonitorPage() {
@@ -16,7 +17,7 @@ export default async function MonitorPage() {
   const teamId = user.user_metadata?.team_id as string
   const admin = createAdminClient()
 
-  const [{ data: entries }, { data: inventory }, { data: counters }, { data: teamData }] =
+  const [{ data: entries }, inventory, { data: counters }, { data: teamData }] =
     await Promise.all([
       admin
         .from('count_entries')
@@ -24,10 +25,13 @@ export default async function MonitorPage() {
         .eq('team_id', teamId)
         .in('counter_role', ['contador_1', 'contador_2'])
         .eq('is_joint_recount', false),
-      admin
-        .from('inventory_items')
-        .select('brand_code, brand_name')
-        .order('brand_code', { ascending: true }),
+      fetchAllRows<{ brand_code: string; brand_name: string }>((from, to) =>
+        admin
+          .from('inventory_items')
+          .select('brand_code, brand_name')
+          .order('brand_code', { ascending: true })
+          .range(from, to)
+      ),
       admin
         .from('counter_accounts')
         .select('id, role, finalized_at')
@@ -44,7 +48,7 @@ export default async function MonitorPage() {
     <MonitorClient
       teamId={teamId}
       initialEntries={entries ?? []}
-      inventory={inventory ?? []}
+      inventory={inventory}
       counters={counters ?? []}
       initialIndConfirmed={!!teamData?.independente_confirmed_at}
     />
