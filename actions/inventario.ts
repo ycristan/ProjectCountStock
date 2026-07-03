@@ -19,8 +19,9 @@ export async function listarInventario(): Promise<ItemInventario[]> {
     supabase
       .from('inventory_items')
       .select('brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1')
-      .order('brand_code'),
-    supabase.from('item_bin_locations').select('brand_code, bin_location').order('brand_code'),
+      .order('brand_code')
+      .range(0, 9999), // ponytail: PostgREST caps unranged selects at 1000 rows; inventory has 2000+ items, raise if it passes 10k
+    supabase.from('item_bin_locations').select('brand_code, bin_location').order('brand_code').range(0, 9999),
   ])
   const binMap: Record<string, string[]> = {}
   for (const b of bins ?? []) {

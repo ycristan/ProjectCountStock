@@ -15,8 +15,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const [{ data: session }, { data: entries }, { data: inventory }] = await Promise.all([
     admin.from('solo_sessions').select('title').eq('id', id).single(),
-    admin.from('solo_entries').select('brand_code, brand_name, final_cases, final_units').eq('session_id', id).order('brand_code'),
-    admin.from('inventory_items').select('brand_code, category, category1, bpu'),
+    admin.from('solo_entries').select('brand_code, brand_name, final_cases, final_units').eq('session_id', id).order('brand_code').range(0, 9999), // ponytail: rows scale with items counted, can pass 1000 on a fully-counted session
+    admin.from('inventory_items').select('brand_code, category, category1, bpu').range(0, 9999), // ponytail: PostgREST caps unranged selects at 1000 rows; inventory has 2000+ items, raise if it passes 10k
   ])
 
   const invMap = Object.fromEntries((inventory ?? []).map((i) => [i.brand_code, i]))
