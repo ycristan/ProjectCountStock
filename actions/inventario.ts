@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase-server'
+import { fetchAllRows } from '@/lib/fetch-all-rows'
 
 export type ItemInventario = {
   brand_code: string
@@ -15,20 +16,32 @@ export type ItemInventario = {
 
 export async function listarInventario(): Promise<ItemInventario[]> {
   const supabase = await createClient()
-  const [{ data: items }, { data: bins }] = await Promise.all([
-    supabase
-      .from('inventory_items')
-      .select('brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1')
-      .order('brand_code')
-      .range(0, 9999), // ponytail: PostgREST caps unranged selects at 1000 rows; inventory has 2000+ items, raise if it passes 10k
-    supabase.from('item_bin_locations').select('brand_code, bin_location').order('brand_code').range(0, 9999),
+  const [items, bins] = await Promise.all([
+    fetchAllRows<{
+      brand_code: string
+      brand_name: string
+      bpu: number
+      pallet_size: number
+      weight_avg: number
+      category: string
+      category1: string
+    }>((from, to) =>
+      supabase
+        .from('inventory_items')
+        .select('brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1')
+        .order('brand_code')
+        .range(from, to)
+    ),
+    fetchAllRows<{ brand_code: string; bin_location: string }>((from, to) =>
+      supabase.from('item_bin_locations').select('brand_code, bin_location').order('brand_code').range(from, to)
+    ),
   ])
   const binMap: Record<string, string[]> = {}
-  for (const b of bins ?? []) {
+  for (const b of bins) {
     if (!binMap[b.brand_code]) binMap[b.brand_code] = []
     binMap[b.brand_code].push(b.bin_location)
   }
-  return (items ?? []).map((item) => ({
+  return items.map((item) => ({
     ...item,
     weight_avg: Number(item.weight_avg),
     bins: binMap[item.brand_code] ?? [],

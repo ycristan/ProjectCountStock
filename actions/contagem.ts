@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase-server'
+import { fetchAllRows } from '@/lib/fetch-all-rows'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,23 +50,29 @@ export async function carregarInventario(): Promise<ItemBusca[]> {
   const teamId = user.user_metadata?.team_id as string
   const counterRole = user.user_metadata?.counter_role as string
 
-  const [{ data: items }, { data: binData }, { data: entries }, { data: teamRow }] =
-    await Promise.all([
-      supabase
-        .from('inventory_items')
-        .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
-        .order('brand_code', { ascending: true })
-        .range(0, 9999), // ponytail: PostgREST caps unranged selects at 1000 rows; inventory has 2000+ items, raise if it passes 10k
-      supabase.from('item_bin_locations').select('brand_code, bin_location').range(0, 9999),
+  const [items, binData, entries, { data: teamRow }] = await Promise.all([
+    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null }>(
+      (from, to) =>
+        supabase
+          .from('inventory_items')
+          .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
+          .order('brand_code', { ascending: true })
+          .range(from, to)
+    ),
+    fetchAllRows<{ brand_code: string; bin_location: string }>((from, to) =>
+      supabase.from('item_bin_locations').select('brand_code, bin_location').range(from, to)
+    ),
+    fetchAllRows<{ brand_code: string; pallets: number; cases: number; units: number }>((from, to) =>
       supabase
         .from('count_entries')
         .select('brand_code, pallets, cases, units')
         .eq('team_id', teamId)
         .eq('counter_role', counterRole)
         .eq('is_joint_recount', false)
-        .range(0, 9999),
-      supabase.from('teams').select('session_id').eq('id', teamId).single(),
-    ])
+        .range(from, to)
+    ),
+    supabase.from('teams').select('session_id').eq('id', teamId).single(),
+  ])
 
   let box_tare_g = 300
   if (teamRow?.session_id) {
@@ -77,14 +84,14 @@ export async function carregarInventario(): Promise<ItemBusca[]> {
     if (sessionRow?.box_tare_g) box_tare_g = sessionRow.box_tare_g
   }
 
-  const entryMap = Object.fromEntries((entries ?? []).map((e) => [e.brand_code, e]))
+  const entryMap = Object.fromEntries(entries.map((e) => [e.brand_code, e]))
   const binMap: Record<string, string[]> = {}
-  for (const b of binData ?? []) {
+  for (const b of binData) {
     if (!binMap[b.brand_code]) binMap[b.brand_code] = []
-    binMap[b.brand_code].push(b.bin_location as string)
+    binMap[b.brand_code].push(b.bin_location)
   }
 
-  return (items ?? []).map((item) => {
+  return items.map((item) => {
     const entry = entryMap[item.brand_code]
     return {
       brand_code: item.brand_code,
