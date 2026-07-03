@@ -4,7 +4,7 @@
 const PAGE_SIZE = 1000
 
 export async function fetchAllRows<T>(
-  fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: { message: string } | null }>
+  fetchPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
 ): Promise<T[]> {
   const rows: T[] = []
   let from = 0
