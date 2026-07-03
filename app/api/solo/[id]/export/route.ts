@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { fetchAllRows } from '@/lib/fetch-all-rows'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
@@ -13,16 +14,26 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params
   const admin = createAdminClient()
 
-  const [{ data: session }, { data: entries }, { data: inventory }] = await Promise.all([
+  const [{ data: session }, entries, inventory] = await Promise.all([
     admin.from('solo_sessions').select('title').eq('id', id).single(),
-    admin.from('solo_entries').select('brand_code, brand_name, final_cases, final_units').eq('session_id', id).order('brand_code').range(0, 9999), // ponytail: rows scale with items counted, can pass 1000 on a fully-counted session
-    admin.from('inventory_items').select('brand_code, category, category1, bpu').range(0, 9999), // ponytail: PostgREST caps unranged selects at 1000 rows; inventory has 2000+ items, raise if it passes 10k
+    fetchAllRows<{ brand_code: string; brand_name: string; final_cases: number; final_units: number }>(
+      (from, to) =>
+        admin
+          .from('solo_entries')
+          .select('brand_code, brand_name, final_cases, final_units')
+          .eq('session_id', id)
+          .order('brand_code')
+          .range(from, to)
+    ),
+    fetchAllRows<{ brand_code: string; category: string; category1: string; bpu: number }>((from, to) =>
+      admin.from('inventory_items').select('brand_code, category, category1, bpu').range(from, to)
+    ),
   ])
 
-  const invMap = Object.fromEntries((inventory ?? []).map((i) => [i.brand_code, i]))
+  const invMap = Object.fromEntries(inventory.map((i) => [i.brand_code, i]))
 
   const headers = ['Category', 'Category 1', 'Brand Code', 'Brand Name', 'BPU', 'Cases', 'Units']
-  const rows = (entries ?? []).map((e) => {
+  const rows = entries.map((e) => {
     const inv = invMap[e.brand_code]
     return [inv?.category ?? '', inv?.category1 ?? '', e.brand_code, e.brand_name ?? '', inv?.bpu ?? '', e.final_cases, e.final_units]
   })

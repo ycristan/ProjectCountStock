@@ -3,6 +3,7 @@
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { fetchAllRows } from '@/lib/fetch-all-rows'
 import { redirect } from 'next/navigation'
 
 type UploadState = { error?: string; success?: boolean; count?: number; skipped?: number } | null
@@ -117,26 +118,38 @@ export async function buscarInventarioParaDownload() {
   } = await supabase.auth.getUser()
   if (!user || user.user_metadata?.role === 'counter') return null
 
-  const [{ data: items }, { data: bins }] = await Promise.all([
-    supabase
-      .from('inventory_items')
-      .select('brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1')
-      .order('brand_code')
-      .range(0, 9999), // ponytail: PostgREST caps unranged selects at 1000 rows; inventory has 2000+ items, raise if it passes 10k
-    supabase
-      .from('item_bin_locations')
-      .select('brand_code, bin_location')
-      .order('brand_code')
-      .range(0, 9999),
+  const [items, bins] = await Promise.all([
+    fetchAllRows<{
+      brand_code: string
+      brand_name: string
+      bpu: number
+      pallet_size: number
+      weight_avg: number
+      category: string
+      category1: string
+    }>((from, to) =>
+      supabase
+        .from('inventory_items')
+        .select('brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1')
+        .order('brand_code')
+        .range(from, to)
+    ),
+    fetchAllRows<{ brand_code: string; bin_location: string }>((from, to) =>
+      supabase
+        .from('item_bin_locations')
+        .select('brand_code, bin_location')
+        .order('brand_code')
+        .range(from, to)
+    ),
   ])
 
   const binMap: Record<string, string[]> = {}
-  for (const b of bins ?? []) {
+  for (const b of bins) {
     if (!binMap[b.brand_code]) binMap[b.brand_code] = []
     binMap[b.brand_code].push(b.bin_location)
   }
 
-  return (items ?? []).map((item) => {
+  return items.map((item) => {
     const b = binMap[item.brand_code] ?? []
     return {
       'Brand Code': item.brand_code,

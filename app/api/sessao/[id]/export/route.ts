@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { fetchAllRows } from '@/lib/fetch-all-rows'
 
 // ponytail: mesma regra da tela (CombinacaoClient.getMerged) — valor oficial do item
 // por equipe: resolvido → reconciliação; senão → Contador 1 (C1=C2, independente não conta mais).
@@ -33,23 +34,37 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id: sessionId } = await params
 
-  const [{ data: teams }, { data: inventory }] = await Promise.all([
+  const [{ data: teams }, inventory] = await Promise.all([
     supabase.from('teams').select('id, team_name').eq('session_id', sessionId).eq('status', 'reconciliada').order('team_name'),
-    supabase.from('inventory_items').select('brand_code, brand_name, bpu, category, category1').range(0, 9999), // ponytail: PostgREST caps unranged selects at 1000 rows; inventory has 2000+ items, raise if it passes 10k
+    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; category: string; category1: string }>(
+      (from, to) =>
+        supabase.from('inventory_items').select('brand_code, brand_name, bpu, category, category1').range(from, to)
+    ),
   ])
 
   const teamIds = (teams ?? []).map((t) => t.id)
 
-  const [{ data: reconcItems }, { data: { users } }] = await Promise.all([
-    supabase
-      .from('reconciliation_items')
-      .select('team_id, brand_code, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units')
-      .in('team_id', teamIds)
-      .range(0, 9999), // ponytail: rows scale with team_count × items counted, can pass 1000 on a single fully-counted team
+  type ReconcFullRow = ReconcRow & {
+    team_id: string
+    brand_code: string
+    contador_2_cases: number | null
+    contador_2_units: number | null
+  }
+
+  const [reconcItems, { data: { users } }] = await Promise.all([
+    teamIds.length === 0
+      ? Promise.resolve([] as ReconcFullRow[])
+      : fetchAllRows<ReconcFullRow>((from, to) =>
+          supabase
+            .from('reconciliation_items')
+            .select('team_id, brand_code, status, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units')
+            .in('team_id', teamIds)
+            .range(from, to)
+        ),
     createAdminClient().auth.admin.listUsers({ perPage: 1000 }),
   ])
 
-  const invMap = Object.fromEntries((inventory ?? []).map((i) => [i.brand_code, i]))
+  const invMap = Object.fromEntries(inventory.map((i) => [i.brand_code, i]))
 
   // countersMap[teamId][role] = full_name (from auth.users metadata)
   const countersMap: Record<string, Record<string, string>> = {}
@@ -71,7 +86,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const wb = XLSX.utils.book_new()
 
   for (const team of teams ?? []) {
-    const items = (reconcItems ?? []).filter((r) => r.team_id === team.id)
+    const items = reconcItems.filter((r) => r.team_id === team.id)
     const codes = [...new Set(items.map((r) => r.brand_code))].sort()
 
     const ind = roleLabel(team.id, 'independente', 'Independent')
@@ -108,15 +123,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const teamList = teams ?? []
-  const reconcMap: Record<string, Record<string, typeof reconcItems extends (infer T)[] | null ? T : never>> = {}
-  for (const r of reconcItems ?? []) {
+  const reconcMap: Record<string, Record<string, ReconcFullRow>> = {}
+  for (const r of reconcItems) {
     if (!reconcMap[r.team_id]) reconcMap[r.team_id] = {}
     reconcMap[r.team_id][r.brand_code] = r
   }
 
   // ponytail: item não contado por nenhuma equipe entra no merge final como 0 (não imputado a equipe).
   // Fonte = inventário inteiro; mergedForCode devolve {0,0} para código sem contagem.
-  const allCodes = [...(inventory ?? []).map((i) => i.brand_code)].sort()
+  const allCodes = [...inventory.map((i) => i.brand_code)].sort()
 
   // ponytail: merged de todas as equipes por item — soma o valor oficial em unidades e re-normaliza pelo BPU
   function mergedForCode(code: string): { cases: number; units: number } {
