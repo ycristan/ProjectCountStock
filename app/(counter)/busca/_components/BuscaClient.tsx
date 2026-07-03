@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import type { ItemBusca, LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
+import type { EntryExistente, ItemBusca, LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
 import { SearchInput } from './SearchInput'
 import { ResultList } from './ResultList'
 import { CountForm } from './CountForm'
@@ -20,6 +20,7 @@ type SucessoResult = {
   final_cases: number
   final_units: number
   brand_name: string
+  entry: EntryExistente
 }
 
 function filterItems(items: ItemBusca[], q: string): ItemBusca[] {
@@ -63,14 +64,17 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot }: Props
   const [isAdditive, setIsAdditive] = useState(false)
   const [modalItem, setModalItem] = useState<ItemBusca | null>(null)
   const [sucesso, setSucesso] = useState<SucessoData | null>(null)
-  // ponytail: track counted codes locally — avoids router.refresh() on every save
-  const [countedCodes, setCountedCodes] = useState<Set<string>>(
-    () => new Set(initialItems.filter((i) => i.jaContado).map((i) => i.brand_code))
-  )
+  // ponytail: tracks the entry actually saved this session, keyed by brand_code —
+  // the next addition must build on this, not on the page-load snapshot in initialItems
+  const [entryOverrides, setEntryOverrides] = useState<Record<string, EntryExistente>>({})
 
   const items = useMemo(
-    () => initialItems.map((i) => ({ ...i, jaContado: countedCodes.has(i.brand_code) })),
-    [initialItems, countedCodes]
+    () =>
+      initialItems.map((i) => {
+        const override = entryOverrides[i.brand_code]
+        return override ? { ...i, jaContado: true, entryExistente: override } : i
+      }),
+    [initialItems, entryOverrides]
   )
 
   const resultados = useMemo(() => filterItems(items, termo), [items, termo])
@@ -84,7 +88,7 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot }: Props
   const handleSucesso = useCallback(
     (result: SucessoResult) => {
       if (!itemSelecionado) return
-      setCountedCodes((prev) => new Set([...prev, itemSelecionado.brand_code]))
+      setEntryOverrides((prev) => ({ ...prev, [itemSelecionado.brand_code]: result.entry }))
       setSucesso({
         brandCode: itemSelecionado.brand_code,
         brandName: result.brand_name,
