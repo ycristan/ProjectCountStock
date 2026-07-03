@@ -47,13 +47,14 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
   const [modo, setModo] = useState<'normal' | 'peso'>('normal')
   const [rodadas, setRodadas] = useState<Rodada[]>([{ id: 0, caixas: '', pesoFmt: '' }])
   const [extraCases, setExtraCases] = useState(0)
-  const [pallets, setPallets] = useState(isAdditive || noPallets || noBpu ? '0' : String(entry?.pallets ?? 0))
-  const [cases, setCases] = useState(isAdditive || noBpu ? '0' : String(entry?.cases ?? 0))
+  // ponytail: input em branco (não "0") evita erro de digitação (apagar "0" e teclar 1 → "10").
+  // Submit já coage "" → 0 via `parseInt(x) || 0`. Só edição mostra o valor salvo; nova/additive = branco.
+  const [pallets, setPallets] = useState(noPallets || noBpu ? '0' : !isAdditive && entry ? String(entry.pallets) : '')
+  const [cases, setCases] = useState(noBpu ? '0' : !isAdditive && entry ? String(entry.cases) : '')
   // ponytail: edit + bpu=1 → collapse existing cases+units into units (bpu=1 normalises all to final_cases)
   const [units, setUnits] = useState(
-    isAdditive ? '0'
-    : noBpu ? String((entry?.cases ?? 0) + (entry?.units ?? 0))
-    : String(entry?.units ?? 0)
+    noBpu ? (!isAdditive && entry ? String((entry.cases ?? 0) + (entry.units ?? 0)) : '')
+    : !isAdditive && entry ? String(entry.units) : ''
   )
   const [erro, setErro] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -259,6 +260,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
                     inputMode="numeric"
                     value={value}
                     onChange={(e) => { set(e.target.value); setErro(null) }}
+                    placeholder="0"
                     disabled={disabled}
                     className={`w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] focus:outline-none transition-colors ${
                       disabled
