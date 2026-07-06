@@ -1,34 +1,121 @@
 @import "tailwindcss";
 
-/* Design tokens — Count Stock mobile UI
+/* ============================================================
+ * NEXT CHAIN — Stock Count & Auditory
+ * Design tokens · Modular Warehouse Suite
+ * ============================================================
  *
- * --cs-bg            page background      #f1f5f9
- * --cs-surface        card / input bg      #ffffff
- * --cs-dark           header, primary btn  #1e293b
- * --cs-accent         focus ring           #3b82f6
- * --cs-success-bg     success card bg      #f0fdf4
- * --cs-success-border success card border  #bbf7d0
- * --cs-radius-card    card border-radius   12px
- * --cs-radius-input   input border-radius  8px
- * --cs-touch-min      min touch target     56px
+ * Brand palette
+ *   Signal Blue   #3b82f6   primary action / focus
+ *   Cyan          #22d3ee   accent / status / gradients
+ *   Deep Navy     #0b1120   headers, dark surfaces
+ *   Emerald       #34d399   reconciled / success
+ *   Amber         #f59e0b   force close / warning
+ *   Coral         #f87171   discrepancy / danger
+ *
+ * Type
+ *   Display  Newsreader (serif, contrast)  → headings
+ *   UI       IBM Plex Sans                 → body / controls
+ *   Data     IBM Plex Mono                 → codes, PINs, counts
  */
+
 :root {
-  --cs-bg: #f1f5f9;
-  --cs-surface: #ffffff;
-  --cs-dark: #1e293b;
-  --cs-accent: #3b82f6;
-  --cs-success-bg: #f0fdf4;
-  --cs-success-border: #bbf7d0;
-  --cs-radius-card: 12px;
-  --cs-radius-input: 8px;
-  --cs-touch-min: 56px;
+  /* ---- surfaces (light — admin/counter default) ---- */
+  --cs-bg:              #f3f5fa;   /* page background */
+  --cs-surface:         #ffffff;   /* card / input bg */
+  --cs-surface-2:       #eef2f8;   /* subtle fills */
+  --cs-border:          #e4e9f2;   /* hairlines */
+  --cs-dark:            #0b1120;   /* header, primary dark btn */
+
+  /* ---- text ---- */
+  --cs-ink:             #0b1120;   /* primary text */
+  --cs-muted:           #64748b;   /* secondary text */
+  --cs-faint:           #94a3b8;   /* hints / placeholders */
+
+  /* ---- brand accents ---- */
+  --cs-accent:          #3b82f6;   /* signal blue — focus ring, links */
+  --cs-accent-2:        #22d3ee;   /* cyan — gradients, live status */
+  --cs-accent-ink:      #061021;   /* text on accent gradient */
+
+  /* ---- semantic ---- */
+  --cs-success:         #16a34a;
+  --cs-success-bg:      #f0fdf4;
+  --cs-success-border:  #bbf7d0;
+  --cs-warning:         #b45309;
+  --cs-warning-bg:      #fef7e7;
+  --cs-warning-border:  #f4d78a;
+  --cs-danger:          #dc2626;
+  --cs-danger-bg:       #fdecec;
+  --cs-danger-border:   #f3c6c6;
+
+  /* ---- shape & touch ---- */
+  --cs-radius-card:     14px;
+  --cs-radius-input:    11px;
+  --cs-radius-pill:     999px;
+  --cs-touch-min:       56px;      /* mobile field targets */
+
+  /* ---- brand gradient (buttons, avatars, key CTAs) ---- */
+  --cs-gradient:        linear-gradient(135deg, #3b82f6, #22d3ee);
+
+  /* ---- fonts (wired via next/font in layout.tsx) ---- */
+  --font-display:  'Newsreader', ui-serif, Georgia, serif;
+  --font-sans:     'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono:     'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* ============================================================
+ * DARK MODE — used on the login screen and any dark surface.
+ * Add class="dark" on <html> (or wrap a section) to opt in.
+ * ============================================================ */
+.dark {
+  --cs-bg:              #070c18;
+  --cs-surface:         #131c2e;
+  --cs-surface-2:       #0e1626;
+  --cs-border:          rgba(255,255,255,0.10);
+  --cs-dark:            #0b1120;
+
+  --cs-ink:             #e6ecf5;
+  --cs-muted:           #93a4c4;
+  --cs-faint:           #5c6b87;
+
+  --cs-success-bg:      #0c1f1a;
+  --cs-success-border:  rgba(52,211,153,0.40);
+  --cs-warning-bg:      #241a08;
+  --cs-warning-border:  rgba(245,158,11,0.40);
+  --cs-danger-bg:       #2a1113;
+  --cs-danger-border:   rgba(248,113,113,0.40);
 }
 
 body {
   background: var(--cs-bg);
+  color: var(--cs-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Newsreader for headings by default */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Mono for tabular / code-like numbers */
+.tabular, .cs-code {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Prevents iOS Safari from zooming on input focus */
 input, select, textarea {
   font-size: max(16px, 1em);
+}
+
+/* Reusable card surface (dashboard, sessions, etc.) */
+.cs-card {
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius-card);
+}
+.cs-card:hover {
+  border-color: var(--cs-accent);
 }
