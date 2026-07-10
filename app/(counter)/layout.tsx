@@ -24,7 +24,7 @@ export default async function CounterLayout({ children }: { children: React.Reac
       .eq('id', teamId)
       .single()
 
-    const sessionStatus = (team?.count_sessions as { status: string } | null)?.status
+    const sessionStatus = (team?.count_sessions as { status: string }[] | undefined)?.[0]?.status
 
     if (sessionStatus === 'fechada') {
       // ponytail: acesso revogado após combinação final — checado no layout, único lugar
