@@ -14,12 +14,23 @@ export default async function CounterLayout({ children }: { children: React.Reac
 
   let bannerType: 'pending' | 'confirm' | 'reconciliando' | null = null
   let pendingCount = 0
+  let sessionClosed = false
 
   if (teamId) {
     const admin = createAdminClient()
-    const { data: team } = await admin.from('teams').select('status').eq('id', teamId).single()
+    const { data: team } = await admin
+      .from('teams')
+      .select('status, count_sessions(status)')
+      .eq('id', teamId)
+      .single()
 
-    if (team?.status === 'reconciliando') {
+    const sessionStatus = (team?.count_sessions as { status: string } | null)?.status
+
+    if (sessionStatus === 'fechada') {
+      // ponytail: acesso revogado após combinação final — checado no layout, único lugar
+      // que todas as rotas de contador (busca/finalizar/monitor/reconciliação) atravessam
+      sessionClosed = true
+    } else if (team?.status === 'reconciliando') {
       if (role === 'independente') {
         const { count } = await admin
           .from('reconciliation_items')
@@ -45,7 +56,7 @@ export default async function CounterLayout({ children }: { children: React.Reac
         <span className="font-bold text-white text-base">Count Stock</span>
         <div className="flex items-center gap-3">
           <span className="text-sm text-slate-300">Hello, {name}</span>
-          {role !== 'independente' && (
+          {!sessionClosed && role !== 'independente' && (
             <Link href="/finalizar" className="text-sm text-amber-400 font-medium">
               Finalise
             </Link>
@@ -57,31 +68,44 @@ export default async function CounterLayout({ children }: { children: React.Reac
           </form>
         </div>
       </header>
-      {bannerType === 'pending' && (
-        <Link
-          href="/reconciliacao"
-          className="block px-4 py-3 text-center text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600"
-        >
-          ⚠️ {pendingCount} {pendingCount === 1 ? 'item needs' : 'items need'} reconciliation → View list
-        </Link>
+      {sessionClosed ? (
+        <main className="px-4 py-6 max-w-lg mx-auto">
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <p className="text-lg font-semibold text-slate-800">Count session closed</p>
+            <p className="text-sm text-slate-500 mt-2">
+              This session has been finalised by the admin. Access to counting and reconciliation is no longer available.
+            </p>
+          </div>
+        </main>
+      ) : (
+        <>
+          {bannerType === 'pending' && (
+            <Link
+              href="/reconciliacao"
+              className="block px-4 py-3 text-center text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600"
+            >
+              ⚠️ {pendingCount} {pendingCount === 1 ? 'item needs' : 'items need'} reconciliation → View list
+            </Link>
+          )}
+          {bannerType === 'confirm' && (
+            <Link
+              href="/reconciliacao"
+              className="block px-4 py-3 text-center text-sm font-semibold text-white bg-green-600 hover:bg-green-700"
+            >
+              ✓ All items reconciled — click here to confirm
+            </Link>
+          )}
+          {bannerType === 'reconciliando' && (
+            <Link
+              href="/reconciliacao"
+              className="block px-4 py-3 text-center text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
+            >
+              ℹ️ {pendingCount} {pendingCount === 1 ? 'item needs' : 'items need'} reconciliation → View list
+            </Link>
+          )}
+          <main className="px-4 py-6 max-w-lg mx-auto">{children}</main>
+        </>
       )}
-      {bannerType === 'confirm' && (
-        <Link
-          href="/reconciliacao"
-          className="block px-4 py-3 text-center text-sm font-semibold text-white bg-green-600 hover:bg-green-700"
-        >
-          ✓ All items reconciled — click here to confirm
-        </Link>
-      )}
-      {bannerType === 'reconciliando' && (
-        <Link
-          href="/reconciliacao"
-          className="block px-4 py-3 text-center text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
-        >
-          ℹ️ {pendingCount} {pendingCount === 1 ? 'item needs' : 'items need'} reconciliation → View list
-        </Link>
-      )}
-      <main className="px-4 py-6 max-w-lg mx-auto">{children}</main>
     </div>
   )
 }
