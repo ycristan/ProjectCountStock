@@ -56,6 +56,7 @@ export async function carregarInventario(): Promise<ItemBusca[]> {
         supabase
           .from('inventory_items')
           .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
+          .eq('brand_active', true)
           .order('brand_code', { ascending: true })
           .range(from, to)
     ),

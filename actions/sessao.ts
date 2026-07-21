@@ -52,6 +52,7 @@ export async function uploadInventory(
       weight_avg,
       category,
       category1,
+      brand_active: true,
     }))
   )
   if (itemsError) return { error: `Error saving items: ${itemsError.message}` }
@@ -59,11 +60,13 @@ export async function uploadInventory(
   const newCodes = items.map((i) => i.brand_code)
   const notIn = `(${newCodes.join(',')})`
 
-  const { error: delItemsError } = await supabase
+  // ponytail: deactivate instead of delete — old brand_codes stay referenced by count history (FK
+  // from combined_results/count_entries/reconciliation_items), hard delete violates that constraint
+  const { error: deactivateError } = await supabase
     .from('inventory_items')
-    .delete()
+    .update({ brand_active: false })
     .not('brand_code', 'in', notIn)
-  if (delItemsError) return { error: `Error removing old items: ${delItemsError.message}` }
+  if (deactivateError) return { error: `Error deactivating old items: ${deactivateError.message}` }
 
   const { error: delOldBinsError } = await supabase
     .from('item_bin_locations')

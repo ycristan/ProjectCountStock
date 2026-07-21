@@ -15,6 +15,7 @@ export default async function AdminSoloDetailPage({ params }: { params: Promise<
         admin
           .from('inventory_items')
           .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
+          .eq('brand_active', true)
           .order('brand_code')
           .range(from, to)
     ),
