@@ -8,8 +8,12 @@ export default async function AdminSoloDetailPage({ params }: { params: Promise<
   const { id } = await params
   const admin = createAdminClient()
 
-  const [{ data: session }, inventory, entries] = await Promise.all([
-    admin.from('solo_sessions').select('id, title, status').eq('id', id).single(),
+  const [{ data: session }, inventory, entries, listItemsRaw] = await Promise.all([
+    admin
+      .from('solo_sessions')
+      .select('id, title, status, assigned_to_counter, restrict_to_list, counter_name')
+      .eq('id', id)
+      .single(),
     fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null }>(
       (from, to) =>
         admin
@@ -34,11 +38,16 @@ export default async function AdminSoloDetailPage({ params }: { params: Promise<
         .eq('session_id', id)
         .range(from, to)
     ),
+    fetchAllRows<{ brand_code: string }>((from, to) =>
+      admin.from('solo_session_items').select('brand_code').eq('session_id', id).range(from, to)
+    ),
   ])
 
   if (!session) notFound()
 
   const entryMap = Object.fromEntries(entries.map((e) => [e.brand_code, e]))
+  const nameByCode = Object.fromEntries(inventory.map((i) => [i.brand_code, i.brand_name]))
+  const listItems = listItemsRaw.map((li) => ({ brand_code: li.brand_code, brand_name: nameByCode[li.brand_code] ?? '' }))
 
   const items: ItemBusca[] = inventory.map((i) => {
     const e = entryMap[i.brand_code]
@@ -67,6 +76,10 @@ export default async function AdminSoloDetailPage({ params }: { params: Promise<
         final_cases: e.final_cases,
         final_units: e.final_units,
       }))}
+      assignedToCounter={session.assigned_to_counter}
+      restrictToList={session.restrict_to_list}
+      counterName={session.counter_name}
+      listItems={listItems}
     />
   )
 }
