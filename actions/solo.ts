@@ -251,8 +251,14 @@ export async function finalizarSoloContagemCounter(sessionId: string): Promise<{
 
   const { data: settings } = await admin.from('app_settings').select('notify_email').eq('id', 1).single()
   if (settings?.notify_email) {
-    // ponytail: failure here must never block the finalise — session is already closed above
-    await sendSoloResultsEmail(settings.notify_email, session.title, session.counter_name, entries ?? [])
+    // ponytail: failure here must never block the finalise — session is already closed above.
+    // try/catch is defensive: sendSoloResultsEmail is designed to never throw, but this path
+    // must not depend on that guarantee alone.
+    try {
+      await sendSoloResultsEmail(settings.notify_email, session.title, session.counter_name, entries ?? [])
+    } catch (err) {
+      console.error('finalizarSoloContagemCounter: email send threw unexpectedly', err)
+    }
   }
 
   return {}
