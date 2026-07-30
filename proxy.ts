@@ -36,18 +36,26 @@ export async function proxy(request: NextRequest) {
 
   if (user && (pathname === '/' || pathname === '/login')) {
     const role = user.user_metadata?.role
+    const isSoloCounter = user.user_metadata?.is_solo_counter === true
     return NextResponse.redirect(
-      new URL(role === 'admin' ? '/admin' : '/busca', request.url)
+      new URL(role === 'admin' ? '/admin' : isSoloCounter ? '/solo' : '/busca', request.url)
     )
   }
 
   if (user) {
     const role = user.user_metadata?.role
+    const isSoloCounter = user.user_metadata?.is_solo_counter === true
     if (pathname.startsWith('/admin') && role !== 'admin') {
-      return NextResponse.redirect(new URL('/busca', request.url))
+      return NextResponse.redirect(new URL(isSoloCounter ? '/solo' : '/busca', request.url))
     }
     if (pathname.startsWith('/busca') && role === 'admin') {
       return NextResponse.redirect(new URL('/admin', request.url))
+    }
+    if (pathname.startsWith('/busca') && isSoloCounter) {
+      return NextResponse.redirect(new URL('/solo', request.url))
+    }
+    if (pathname.startsWith('/solo') && role !== 'admin' && !isSoloCounter) {
+      return NextResponse.redirect(new URL('/busca', request.url))
     }
   }
 
