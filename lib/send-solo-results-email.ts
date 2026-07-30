@@ -42,12 +42,13 @@ export async function sendSoloResultsEmail(
   }
   try {
     const resend = new Resend(apiKey)
-    await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: 'Count Stock <onboarding@resend.dev>',
       to,
       subject: `Solo Count finalised: ${sessionTitle}`,
       html: `<p>Solo count <strong>${sessionTitle}</strong> was finalised by ${counterName ?? 'a counter'}.</p>${buildHtmlTable(entries)}`,
     })
+    if (error) console.error('sendSoloResultsEmail: Resend returned an error', error)
   } catch (err) {
     console.error('sendSoloResultsEmail: failed to send', err)
   }
