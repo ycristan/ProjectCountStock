@@ -28,6 +28,7 @@ export function SoloCounterClient({ sessionId, title, counterName, items }: Prop
     startTransition(async () => {
       const res = await definirNomeContadorSolo(sessionId, nameInput)
       if (res.error) { setErro(res.error); return }
+      setErro(null)
       setName(nameInput.trim())
     })
   }

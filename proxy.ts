@@ -54,6 +54,9 @@ export async function proxy(request: NextRequest) {
     if (pathname.startsWith('/busca') && isSoloCounter) {
       return NextResponse.redirect(new URL('/solo', request.url))
     }
+    if (pathname.startsWith('/solo') && role === 'admin') {
+      return NextResponse.redirect(new URL('/admin', request.url))
+    }
     if (pathname.startsWith('/solo') && role !== 'admin' && !isSoloCounter) {
       return NextResponse.redirect(new URL('/busca', request.url))
     }
