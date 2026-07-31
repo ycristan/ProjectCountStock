@@ -12,6 +12,7 @@ export function SoloCounterCard({ initialActive }: { initialActive: boolean }) {
 
   function handleCreate() {
     setErro(null)
+    setConfirmingDelete(false)
     startTransition(async () => {
       const res = await criarContadorSoloFixo()
       if (res.error) { setErro(res.error); return }
@@ -49,46 +50,57 @@ export function SoloCounterCard({ initialActive }: { initialActive: boolean }) {
           </button>
         </div>
       ) : (
-        <p className="text-sm text-slate-500">
-          {active
-            ? 'Active — you can assign sessions to it.'
-            : "No solo counter configured — sessions can't be assigned until you create one."}
-        </p>
-      )}
+        <>
+          <p className="text-sm text-slate-500">
+            {active
+              ? 'Active — you can assign sessions to it.'
+              : "No solo counter configured — sessions can't be assigned until you create one."}
+          </p>
 
-      {erro && <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">{erro}</div>}
+          {erro && <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">{erro}</div>}
 
-      <div className="flex gap-2">
-        <button
-          onClick={handleCreate}
-          disabled={isPending}
-          className="text-sm font-semibold bg-slate-900 text-white rounded-xl px-4 py-2 disabled:opacity-40"
-        >
-          {isPending ? '...' : active ? 'Create New Solo Counter' : 'Create Solo Counter'}
-        </button>
-        {active && !confirmingDelete && (
-          <button
-            onClick={() => setConfirmingDelete(true)}
-            className="text-sm font-semibold text-red-600 border border-red-200 rounded-xl px-4 py-2 hover:bg-red-50"
-          >
-            Delete
-          </button>
-        )}
-        {confirmingDelete && (
-          <>
+          <div className="flex gap-2">
             <button
-              onClick={handleDelete}
+              onClick={handleCreate}
               disabled={isPending}
-              className="text-sm font-semibold bg-red-600 text-white rounded-xl px-4 py-2 disabled:opacity-40"
+              className="text-sm font-semibold bg-slate-900 text-white rounded-xl px-4 py-2 disabled:opacity-40"
             >
-              Confirm delete
+              {isPending ? '...' : active ? 'Create New Solo Counter' : 'Create Solo Counter'}
             </button>
-            <button onClick={() => setConfirmingDelete(false)} className="text-sm text-slate-500 px-4 py-2">
-              Cancel
-            </button>
-          </>
-        )}
-      </div>
+            {active && !confirmingDelete && (
+              <button
+                onClick={() => setConfirmingDelete(true)}
+                className="text-sm font-semibold text-red-600 border border-red-200 rounded-xl px-4 py-2 hover:bg-red-50"
+              >
+                Delete
+              </button>
+            )}
+            {confirmingDelete && (
+              <>
+                <button
+                  onClick={handleDelete}
+                  disabled={isPending}
+                  className="text-sm font-semibold bg-red-600 text-white rounded-xl px-4 py-2 disabled:opacity-40"
+                >
+                  Confirm delete
+                </button>
+                <button
+                  onClick={() => setConfirmingDelete(false)}
+                  disabled={isPending}
+                  className="text-sm text-slate-500 px-4 py-2 disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
+          {confirmingDelete && (
+            <p className="text-xs text-amber-600">
+              Anyone currently logged in or mid-count with this PIN will immediately lose access.
+            </p>
+          )}
+        </>
+      )}
     </div>
   )
 }
