@@ -1,87 +1,28 @@
-'use client'
-
-import { useActionState } from 'react'
-import { criarSessao } from '@/actions/sessao'
 import Link from 'next/link'
 
-type SessaoState = { error?: string } | null
-
-export default function SessaoPage() {
-  const [state, formAction, pending] = useActionState<SessaoState, FormData>(
-    criarSessao,
-    null
-  )
-
+export default function SessaoTypePickerPage() {
   return (
     <div>
       <Link href="/admin" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
         ← Dashboard
       </Link>
-      <h2 className="text-xl font-semibold text-slate-900 mb-4">New Count Session</h2>
-      <form action={formAction} className="space-y-6 max-w-sm">
-        <div>
-          <label
-            htmlFor="num_equipes"
-            className="block text-sm font-medium text-slate-700 mb-1"
-          >
-            Number of Teams
-          </label>
-          <input
-            id="num_equipes"
-            name="num_equipes"
-            type="number"
-            min={1}
-            max={20}
-            defaultValue={1}
-            required
-            className="w-full px-4 py-3 text-lg border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="box_tare_g"
-            className="block text-sm font-medium text-slate-700 mb-1"
-          >
-            Box Tare (grams)
-          </label>
-          <input
-            id="box_tare_g"
-            name="box_tare_g"
-            type="number"
-            min={1}
-            defaultValue={300}
-            required
-            className="w-full px-4 py-3 text-lg border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
-          />
-          <p className="text-xs text-slate-400 mt-1">Weight of each empty box to be deducted during weighing</p>
-        </div>
-        <div>
-          <label
-            htmlFor="tolerance_g"
-            className="block text-sm font-medium text-slate-700 mb-1"
-          >
-            Weight Tolerance (grams)
-          </label>
-          <input
-            id="tolerance_g"
-            name="tolerance_g"
-            type="number"
-            min={0}
-            defaultValue={0}
-            required
-            className="w-full px-4 py-3 text-lg border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
-          />
-          <p className="text-xs text-slate-400 mt-1">Maximum difference between C1 and C2 for weighted items to be considered combined (0 = exact match)</p>
-        </div>
-        {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full py-3 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 disabled:opacity-50"
+      <h2 className="text-xl font-semibold text-slate-900 mb-6">New Session</h2>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Link
+          href="/admin/sessao/team"
+          className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all"
         >
-          {pending ? 'Creating...' : 'Create Session'}
-        </button>
-      </form>
+          <h3 className="font-semibold text-slate-900 mb-1">Team Count Session</h3>
+          <p className="text-sm text-slate-500">Blind triple count with reconciliation across teams</p>
+        </Link>
+        <Link
+          href="/admin/sessao/solo"
+          className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all"
+        >
+          <h3 className="font-semibold text-slate-900 mb-1">Solo Count Session</h3>
+          <p className="text-sm text-slate-500">Count yourself or assign to the solo counter — no reconciliation</p>
+        </Link>
+      </div>
     </div>
   )
 }
