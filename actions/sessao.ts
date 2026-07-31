@@ -99,10 +99,15 @@ export async function criarSessao(
   const numEquipes = parseInt(formData.get('num_equipes') as string)
   if (!numEquipes || numEquipes < 1) return { error: 'Invalid number of teams.' }
 
-  const box_tare_g = Math.max(1, parseInt(formData.get('box_tare_g') as string) || 300)
-  const tolerance_g = Math.max(0, parseInt(formData.get('tolerance_g') as string) || 0)
-
   const supabase = await createClient()
+  const { data: settings } = await supabase
+    .from('app_settings')
+    .select('default_box_tare_g, default_tolerance_g')
+    .eq('id', 1)
+    .single()
+  const box_tare_g = settings?.default_box_tare_g ?? 300
+  const tolerance_g = settings?.default_tolerance_g ?? 0
+
   const { data, error } = await supabase
     .from('count_sessions')
     .insert({ status: 'aberta', box_tare_g, tolerance_g })

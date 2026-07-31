@@ -17,18 +17,39 @@ async function isSoloCounter(): Promise<boolean> {
   return user?.user_metadata?.role === 'counter' && user?.user_metadata?.is_solo_counter === true
 }
 
-export async function criarSoloSessao(title: string): Promise<{ id?: string; error?: string }> {
+export async function criarSoloSessaoCompleta(input: {
+  title: string
+  assignedToCounter: boolean
+  restrictToList: boolean
+  itemCodes: string[]
+}): Promise<{ id?: string; error?: string }> {
   if (!(await isAdmin())) return { error: 'Unauthorized' }
-  if (!title.trim()) return { error: 'Title is required.' }
+  const title = input.title.trim()
+  if (!title) return { error: 'Title is required.' }
 
   const admin = createAdminClient()
+  const { data: settings } = await admin.from('app_settings').select('default_box_tare_g').eq('id', 1).single()
+  const box_tare_g = settings?.default_box_tare_g ?? 300
+
   const { data, error } = await admin
     .from('solo_sessions')
-    .insert({ title: title.trim() })
+    .insert({
+      title,
+      assigned_to_counter: input.assignedToCounter,
+      restrict_to_list: input.restrictToList,
+      box_tare_g,
+    })
     .select('id')
     .single()
+  if (error || !data) return { error: error?.message ?? 'Error creating session.' }
 
-  if (error) return { error: error.message }
+  if (input.restrictToList && input.itemCodes.length > 0) {
+    const { error: itemsError } = await admin
+      .from('solo_session_items')
+      .insert(input.itemCodes.map((brand_code) => ({ session_id: data.id, brand_code })))
+    if (itemsError) return { error: `Session created but failed to save item list: ${itemsError.message}` }
+  }
+
   return { id: data.id }
 }
 
@@ -141,22 +162,6 @@ export async function removerItemListaSolo(sessionId: string, brandCode: string)
     .delete()
     .eq('session_id', sessionId)
     .eq('brand_code', brandCode)
-  return error ? { error: error.message } : {}
-}
-
-export async function buscarNotifyEmail(): Promise<string> {
-  if (!(await isAdmin())) return ''
-  const admin = createAdminClient()
-  const { data } = await admin.from('app_settings').select('notify_email').eq('id', 1).single()
-  return data?.notify_email ?? ''
-}
-
-export async function salvarNotifyEmail(email: string): Promise<{ error?: string }> {
-  if (!(await isAdmin())) return { error: 'Unauthorized' }
-  const trimmed = email.trim()
-  if (trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return { error: 'Invalid email address.' }
-  const admin = createAdminClient()
-  const { error } = await admin.from('app_settings').update({ notify_email: trimmed || null }).eq('id', 1)
   return error ? { error: error.message } : {}
 }
 
