@@ -16,7 +16,7 @@ export default async function SoloCounterPage({ params }: { params: Promise<{ id
   const admin = createAdminClient()
   const { data: session } = await admin
     .from('solo_sessions')
-    .select('id, title, status, assigned_to_counter, restrict_to_list, counter_name')
+    .select('id, title, status, assigned_to_counter, restrict_to_list, counter_name, box_tare_g')
     .eq('id', id)
     .single()
 
@@ -55,7 +55,7 @@ export default async function SoloCounterPage({ params }: { params: Promise<{ id
         bpu: i.bpu,
         pallet_size: i.pallet_size,
         weight_avg: i.weight_avg ?? 0,
-        box_tare_g: 300,
+        box_tare_g: session.box_tare_g,
         bins: [],
         jaContado: !!e,
         entryExistente: e ? { pallets: e.pallets, cases: e.cases, units: e.units } : null,

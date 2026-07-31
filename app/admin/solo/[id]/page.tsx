@@ -11,7 +11,7 @@ export default async function AdminSoloDetailPage({ params }: { params: Promise<
   const [{ data: session }, inventory, entries, listItemsRaw] = await Promise.all([
     admin
       .from('solo_sessions')
-      .select('id, title, status, assigned_to_counter, restrict_to_list, counter_name')
+      .select('id, title, status, assigned_to_counter, restrict_to_list, counter_name, box_tare_g')
       .eq('id', id)
       .single(),
     fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null }>(
@@ -57,7 +57,7 @@ export default async function AdminSoloDetailPage({ params }: { params: Promise<
       bpu: i.bpu,
       pallet_size: i.pallet_size,
       weight_avg: i.weight_avg ?? 0,
-      box_tare_g: 300,
+      box_tare_g: session.box_tare_g,
       bins: [],
       jaContado: !!e,
       entryExistente: e ? { pallets: e.pallets, cases: e.cases, units: e.units } : null,
