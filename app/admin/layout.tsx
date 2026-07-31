@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import { logout } from '@/actions/auth'
+import Link from 'next/link'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -11,6 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="sticky top-0 z-50 bg-slate-900 px-4 py-3 flex items-center justify-between">
         <span className="font-bold text-white text-base">Count Stock — Admin</span>
         <div className="flex items-center gap-4">
+          <Link href="/admin/settings" className="text-sm text-slate-300 hover:text-white">Settings</Link>
           <span className="text-sm text-slate-300">Hello, {name}</span>
           <form action={logout}>
             <button type="submit" className="text-sm text-slate-400 hover:text-white">
