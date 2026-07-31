@@ -27,6 +27,7 @@ export function AssignmentPanel({
 }: Props) {
   const [listItems, setListItems] = useState(initialListItems)
   const [termo, setTermo] = useState('')
+  const [erro, setErro] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   const listedCodes = new Set(listItems.map((i) => i.brand_code))
@@ -43,14 +44,18 @@ export function AssignmentPanel({
 
   function setAssigned(next: boolean) {
     startTransition(async () => {
-      await atribuirSoloContador(sessionId, next, restrictToList)
+      const res = await atribuirSoloContador(sessionId, next, restrictToList)
+      if (res.error) { setErro(res.error); return }
+      setErro(null)
       onAssignedChange(next)
     })
   }
 
   function setRestrict(next: boolean) {
     startTransition(async () => {
-      await atribuirSoloContador(sessionId, assignedToCounter, next)
+      const res = await atribuirSoloContador(sessionId, assignedToCounter, next)
+      if (res.error) { setErro(res.error); return }
+      setErro(null)
       onRestrictChange(next)
     })
   }
@@ -59,19 +64,35 @@ export function AssignmentPanel({
     setListItems((prev) => [...prev, { brand_code: item.brand_code, brand_name: item.brand_name }])
     setTermo('')
     startTransition(async () => {
-      await adicionarItemListaSolo(sessionId, item.brand_code)
+      const res = await adicionarItemListaSolo(sessionId, item.brand_code)
+      if (res.error) {
+        setListItems((prev) => prev.filter((i) => i.brand_code !== item.brand_code))
+        setErro(res.error)
+      } else {
+        setErro(null)
+      }
     })
   }
 
   function removeItem(brandCode: string) {
+    const removed = listItems.find((i) => i.brand_code === brandCode)
     setListItems((prev) => prev.filter((i) => i.brand_code !== brandCode))
     startTransition(async () => {
-      await removerItemListaSolo(sessionId, brandCode)
+      const res = await removerItemListaSolo(sessionId, brandCode)
+      if (res.error) {
+        if (removed) setListItems((prev) => [...prev, removed])
+        setErro(res.error)
+      } else {
+        setErro(null)
+      }
     })
   }
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-4 mb-4 space-y-4">
+      {erro && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">{erro}</div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="text-sm font-semibold text-slate-700">Who counts</span>
         <div className="flex gap-2">
