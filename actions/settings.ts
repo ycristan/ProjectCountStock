@@ -71,7 +71,8 @@ function genPin(exclude: Set<string>): string {
 export async function statusContadorSoloFixo(): Promise<{ active: boolean }> {
   if (!(await isAdmin())) return { active: false }
   const admin = createAdminClient()
-  const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const { data: { users }, error } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  if (error) return { active: false }
   return { active: users.some((u) => u.user_metadata?.is_solo_counter === true) }
 }
 
@@ -84,7 +85,8 @@ export async function criarContadorSoloFixo(): Promise<{
   const admin = createAdminClient()
 
   // ponytail: only one fixed solo counter at a time — creating a new one retires the old
-  const { data: { users: before } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const { data: { users: before }, error: listError1 } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  if (listError1) return { error: `Error checking existing accounts: ${listError1.message}` }
   const existing = before.find((u) => u.user_metadata?.is_solo_counter === true)
   if (existing) {
     const { error: delError } = await admin.auth.admin.deleteUser(existing.id)
@@ -93,7 +95,8 @@ export async function criarContadorSoloFixo(): Promise<{
 
   const { data: teams } = await admin.from('teams').select('team_pin')
   const usedTeamPins = new Set((teams ?? []).map((t) => t.team_pin))
-  const { data: { users: after } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const { data: { users: after }, error: listError2 } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  if (listError2) return { error: `Error checking existing logins: ${listError2.message}` }
   for (const u of after) {
     if (u.email?.endsWith('@count.local')) usedTeamPins.add(u.email.slice(0, 4))
   }
@@ -116,7 +119,8 @@ export async function criarContadorSoloFixo(): Promise<{
 export async function deletarContadorSoloFixo(): Promise<{ error?: string }> {
   if (!(await isAdmin())) return { error: 'Unauthorized' }
   const admin = createAdminClient()
-  const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const { data: { users }, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  if (listError) return { error: listError.message }
   const existing = users.find((u) => u.user_metadata?.is_solo_counter === true)
   if (!existing) return {}
   const { error } = await admin.auth.admin.deleteUser(existing.id)
