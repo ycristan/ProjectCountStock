@@ -1,13 +1,15 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { SoloCreateForm } from './_components/SoloCreateForm'
+import { NotifyEmailForm } from './_components/NotifyEmailForm'
+import { buscarNotifyEmail } from '@/actions/solo'
 
 export default async function AdminSoloPage() {
   const admin = createAdminClient()
-  const { data: sessions } = await admin
-    .from('solo_sessions')
-    .select('id, title, status, created_at')
-    .order('created_at', { ascending: false })
+  const [{ data: sessions }, notifyEmail] = await Promise.all([
+    admin.from('solo_sessions').select('id, title, status, created_at').order('created_at', { ascending: false }),
+    buscarNotifyEmail(),
+  ])
 
   return (
     <div>
@@ -16,6 +18,7 @@ export default async function AdminSoloPage() {
         <Link href="/admin" className="text-sm text-slate-400 hover:text-slate-900">← Dashboard</Link>
       </div>
 
+      <NotifyEmailForm initialEmail={notifyEmail} />
       <SoloCreateForm />
 
       <div className="mt-6 space-y-3">
