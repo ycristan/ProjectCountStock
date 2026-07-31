@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { createClient } from '@/lib/supabase-server'
 import type { LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
 import { sendSoloResultsEmail } from '@/lib/send-solo-results-email'
+import { getDefaultTare } from '@/actions/settings'
 
 async function isAdmin(): Promise<boolean> {
   const supabase = await createClient()
@@ -28,8 +29,7 @@ export async function criarSoloSessaoCompleta(input: {
   if (!title) return { error: 'Title is required.' }
 
   const admin = createAdminClient()
-  const { data: settings } = await admin.from('app_settings').select('default_box_tare_g').eq('id', 1).single()
-  const box_tare_g = settings?.default_box_tare_g ?? 300
+  const { box_tare_g } = await getDefaultTare()
 
   const { data, error } = await admin
     .from('solo_sessions')

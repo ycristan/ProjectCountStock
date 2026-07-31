@@ -9,6 +9,23 @@ async function isAdmin(): Promise<boolean> {
   return user?.user_metadata?.role === 'admin'
 }
 
+// ponytail: shared by criarSoloSessaoCompleta (solo.ts) and criarSessao (sessao.ts) —
+// both need the current tare/tolerance defaults but neither is itself the settings-page
+// data-loader, so this isn't gated by isAdmin() — callers are already admin-gated themselves
+export async function getDefaultTare(): Promise<{ box_tare_g: number; tolerance_g: number }> {
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('app_settings')
+    .select('default_box_tare_g, default_tolerance_g')
+    .eq('id', 1)
+    .single()
+  if (error) console.error('getDefaultTare: failed to fetch settings, using fallback', error)
+  return {
+    box_tare_g: data?.default_box_tare_g ?? 300,
+    tolerance_g: data?.default_tolerance_g ?? 0,
+  }
+}
+
 // ─── Defaults + notify e-mail ───────────────────────────────────────────────
 
 export async function buscarConfigSistema(): Promise<{

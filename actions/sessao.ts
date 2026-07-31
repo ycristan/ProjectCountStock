@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 import { redirect } from 'next/navigation'
+import { getDefaultTare } from '@/actions/settings'
 
 type UploadState = { error?: string; success?: boolean; count?: number; skipped?: number } | null
 type SessaoState = { error?: string } | null
@@ -100,15 +101,13 @@ export async function criarSessao(
   if (!numEquipes || numEquipes < 1) return { error: 'Invalid number of teams.' }
 
   const supabase = await createClient()
-  const { data: settings } = await supabase
-    .from('app_settings')
-    .select('default_box_tare_g, default_tolerance_g')
-    .eq('id', 1)
-    .single()
-  const box_tare_g = settings?.default_box_tare_g ?? 300
-  const tolerance_g = settings?.default_tolerance_g ?? 0
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.user_metadata?.role !== 'admin') return { error: 'Not authorised.' }
 
-  const { data, error } = await supabase
+  const { box_tare_g, tolerance_g } = await getDefaultTare()
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
     .from('count_sessions')
     .insert({ status: 'aberta', box_tare_g, tolerance_g })
     .select('id')
