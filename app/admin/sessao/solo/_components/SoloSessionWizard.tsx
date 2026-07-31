@@ -65,7 +65,7 @@ export function SoloSessionWizard({ inventory, soloCounterActive }: Props) {
         <h3 className="font-semibold text-slate-900">Who counts</h3>
         <div className="flex gap-2">
           <button
-            onClick={() => setAssignedToCounter(false)}
+            onClick={() => { setAssignedToCounter(false); setRestrictToList(false); setItemCodes([]) }}
             className={`flex-1 rounded-xl py-3 text-sm font-semibold border-2 ${!assignedToCounter ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600'}`}
           >
             Myself
@@ -93,6 +93,20 @@ export function SoloSessionWizard({ inventory, soloCounterActive }: Props) {
   }
 
   if (step === 'list') {
+    if (!assignedToCounter) {
+      return (
+        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+          <h3 className="font-semibold text-slate-900">Item list</h3>
+          <p className="text-sm text-slate-500">
+            Item list restriction only applies when the session is assigned to the solo counter. You&apos;ll be able to count any item.
+          </p>
+          <div className="flex gap-2">
+            <button onClick={() => setStep('who')} className="px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-500">← Back</button>
+            <button onClick={() => setStep('review')} className="flex-1 bg-slate-900 text-white font-semibold py-3 rounded-xl text-sm">Next →</button>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
         <h3 className="font-semibold text-slate-900">Item list</h3>
