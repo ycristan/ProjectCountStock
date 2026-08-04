@@ -62,5 +62,13 @@ export default async function SoloCounterPage({ params }: { params: Promise<{ id
       }
     })
 
-  return <SoloCounterClient sessionId={id} title={session.title} counterName={session.counter_name} items={items} />
+  return (
+    <SoloCounterClient
+      sessionId={id}
+      title={session.title}
+      counterName={session.counter_name}
+      items={items}
+      restrictToList={session.restrict_to_list}
+    />
+  )
 }
