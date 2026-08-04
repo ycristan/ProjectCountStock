@@ -1,30 +1,8 @@
-import { Resend } from 'resend'
-
 type SoloEntryRow = {
   brand_code: string
   brand_name: string | null
   final_cases: number
   final_units: number
-}
-
-function buildHtmlTable(rows: SoloEntryRow[]): string {
-  const body = rows
-    .map(
-      (r) =>
-        `<tr><td>${r.brand_name ?? ''}</td><td>${r.brand_code}</td><td>${r.final_cases}</td><td>${r.final_units}</td><td>Avl</td></tr>`
-    )
-    .join('')
-
-  return `
-    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:sans-serif;font-size:13px">
-      <thead>
-        <tr style="background:#f1f5f9">
-          <th>Brand Name</th><th>Brand Code</th><th>Count Qty (Outers)</th><th>Count Qty (Units)</th><th>Status</th>
-        </tr>
-      </thead>
-      <tbody>${body}</tbody>
-    </table>
-  `
 }
 
 // ponytail: failure here is logged, never thrown — the caller has already
@@ -35,20 +13,42 @@ export async function sendSoloResultsEmail(
   counterName: string | null,
   entries: SoloEntryRow[],
 ): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
-    console.error('sendSoloResultsEmail: RESEND_API_KEY not configured, skipping.')
+  const serviceId = process.env.EMAILJS_SERVICE_ID
+  const templateId = process.env.EMAILJS_TEMPLATE_ID
+  const publicKey = process.env.EMAILJS_PUBLIC_KEY
+  const privateKey = process.env.EMAILJS_PRIVATE_KEY
+  if (!serviceId || !templateId || !publicKey || !privateKey) {
+    console.error('sendSoloResultsEmail: EmailJS env vars not fully configured, skipping.')
     return
   }
+
   try {
-    const resend = new Resend(apiKey)
-    const { error } = await resend.emails.send({
-      from: 'Count Stock <onboarding@resend.dev>',
-      to,
-      subject: `Solo Count finalised: ${sessionTitle}`,
-      html: `<p>Solo count <strong>${sessionTitle}</strong> was finalised by ${counterName ?? 'a counter'}.</p>${buildHtmlTable(entries)}`,
+    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: serviceId,
+        template_id: templateId,
+        user_id: publicKey,
+        accessToken: privateKey,
+        template_params: {
+          to_email: to,
+          session_title: sessionTitle,
+          counter_name: counterName ?? 'a counter',
+          date: new Date().toLocaleString('en-GB'),
+          items: entries.map((r) => ({
+            brand_name: r.brand_name ?? '',
+            brand_code: r.brand_code,
+            cases: r.final_cases,
+            units: r.final_units,
+            status: 'Avl',
+          })),
+        },
+      }),
     })
-    if (error) console.error('sendSoloResultsEmail: Resend returned an error', error)
+    if (!res.ok) {
+      console.error('sendSoloResultsEmail: EmailJS returned an error', res.status, await res.text())
+    }
   } catch (err) {
     console.error('sendSoloResultsEmail: failed to send', err)
   }
