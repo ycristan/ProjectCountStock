@@ -11,9 +11,10 @@ type Props = {
   title: string
   counterName: string | null
   items: ItemBusca[]
+  restrictToList: boolean
 }
 
-export function SoloCounterClient({ sessionId, title, counterName, items }: Props) {
+export function SoloCounterClient({ sessionId, title, counterName, items, restrictToList }: Props) {
   const [name, setName] = useState(counterName)
   const [nameInput, setNameInput] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -83,5 +84,5 @@ export function SoloCounterClient({ sessionId, title, counterName, items }: Prop
     </div>
   )
 
-  return <BuscaClient items={items} onSubmit={onSubmit} headerSlot={header} />
+  return <BuscaClient items={items} onSubmit={onSubmit} headerSlot={header} restrictToList={restrictToList} />
 }
