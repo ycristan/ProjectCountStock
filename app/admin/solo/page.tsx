@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase-admin'
-import { SoloCreateForm } from './_components/SoloCreateForm'
 
 export default async function AdminSoloPage() {
   const admin = createAdminClient()
@@ -13,12 +12,18 @@ export default async function AdminSoloPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-slate-900">Solo Count</h2>
-        <Link href="/admin" className="text-sm text-slate-400 hover:text-slate-900">← Dashboard</Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/sessao/solo"
+            className="text-sm font-semibold text-blue-700 border border-blue-200 rounded-lg px-3 py-1.5 hover:bg-blue-50"
+          >
+            + New Solo Count
+          </Link>
+          <Link href="/admin" className="text-sm text-slate-400 hover:text-slate-900">← Dashboard</Link>
+        </div>
       </div>
 
-      <SoloCreateForm />
-
-      <div className="mt-6 space-y-3">
+      <div className="space-y-3">
         {(sessions ?? []).map((s) => (
           <div
             key={s.id}

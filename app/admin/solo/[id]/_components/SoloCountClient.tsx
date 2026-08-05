@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { ItemBusca, LancarContagemPayload } from '@/actions/contagem'
 import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
 import { lancarSoloContagem, encerrarSoloSessao } from '@/actions/solo'
+import { AssignmentPanel } from './AssignmentPanel'
 
 type Entry = { brand_code: string; brand_name: string | null; final_cases: number; final_units: number }
+type ListItem = { brand_code: string; brand_name: string }
 
 type Props = {
   sessionId: string
@@ -15,15 +17,30 @@ type Props = {
   status: string
   items: ItemBusca[]
   entries: Entry[]
+  assignedToCounter: boolean
+  restrictToList: boolean
+  counterName: string | null
+  listItems: ListItem[]
 }
 
-export function SoloCountClient({ sessionId, title, status: initialStatus, items, entries }: Props) {
+export function SoloCountClient({
+  sessionId,
+  title,
+  status: initialStatus,
+  items,
+  entries,
+  assignedToCounter: initialAssigned,
+  restrictToList: initialRestrict,
+  counterName,
+  listItems,
+}: Props) {
   const [status, setStatus] = useState(initialStatus)
+  const [assignedToCounter, setAssignedToCounter] = useState(initialAssigned)
+  const [restrictToList, setRestrictToList] = useState(initialRestrict)
   const [finalising, startFinalise] = useTransition()
   const router = useRouter()
   const isOpen = status === 'open'
 
-  // ponytail: reusa CountForm/BuscaClient; só troca o destino do save
   const onSubmit = (payload: LancarContagemPayload) => lancarSoloContagem(sessionId, payload)
 
   function handleFinalise() {
@@ -35,6 +52,16 @@ export function SoloCountClient({ sessionId, title, status: initialStatus, items
       }
     })
   }
+
+  // ponytail: monitor refreshes via polling, not Postgres Realtime — Realtime would need
+  // a new publication entry + RLS-visible reads from the client's own JWT (currently every
+  // solo read/write goes through 'use server' actions on the service-role client). Swap for
+  // a Realtime channel (same setAuth pattern as the team monitor) if 5s latency is too slow.
+  useEffect(() => {
+    if (!assignedToCounter || !isOpen) return
+    const interval = setInterval(() => router.refresh(), 5000)
+    return () => clearInterval(interval)
+  }, [assignedToCounter, isOpen, router])
 
   const header = (
     <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
@@ -53,7 +80,7 @@ export function SoloCountClient({ sessionId, title, status: initialStatus, items
         >
           ↓ Export Excel
         </a>
-        {isOpen && (
+        {isOpen && !assignedToCounter && (
           <button
             onClick={handleFinalise}
             disabled={finalising}
@@ -66,38 +93,78 @@ export function SoloCountClient({ sessionId, title, status: initialStatus, items
     </div>
   )
 
-  if (!isOpen) {
-    const sorted = [...entries].sort((a, b) => a.brand_code.localeCompare(b.brand_code))
+  const sorted = [...entries].sort((a, b) => a.brand_code.localeCompare(b.brand_code))
+  const resultsTable = (
+    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="border-b border-slate-200 bg-slate-50">
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Brand Code</th>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Brand Name</th>
+            <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Count</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {sorted.length === 0 ? (
+            <tr><td colSpan={3} className="px-4 py-12 text-center text-sm text-slate-400">No items counted.</td></tr>
+          ) : (
+            sorted.map((e) => (
+              <tr key={e.brand_code} className="hover:bg-slate-50">
+                <td className="px-4 py-3 font-bold text-slate-700">{e.brand_code}</td>
+                <td className="px-4 py-3 text-slate-600">{e.brand_name}</td>
+                <td className="px-4 py-3 text-center font-mono">{e.final_cases}+{e.final_units}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  )
+
+  const assignmentPanel = (
+    <AssignmentPanel
+      sessionId={sessionId}
+      inventory={items}
+      assignedToCounter={assignedToCounter}
+      restrictToList={restrictToList}
+      listItems={listItems}
+      onAssignedChange={setAssignedToCounter}
+      onRestrictChange={setRestrictToList}
+    />
+  )
+
+  if (assignedToCounter) {
     return (
       <div>
         {header}
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Brand Code</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Brand Name</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Count</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sorted.length === 0 ? (
-                <tr><td colSpan={3} className="px-4 py-12 text-center text-sm text-slate-400">No items counted.</td></tr>
-              ) : (
-                sorted.map((e) => (
-                  <tr key={e.brand_code} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-bold text-slate-700">{e.brand_code}</td>
-                    <td className="px-4 py-3 text-slate-600">{e.brand_name}</td>
-                    <td className="px-4 py-3 text-center font-mono">{e.final_cases}+{e.final_units}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        {isOpen && assignmentPanel}
+        <div className="text-sm text-slate-500 mb-3">
+          {counterName ? `Counting by: ${counterName}` : 'Waiting for the counter to enter their name…'}
         </div>
+        {resultsTable}
       </div>
     )
   }
 
-  return <BuscaClient items={items} onSubmit={onSubmit} headerSlot={header} />
+  if (!isOpen) {
+    return (
+      <div>
+        {header}
+        {resultsTable}
+      </div>
+    )
+  }
+
+  return (
+    <BuscaClient
+      items={items}
+      onSubmit={onSubmit}
+      headerSlot={
+        <>
+          {header}
+          {assignmentPanel}
+        </>
+      }
+    />
+  )
 }

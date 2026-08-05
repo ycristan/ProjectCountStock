@@ -55,9 +55,12 @@ type Props = {
   // ponytail: solo count injeta submit próprio + header; padrão = fluxo de equipe
   onSubmit?: (payload: LancarContagemPayload) => Promise<LancarContagemResult>
   headerSlot?: React.ReactNode
+  // ponytail: quando true, items já é a lista pré-selecionada (pequena) do admin —
+  // mostra ela direto em vez de exigir que o contador já saiba o que procurar
+  restrictToList?: boolean
 }
 
-export function BuscaClient({ items: initialItems, onSubmit, headerSlot }: Props) {
+export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restrictToList }: Props) {
   const [tela, setTela] = useState<Tela>('busca')
   const [termo, setTermo] = useState('')
   const [itemSelecionado, setItemSelecionado] = useState<ItemBusca | null>(null)
@@ -77,7 +80,10 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot }: Props
     [initialItems, entryOverrides]
   )
 
-  const resultados = useMemo(() => filterItems(items, termo), [items, termo])
+  const resultados = useMemo(
+    () => (restrictToList && !termo.trim() ? items : filterItems(items, termo)),
+    [items, termo, restrictToList]
+  )
 
   const handleVoltar = useCallback(() => {
     setTela('busca')
@@ -142,7 +148,9 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot }: Props
   return (
     <div>
       {headerSlot}
-      <h2 className="text-xl font-semibold text-slate-900 mb-4">Search Item</h2>
+      <h2 className="text-xl font-semibold text-slate-900 mb-4">
+        {restrictToList ? `Your items (${items.length})` : 'Search Item'}
+      </h2>
       <SearchInput value={termo} onChange={setTermo} />
 
       {termo.trim() && resultados.length === 0 && (
@@ -162,7 +170,7 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot }: Props
         }}
       />
 
-      {!termo && (
+      {!termo && !restrictToList && (
         <p className="text-sm text-slate-400 mt-4 text-center">
           Search by code (e.g. 6323), product name or BIN (e.g. 40A02)
         </p>

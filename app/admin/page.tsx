@@ -28,7 +28,7 @@ export default async function AdminPage() {
         </Link>
         <Link href="/admin/sessao" className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all">
           <h3 className="font-semibold text-slate-900 mb-1">New Session</h3>
-          <p className="text-sm text-slate-500">Create a count session and configure teams</p>
+          <p className="text-sm text-slate-500">Start a team or solo count session</p>
         </Link>
         <Link href="/admin/sessoes" className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all">
           <h3 className="font-semibold text-slate-900 mb-1">Monitor Count</h3>
@@ -40,7 +40,7 @@ export default async function AdminPage() {
         </Link>
         <Link href="/admin/solo" className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all">
           <h3 className="font-semibold text-slate-900 mb-1">Solo Count</h3>
-          <p className="text-sm text-slate-500">Count inventory yourself — no teams, no reconciliation</p>
+          <p className="text-sm text-slate-500">View and manage existing solo count sessions</p>
         </Link>
       </div>
     </div>

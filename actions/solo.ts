@@ -3,6 +3,8 @@
 import { createAdminClient } from '@/lib/supabase-admin'
 import { createClient } from '@/lib/supabase-server'
 import type { LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
+import { sendSoloResultsEmail } from '@/lib/send-solo-results-email'
+import { getDefaultTare } from '@/actions/settings'
 
 async function isAdmin(): Promise<boolean> {
   const supabase = await createClient()
@@ -10,23 +12,50 @@ async function isAdmin(): Promise<boolean> {
   return user?.user_metadata?.role === 'admin'
 }
 
-export async function criarSoloSessao(title: string): Promise<{ id?: string; error?: string }> {
+async function isSoloCounter(): Promise<boolean> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user?.user_metadata?.role === 'counter' && user?.user_metadata?.is_solo_counter === true
+}
+
+export async function criarSoloSessaoCompleta(input: {
+  title: string
+  assignedToCounter: boolean
+  restrictToList: boolean
+  itemCodes: string[]
+}): Promise<{ id?: string; error?: string }> {
   if (!(await isAdmin())) return { error: 'Unauthorized' }
-  if (!title.trim()) return { error: 'Title is required.' }
+  const title = input.title.trim()
+  if (!title) return { error: 'Title is required.' }
 
   const admin = createAdminClient()
+  const { box_tare_g } = await getDefaultTare()
+
   const { data, error } = await admin
     .from('solo_sessions')
-    .insert({ title: title.trim() })
+    .insert({
+      title,
+      assigned_to_counter: input.assignedToCounter,
+      restrict_to_list: input.restrictToList,
+      box_tare_g,
+    })
     .select('id')
     .single()
+  if (error || !data) return { error: error?.message ?? 'Error creating session.' }
 
-  if (error) return { error: error.message }
+  if (input.restrictToList && input.itemCodes.length > 0) {
+    const { error: itemsError } = await admin
+      .from('solo_session_items')
+      .insert(input.itemCodes.map((brand_code) => ({ session_id: data.id, brand_code })))
+    if (itemsError) return { error: `Session created but failed to save item list: ${itemsError.message}` }
+  }
+
   return { id: data.id }
 }
 
-// ponytail: mesmo contrato de lancarContagem (payload + convert_count) para reusar o CountForm
-export async function lancarSoloContagem(
+// ponytail: shared by the admin path (lancarSoloContagem) and the counter path
+// (lancarSoloContagemCounter) — same validation/convert/save, only the auth check differs
+async function _saveSoloEntry(
   sessionId: string,
   payload: LancarContagemPayload,
 ): Promise<LancarContagemResult> {
@@ -40,10 +69,6 @@ export async function lancarSoloContagem(
   ) {
     return { error: 'Count values must be integers.' }
   }
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user?.user_metadata?.role !== 'admin') return { error: 'Unauthorized' }
 
   const admin = createAdminClient()
   const { data: item, error: itemError } = await admin
@@ -88,10 +113,158 @@ export async function lancarSoloContagem(
   return { final_cases, final_units, brand_name: item.brand_name }
 }
 
+export async function lancarSoloContagem(
+  sessionId: string,
+  payload: LancarContagemPayload,
+): Promise<LancarContagemResult> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
+  return _saveSoloEntry(sessionId, payload)
+}
+
 export async function encerrarSoloSessao(sessionId: string): Promise<{ error?: string }> {
   if (!(await isAdmin())) return { error: 'Unauthorized' }
   const admin = createAdminClient()
   const { error } = await admin.from('solo_sessions').update({ status: 'closed' }).eq('id', sessionId)
   if (error) return { error: error.message }
+  return {}
+}
+
+// ─── Assignment (admin) ──────────────────────────────────────────────────────
+
+export async function atribuirSoloContador(
+  sessionId: string,
+  assigned: boolean,
+  restrict: boolean,
+): Promise<{ error?: string }> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('solo_sessions')
+    .update({ assigned_to_counter: assigned, restrict_to_list: restrict })
+    .eq('id', sessionId)
+  return error ? { error: error.message } : {}
+}
+
+export async function adicionarItemListaSolo(sessionId: string, brandCode: string): Promise<{ error?: string }> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('solo_session_items')
+    .upsert({ session_id: sessionId, brand_code: brandCode }, { onConflict: 'session_id,brand_code' })
+  return error ? { error: error.message } : {}
+}
+
+export async function removerItemListaSolo(sessionId: string, brandCode: string): Promise<{ error?: string }> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('solo_session_items')
+    .delete()
+    .eq('session_id', sessionId)
+    .eq('brand_code', brandCode)
+  return error ? { error: error.message } : {}
+}
+
+// ─── Counter-facing (fixed solo-counter account) ────────────────────────────
+
+export async function listarSoloSessoesAtribuidas(): Promise<{ id: string; title: string; counter_name: string | null }[]> {
+  if (!(await isSoloCounter())) return []
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('solo_sessions')
+    .select('id, title, counter_name')
+    .eq('assigned_to_counter', true)
+    .eq('status', 'open')
+    .order('created_at', { ascending: false })
+  return data ?? []
+}
+
+export async function definirNomeContadorSolo(sessionId: string, nome: string): Promise<{ error?: string }> {
+  if (!(await isSoloCounter())) return { error: 'Unauthorized' }
+  if (!nome.trim()) return { error: 'Name is required.' }
+
+  const admin = createAdminClient()
+  const { data: session } = await admin
+    .from('solo_sessions')
+    .select('assigned_to_counter, status')
+    .eq('id', sessionId)
+    .single()
+  if (!session || !session.assigned_to_counter || session.status !== 'open') {
+    return { error: 'Session not available.' }
+  }
+
+  // ponytail: .is('counter_name', null) — only the first person to open the
+  // session sets the name; later re-opens by the same shared account don't overwrite it
+  const { error } = await admin
+    .from('solo_sessions')
+    .update({ counter_name: nome.trim() })
+    .eq('id', sessionId)
+    .is('counter_name', null)
+  return error ? { error: error.message } : {}
+}
+
+export async function lancarSoloContagemCounter(
+  sessionId: string,
+  payload: LancarContagemPayload,
+): Promise<LancarContagemResult> {
+  if (!(await isSoloCounter())) return { error: 'Unauthorized' }
+
+  const admin = createAdminClient()
+  const { data: session } = await admin
+    .from('solo_sessions')
+    .select('assigned_to_counter, status, restrict_to_list')
+    .eq('id', sessionId)
+    .single()
+  if (!session || !session.assigned_to_counter || session.status !== 'open') {
+    return { error: 'Session not available.' }
+  }
+
+  if (session.restrict_to_list) {
+    const { data: allowed } = await admin
+      .from('solo_session_items')
+      .select('brand_code')
+      .eq('session_id', sessionId)
+      .eq('brand_code', payload.brand_code)
+      .maybeSingle()
+    if (!allowed) return { error: 'Item is not in the pre-selected list for this count.' }
+  }
+
+  return _saveSoloEntry(sessionId, payload)
+}
+
+export async function finalizarSoloContagemCounter(sessionId: string): Promise<{ error?: string }> {
+  if (!(await isSoloCounter())) return { error: 'Unauthorized' }
+
+  const admin = createAdminClient()
+  const { data: session } = await admin
+    .from('solo_sessions')
+    .select('assigned_to_counter, status, title, counter_name')
+    .eq('id', sessionId)
+    .single()
+  if (!session || !session.assigned_to_counter || session.status !== 'open') {
+    return { error: 'Session not available.' }
+  }
+
+  const { error } = await admin.from('solo_sessions').update({ status: 'closed' }).eq('id', sessionId)
+  if (error) return { error: error.message }
+
+  const { data: entries } = await admin
+    .from('solo_entries')
+    .select('brand_code, brand_name, final_cases, final_units')
+    .eq('session_id', sessionId)
+    .order('brand_code')
+
+  const { data: settings } = await admin.from('app_settings').select('notify_email').eq('id', 1).single()
+  if (settings?.notify_email) {
+    // ponytail: failure here must never block the finalise — session is already closed above.
+    // try/catch is defensive: sendSoloResultsEmail is designed to never throw, but this path
+    // must not depend on that guarantee alone.
+    try {
+      await sendSoloResultsEmail(settings.notify_email, session.title, session.counter_name, entries ?? [])
+    } catch (err) {
+      console.error('finalizarSoloContagemCounter: email send threw unexpectedly', err)
+    }
+  }
+
   return {}
 }
