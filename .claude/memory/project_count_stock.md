@@ -35,9 +35,12 @@ metadata:
 - Email Supabase: `${team_pin}${user_pin}@count.local`; Senha: `user_pin` (4 dígitos)
 - `user_metadata.role`: `'admin'` ou `'counter'`; `counter_role`: `'contador_1'|'contador_2'|'independente'`; `team_id`
 - Nomes reais dos contadores: NÃO em `counter_accounts.username` (guarda `team_pin+user_pin`) — estão em `auth.users.raw_user_meta_data->>'full_name'`
+- ⚠️ **Como a senha é o próprio `user_pin`, escrever "team_pin X + user_pin Y" em qualquer lugar equivale a publicar a senha da conta. Nunca registrar PINs nem senhas nesta memória** — ver regra no Workflow.
 
 ## Solo Count (pós-#58)
-- **Contador solo fixo**: 1 conta compartilhada `90000001@count.local` (team_pin `9000` + user_pin `0001`), `user_metadata: {role:'counter', is_solo_counter:true}`. Cada pessoa que usa a conta digita o próprio nome na primeira sessão que abre (`counter_name`, first-write-wins).
+- **Contador solo fixo**: 1 conta compartilhada com `user_metadata: {role:'counter', is_solo_counter:true}`. Cada pessoa que usa a conta digita o próprio nome na primeira sessão que abre (`counter_name`, first-write-wins).
+  - A conta é **criada e deletada pelo admin na tela `/admin/settings`** — as credenciais mudam a cada recriação e **não são documentadas aqui de propósito**. O par usado no desenvolvimento do #58 foi descartado e a conta atual foi recriada em 2026-08-04.
+  - Para descobrir a conta ativa: `select email from auth.users where raw_user_meta_data->>'is_solo_counter' = 'true'`.
 - **Admin atribui sessão** ao contador fixo (em vez de contar ele mesmo) via wizard `/admin/sessao/solo`, opcionalmente restringindo a uma lista pré-selecionada de itens (`solo_session_items`).
 - **`/admin/settings`**: hub central — tara/tolerância default, e-mail de notificação (`app_settings.notify_email` = `yuridelima@vending.ie`, definitivo), criar/deletar a conta do contador solo fixo.
 - Rotas: `/admin/solo` (lista admin) espelha `/solo` (lista contador); ambas reusam `BuscaClient`/`CountForm` sem modificação.
@@ -95,10 +98,10 @@ Env vars: `EMAILJS_SERVICE_ID`, `EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`, `CO
 001 schema | 002 functions | 003 rls | 004 finalized_at | 005 weight_avg | 006 category | 007 reconc_recount | 008 weight_marker | 009 realtime+admin_rls | 010 remove_bin_from_finalize | 011 combine_session | 012 fix_count_entries_dup | 013 finalize_c1_c2_only | 014 fix_combine_no_discrepancy | 015 independente_confirm | 016 solo_sessions | 017 tolerance | 018 solo_pin | 019 combine_all_inventory (item não contado=0) | 020 encerrar_sessao_combinacao (combine_session_results seta status='fechada'; RLS bloqueia escrita pós-fechamento) | 021 brand_active (inventory_items.brand_active) | **022 solo_counter_fixed** (assigned_to_counter/restrict_to_list, solo_session_items, app_settings) | **023 solo_counter_rls_hardening** (WITH CHECK explícito, GRANT UPDATE coluna) | **024 system_settings_and_solo_tare** (box_tare_g por sessão, defaults) | **025 solo_counter_status_guard** (RLS checa status='open', achado pelo `/code-review`)
 
 ## PRs
-- Mergeados: #1–#52, #54, #55, #57, **#58**.
+- Mergeados: #1–#52, #54, #55, #57, **#58**, #59 (sync de memória).
 - **#53 (rebrand "NEXT CHAIN") mergeado 2026-07-06 SEM AUTORIZAÇÃO e revertido no mesmo dia** — não está em produção.
 - **#56 (recriação do #53 sobre a main atual, draft "não mergear") — ainda OPEN**, serve só de base pro `/code-review`. Achado: rebrand só cobre 6 de ~40 arquivos, resto do app fica com Tailwind hardcoded antigo — diverge da preferência forte do usuário por padronização visual (ver `.claude/memory/feedback_reuse_components.md`).
-- **Plano de rebrand completo (4 PRs) aprovado em conceito 2026-07-21, ainda não iniciado**.
+- **Plano de rebrand completo (4 PRs) aprovado em conceito 2026-07-21, ainda não iniciado** — detalhado em `.claude/memory/project_count_stock_roadmap.md`, item 10.
 - **#58 (contador solo fixo) mergeado e fechado 2026-08-05** — ver seção própria acima.
 
 ## Lição: solo-PIN login (não repetir)
@@ -109,6 +112,7 @@ Tentativa: contador solo logar pela tela normal com codinome+PIN, cookie `solo_p
 
 ## Workflow
 - Todo código via GitHub MCP (`mcp__github__*`) — branch + PR + squash. Push direto na main só se o usuário pedir (docs/memory ok).
+- **NUNCA escrever credencial nesta memória** — PIN, senha, chave de API, token. Este repo é público, e no padrão 2-PIN a senha é o próprio `user_pin`: documentar "team_pin X + user_pin Y" é publicar a senha. Documentar **onde** a credencial vive (tela de admin, painel do serviço, env var) ou **como descobrir** a conta ativa (query SQL), nunca o valor.
 - Migration aplicada direto no Supabase (MCP `apply_migration`) mesmo antes do merge do PR — padrão já usado nas migrations 020, 021, e 022-025.
 - Ao pedir env var pro usuário configurar: repetir SEMPRE nome exato + todos os ambientes (Production E Preview) em cada uma, nunca abreviar depois da primeira.
 - Debug de integração com serviço terceiro: ler os runtime logs da Vercel direto (erro exato retornado pela API terceira) em vez de supor — foi assim que os 3 erros do EmailJS foram resolvidos em sequência, rápido.
