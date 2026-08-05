@@ -1,6 +1,6 @@
 ---
 name: project-count-stock
-description: "Count Stock — contagem física cega tripla: stack, fluxo, PRs #1–#52 mergeados, #53 revertido, #54/#55/#57 mergeadas 2026-07-21; PR #58 (contador solo fixo) mergeado 2026-08-05"
+description: "Count Stock — contagem física cega tripla: stack, fluxo, PRs #1–#52 mergeados, #53 revertido, #54/#55/#57 mergeadas 2026-07-21; PR #58 (contador solo fixo) mergeado e fechado 2026-08-05, sem pendência"
 metadata: 
   node_type: memory
   type: project
@@ -17,7 +17,7 @@ metadata:
 - **App URL produção**: derivado do host do request em runtime (sem env var hardcoded)
 
 ## Estado atual (2026-08-05)
-- **PR #58 (contador solo fixo) mergeado na main** (squash, commit `fe65d0b7`) — ver seção própria abaixo.
+- **PR #58 (contador solo fixo) mergeado na main e FECHADO, sem pendência técnica** (squash, commit `fe65d0b7`) — ver seção própria abaixo.
 - Banco resetado 2026-07-03, inventário recarregado; upload real de 504 itens testado 2026-07-21 (ver bug conhecido abaixo).
 - Variável importante: **preview e produção usam o MESMO Supabase** (`sktpzvlmeegyuqsvtunx`). Não há banco por branch.
 - **Migrations NÃO são aplicadas automaticamente no merge** — aplicar à mão via Supabase MCP `apply_migration` (mas no caso do #58, todas as migrations 022-025 já tinham sido aplicadas ao longo do desenvolvimento, antes mesmo do merge).
@@ -29,7 +29,7 @@ metadata:
 - Supabase (Postgres + Auth + RLS + Realtime) via `@supabase/ssr`
 - `xlsx` — upload/download de inventário e exportação Excel
 - `qrcode` — QR codes server-side (PR #23)
-- `EmailJS` (REST API via `fetch`, sem SDK) — notificação de resultado de contagem solo. Substituiu `resend` (removido do package.json) porque o Resend só permite enviar pro e-mail dono da conta sem domínio verificado, e o usuário não tem acesso DNS ao domínio da empresa.
+- `EmailJS` (REST API via `fetch`, sem SDK) — notificação de resultado de contagem solo, **confirmado funcionando em produção 2026-08-05**. Substituiu `resend` (removido do package.json) porque o Resend só permite enviar pro e-mail dono da conta sem domínio verificado, e o usuário não tem acesso DNS ao domínio da empresa.
 
 ## Auth — padrão 2-PIN (contadores triplos)
 - Email Supabase: `${team_pin}${user_pin}@count.local`; Senha: `user_pin` (4 dígitos)
@@ -39,7 +39,7 @@ metadata:
 ## Solo Count (pós-#58)
 - **Contador solo fixo**: 1 conta compartilhada `90000001@count.local` (team_pin `9000` + user_pin `0001`), `user_metadata: {role:'counter', is_solo_counter:true}`. Cada pessoa que usa a conta digita o próprio nome na primeira sessão que abre (`counter_name`, first-write-wins).
 - **Admin atribui sessão** ao contador fixo (em vez de contar ele mesmo) via wizard `/admin/sessao/solo`, opcionalmente restringindo a uma lista pré-selecionada de itens (`solo_session_items`).
-- **`/admin/settings`**: hub central — tara/tolerância default, e-mail de notificação, criar/deletar a conta do contador solo fixo.
+- **`/admin/settings`**: hub central — tara/tolerância default, e-mail de notificação (`app_settings.notify_email` = `yuridelima@vending.ie`, definitivo), criar/deletar a conta do contador solo fixo.
 - Rotas: `/admin/solo` (lista admin) espelha `/solo` (lista contador); ambas reusam `BuscaClient`/`CountForm` sem modificação.
 - **Modo Admin puro (PR #43)** continua existindo: admin conta ele mesmo, sem atribuir a ninguém.
 - **PR #47 (PIN por cookie httpOnly) permanece abandonada** — nunca foi reaproveitada, #58 é implementação nova do zero.
@@ -47,7 +47,7 @@ metadata:
 ## Fluxo completo — Contagem Tripla
 1. Admin cria sessão (nº equipes, box_tare_g, tolerance_g — agora com default vindo de `/admin/settings`). 2. Cria equipes (team_pin+user_pin, cartões QR). 3. Contadores 1 e 2 contam cego. 4. Independente **não conta** — vai pra /monitor. 5. Admin "Check →" → RPC `finalize_team_count` → gera reconciliation_items. 6. Independente reconcilia discrepâncias. 7. Admin monitora ao vivo. 8. Independente confirma → status 'reconciliada'. 9. Admin → Combinação → Confirm Merge → RPC `combine_session_results` → `combined_results` + `count_sessions.status='fechada'`. 10. Export Excel.
 
-## PR #58 — Contador Solo Fixo (mergeado 2026-08-05)
+## PR #58 — Contador Solo Fixo (mergeado e fechado 2026-08-05)
 Pedido original: 1 conta fixa de contador solo, admin atribui sessão + restringe lista de itens, envia resultado por e-mail ao finalizar.
 
 **O que entrou** (2 rodadas de desenvolvimento, 2026-07-30 a 2026-08-05):
@@ -60,17 +60,14 @@ Pedido original: 1 conta fixa de contador solo, admin atribui sessão + restring
 3. Migration 025: policies RLS do contador solo (022/023) não checavam `status='open'`, mesmo padrão do incidente #54 — corrigido por defesa em profundidade (achado pelo `/code-review`, não explorável hoje pois toda escrita usa service-role).
 4. **E-mail via Resend nunca funcionou** — sandbox `onboarding@resend.dev` só entrega pro e-mail dono da conta Resend, sem domínio verificado (usuário não tem DNS do domínio da empresa). **Trocado para EmailJS** — manda através de Gmail real conectado via OAuth, sem restrição de destinatário.
 
-**EmailJS — sequência de debug até funcionar** (3 erros distintos, cada um resolvido em ordem via log real da Vercel, não suposição):
-1. "env vars not fully configured" → faltava marcar ambiente **Preview** nas env vars (só tinham Production)
+**EmailJS — sequência de debug até funcionar** (3 erros distintos, cada um resolvido em ordem via log real da Vercel, não suposição — **confirmado funcionando no final**):
+1. "env vars not fully configured" → faltava marcar ambiente **Preview** nas env vars (só tinham Production). Nota: usuário reportou que a Vercel não deixou editar o escopo das vars já criadas em Production (são "sensitive") — só deu pra criar novas entradas com escopo Preview. Diverge do que a doc oficial da Vercel descreve como possível; tratar como comportamento real observado neste projeto, não repetir a alegação de "dá pra editar" sem ressalva.
 2. "403 API access from non-browser environments is currently disabled" → habilitar em dashboard.emailjs.com/admin/account/security
 3. "422 The recipients address is empty" → campo **To Email** do template (aba Settings, não a do HTML) precisa ser `{{to_email}}`
 
 Env vars: `EMAILJS_SERVICE_ID`, `EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`, `COUNTSTOCK_TEMPLATE_ID` (nome não-padrão, não `EMAILJS_TEMPLATE_ID` — código lê esse nome específico).
 
-**Pendências pós-merge**:
-1. Confirmar se o e-mail está saindo de fato (reteste do usuário ficou no erro #3, sem confirmação final antes do merge)
-2. `notify_email` em `app_settings` está com `ycristan@gmail.com` (valor de teste) — trocar pra `yuridelima@vending.ie` quando confirmado
-3. Branch `feat/solo-counter-fixed` pode ser deletado
+**Fechamento**: usuário confirmou e-mail recebido de verdade em produção. `notify_email` revertido pra `yuridelima@vending.ie` (destino real). Branch `feat/solo-counter-fixed` (já mergeado) não foi deletado — MCP do GitHub não tem tool de deletar branch nem arquivo (confirmado por varredura completa das 24 tools disponíveis); sem efeito em produção, cosmético.
 
 ## Bug conhecido: sessão travada em status='aberta' (RESOLVIDO por sessão, ver abaixo)
 - `combine_session_results` só passou a setar `count_sessions.status='fechada'` a partir da migration 020 (2026-07-09).
@@ -102,7 +99,7 @@ Env vars: `EMAILJS_SERVICE_ID`, `EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`, `CO
 - **#53 (rebrand "NEXT CHAIN") mergeado 2026-07-06 SEM AUTORIZAÇÃO e revertido no mesmo dia** — não está em produção.
 - **#56 (recriação do #53 sobre a main atual, draft "não mergear") — ainda OPEN**, serve só de base pro `/code-review`. Achado: rebrand só cobre 6 de ~40 arquivos, resto do app fica com Tailwind hardcoded antigo — diverge da preferência forte do usuário por padronização visual (ver `.claude/memory/feedback_reuse_components.md`).
 - **Plano de rebrand completo (4 PRs) aprovado em conceito 2026-07-21, ainda não iniciado**.
-- **#58 (contador solo fixo) mergeado 2026-08-05** — ver seção própria acima.
+- **#58 (contador solo fixo) mergeado e fechado 2026-08-05** — ver seção própria acima.
 
 ## Lição: solo-PIN login (não repetir)
 Tentativa: contador solo logar pela tela normal com codinome+PIN, cookie `solo_pin_<id>` pra cair em `/solo/[id]/contar`. Sintoma: login OK mas `GET /solo/[id]/contar` sempre voltava 307 pro login (cookie httpOnly não sobrevivia). 2 tentativas não resolveram, causa raiz nunca achada. PR #47 fechada sem merge. #58 implementou solo count com conta fixa (não PIN por cookie) e não teve esse problema.
@@ -114,5 +111,6 @@ Tentativa: contador solo logar pela tela normal com codinome+PIN, cookie `solo_p
 - Todo código via GitHub MCP (`mcp__github__*`) — branch + PR + squash. Push direto na main só se o usuário pedir (docs/memory ok).
 - Migration aplicada direto no Supabase (MCP `apply_migration`) mesmo antes do merge do PR — padrão já usado nas migrations 020, 021, e 022-025.
 - Ao pedir env var pro usuário configurar: repetir SEMPRE nome exato + todos os ambientes (Production E Preview) em cada uma, nunca abreviar depois da primeira.
+- Debug de integração com serviço terceiro: ler os runtime logs da Vercel direto (erro exato retornado pela API terceira) em vez de supor — foi assim que os 3 erros do EmailJS foram resolvidos em sequência, rápido.
 - [[project-count-stock-architecture]] para padrões técnicos críticos.
 - **Memória do projeto é espelhada em dois lugares: local (`~/.claude/.../memory/`) e neste repo (`.claude/memory/`). Sempre atualizar os dois juntos, nunca só um.**
