@@ -1,0 +1,45 @@
+name: Database security tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/database-security-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  database-security:
+    name: Apply migrations and verify authorization
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Initialize disposable local Supabase project
+        run: |
+          if [ ! -f supabase/config.toml ]; then
+            supabase init
+          fi
+
+      - name: Start disposable Supabase
+        run: supabase start
+
+      - name: Run database authorization tests
+        run: supabase test db
+
+      - name: Lint database functions
+        run: supabase db lint --level error
+
+      - name: Stop disposable Supabase
+        if: always()
+        run: supabase stop
