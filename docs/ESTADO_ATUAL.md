@@ -10,6 +10,8 @@ Atualizado: 2026-09-01
 ## Prioridade P0 — segurança de autorização
 A auditoria identificou que permissões de administrador e contador dependem de `user_metadata` no Supabase. Esse campo pode ser alterado pelo próprio usuário autenticado e não pode ser usado como chave de autorização.
 
+A correção está em preparação na branch `codex/security-authorization-hardening`. A escolha técnica é uma tabela protegida, `app_user_access`, porque a autorização passa a ter efeito imediato — sem esperar a renovação de token.
+
 A correção deve:
 1. Mover função e vínculos de acesso para dados protegidos (`app_metadata` ou tabela de perfil controlada pelo banco).
 2. Atualizar as políticas RLS e o `proxy.ts`.
