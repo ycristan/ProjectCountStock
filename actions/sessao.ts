@@ -298,10 +298,7 @@ export async function listarEquipes(sessaoId: string): Promise<ContadorComCreden
 
   const nameMap: Record<string, string> = {}
   for (const u of users) {
-    const tid = u.user_metadata?.team_id as string
-    const role = u.user_metadata?.counter_role as string
-    const name = u.user_metadata?.full_name as string
-    if (tid && role) nameMap[`${tid}:${role}`] = name ?? ''
+    nameMap[u.id] = (u.user_metadata?.full_name as string) ?? ''
   }
 
   const teamMap = Object.fromEntries(teams.map((t) => [t.id, t]))
@@ -313,7 +310,7 @@ export async function listarEquipes(sessaoId: string): Promise<ContadorComCreden
     team_pin: teamMap[a.team_id]?.team_pin ?? '',
     role: a.role,
     user_pin: a.user_pin,
-    full_name: nameMap[`${a.team_id}:${a.role}`] ?? '',
+    full_name: nameMap[a.auth_user_id] ?? '',
   }))
 }
 
