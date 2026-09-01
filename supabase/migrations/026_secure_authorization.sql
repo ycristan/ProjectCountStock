@@ -2,9 +2,10 @@
 -- Backfill is intentionally a one-time migration; future authorization reads only public.app_user_access.
 
 create table if not exists public.app_user_access (
-  user_id uuid primary key references auth.users(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
   access_kind text not null check (access_kind in ('admin', 'team_counter', 'solo_counter')),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  primary key (user_id, access_kind)
 );
 
 alter table public.app_user_access enable row level security;
@@ -16,29 +17,25 @@ insert into public.app_user_access (user_id, access_kind)
 select id, 'admin'
 from auth.users
 where raw_user_meta_data ->> 'role' = 'admin'
-on conflict (user_id) do update set access_kind = excluded.access_kind;
+on conflict do nothing;
 
 insert into public.app_user_access (user_id, access_kind)
 select auth_user_id, 'team_counter'
 from public.counter_accounts
-on conflict (user_id) do update set access_kind = excluded.access_kind;
+on conflict do nothing;
 
 insert into public.app_user_access (user_id, access_kind)
 select id, 'solo_counter'
 from auth.users
 where (raw_user_meta_data ->> 'is_solo_counter')::boolean is true
-on conflict (user_id) do update set access_kind = excluded.access_kind;
+on conflict do nothing;
 
 create schema if not exists private;
 revoke all on schema private from public;
 grant usage on schema private to authenticated;
 
 create or replace function private.is_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
+returns boolean language sql stable security definer set search_path = ''
 as $$
   select exists (
     select 1 from public.app_user_access
@@ -47,11 +44,7 @@ as $$
 $$;
 
 create or replace function private.is_solo_counter()
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
+returns boolean language sql stable security definer set search_path = ''
 as $$
   select exists (
     select 1 from public.app_user_access
@@ -59,20 +52,19 @@ as $$
   );
 $$;
 
+revoke all on function private.is_admin(), private.is_solo_counter() from public;
+grant execute on function private.is_admin(), private.is_solo_counter() to authenticated;
+
 create or replace function public.is_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
+returns boolean language sql stable security definer set search_path = ''
 as $$ select private.is_admin(); $$;
 
+create or replace function public.is_solo_counter()
+returns boolean language sql stable security definer set search_path = ''
+as $$ select private.is_solo_counter(); $$;
+
 create or replace function public.my_team_id()
-returns uuid
-language sql
-stable
-security definer
-set search_path = ''
+returns uuid language sql stable security definer set search_path = ''
 as $$
   select team_id from public.counter_accounts
   where auth_user_id = auth.uid()
@@ -80,21 +72,15 @@ as $$
 $$;
 
 create or replace function public.my_counter_role()
-returns counter_role
-language sql
-stable
-security definer
-set search_path = ''
+returns counter_role language sql stable security definer set search_path = ''
 as $$
   select role from public.counter_accounts
   where auth_user_id = auth.uid()
   limit 1;
 $$;
 
-revoke all on function public.is_admin() from public, anon;
-revoke all on function public.my_team_id() from public, anon;
-revoke all on function public.my_counter_role() from public, anon;
-grant execute on function public.is_admin(), public.my_team_id(), public.my_counter_role() to authenticated;
+revoke all on function public.is_admin(), public.is_solo_counter(), public.my_team_id(), public.my_counter_role() from public, anon;
+grant execute on function public.is_admin(), public.is_solo_counter(), public.my_team_id(), public.my_counter_role() to authenticated;
 
 -- Administrative database routines are server-only; browser/API callers lose execute permission.
 revoke all on function public.finalize_team_count(uuid) from public, anon, authenticated;

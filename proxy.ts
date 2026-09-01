@@ -15,16 +15,12 @@ export async function proxy(request: NextRequest) {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
         },
       },
-    }
+    },
   )
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -34,32 +30,27 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (user && (pathname === '/' || pathname === '/login')) {
-    const role = user.user_metadata?.role
-    const isSoloCounter = user.user_metadata?.is_solo_counter === true
-    return NextResponse.redirect(
-      new URL(role === 'admin' ? '/admin' : isSoloCounter ? '/solo' : '/busca', request.url)
-    )
-  }
+  if (!user) return supabaseResponse
 
-  if (user) {
-    const role = user.user_metadata?.role
-    const isSoloCounter = user.user_metadata?.is_solo_counter === true
-    if (pathname.startsWith('/admin') && role !== 'admin') {
-      return NextResponse.redirect(new URL(isSoloCounter ? '/solo' : '/busca', request.url))
-    }
-    if (pathname.startsWith('/busca') && role === 'admin') {
-      return NextResponse.redirect(new URL('/admin', request.url))
-    }
-    if (pathname.startsWith('/busca') && isSoloCounter) {
-      return NextResponse.redirect(new URL('/solo', request.url))
-    }
-    if (pathname.startsWith('/solo') && role === 'admin') {
-      return NextResponse.redirect(new URL('/admin', request.url))
-    }
-    if (pathname.startsWith('/solo') && role !== 'admin' && !isSoloCounter) {
-      return NextResponse.redirect(new URL('/busca', request.url))
-    }
+  const [{ data: adminValue }, { data: soloValue }] = await Promise.all([
+    supabase.rpc('is_admin'),
+    supabase.rpc('is_solo_counter'),
+  ])
+  const isAdmin = adminValue === true
+  const isSoloCounter = soloValue === true
+  const home = isAdmin ? '/admin' : isSoloCounter ? '/solo' : '/busca'
+
+  if (pathname === '/' || pathname === '/login') {
+    return NextResponse.redirect(new URL(home, request.url))
+  }
+  if (pathname.startsWith('/admin') && !isAdmin) {
+    return NextResponse.redirect(new URL(home, request.url))
+  }
+  if (pathname.startsWith('/busca') && (isAdmin || isSoloCounter)) {
+    return NextResponse.redirect(new URL(home, request.url))
+  }
+  if (pathname.startsWith('/solo') && !isAdmin && !isSoloCounter) {
+    return NextResponse.redirect(new URL('/busca', request.url))
   }
 
   return supabaseResponse
