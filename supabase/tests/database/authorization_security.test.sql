@@ -15,12 +15,11 @@ values
 insert into public.count_sessions (id)
 values ('00000000-0000-0000-0000-000000000301');
 
-insert into public.teams (id, session_id, team_name, team_pin)
+insert into public.teams (id, session_id, team_name)
 values (
   '00000000-0000-0000-0000-000000000201',
   '00000000-0000-0000-0000-000000000301',
-  'Synthetic security test team',
-  '9999'
+  'Synthetic security test team'
 );
 
 insert into public.counter_accounts (auth_user_id, team_id, role, username, user_pin)
