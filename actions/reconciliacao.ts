@@ -1,7 +1,7 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { getTeamCounterAccess, isAdmin } from '@/lib/authorization'
 
 export type ReconcItemLista = {
   id: string
@@ -11,7 +11,7 @@ export type ReconcItemLista = {
   status: 'discrepancia' | 'resolvido'
   is_weight_count: boolean
   contador_1_cases: number | null
-  contador_1_units: number | null
+  contador_1_units: number |null
   contador_2_cases: number | null
   contador_2_units: number | null
   independente_cases: number | null
@@ -24,43 +24,29 @@ export type ReconcItemLista = {
   box_tare_g: number
 }
 
-export async function finalizarEquipe(
-  teamId: string,
-): Promise<{ error?: string; success?: boolean }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') return { error: 'Not authorised.' }
+export async function finalizarEquipe(teamId: string): Promise<{ error?: string; success?: boolean }> {
+  if (!(await isAdmin())) return { error: 'Not authorised.' }
 
   const admin = createAdminClient()
   const { error } = await admin.rpc('finalize_team_count', { p_team_id: teamId })
-  if (error) return { error: error.message }
-  return { success: true }
+  return error ? { error: error.message } : { success: true }
 }
 
 export async function listarDiscrepancias(): Promise<ReconcItemLista[]> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return []
+  const access = await getTeamCounterAccess()
+  if (!access) return []
 
-  const teamId = user.user_metadata?.team_id as string
   const admin = createAdminClient()
-
   const { data: items } = await admin
     .from('reconciliation_items')
-    .select(
-      'id, brand_code, bin_location, status, is_weight_count, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units',
-    )
-    .eq('team_id', teamId)
+    .select('id, brand_code, bin_location, status, is_weight_count, contador_1_cases, contador_1_units, contador_2_cases, contador_2_units, independente_cases, independente_units, reconciliated_cases, reconciliated_units')
+    .eq('team_id', access.teamId)
     .in('status', ['discrepancia', 'resolvido'])
     .order('brand_code')
 
   if (!items?.length) return []
 
-  const { data: teamRow } = await admin.from('teams').select('session_id').eq('id', teamId).single()
+  const { data: teamRow } = await admin.from('teams').select('session_id').eq('id', access.teamId).single()
   let box_tare_g = 300
   if (teamRow?.session_id) {
     const { data: sessionRow } = await admin
@@ -99,19 +85,10 @@ export async function listarDiscrepancias(): Promise<ReconcItemLista[]> {
   }))
 }
 
-export async function resolverItemReconciliacao(
-  itemId: string,
-  cases: number,
-  units: number,
-): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
-
-  const role = user.user_metadata?.counter_role
-  if (role !== 'independente') return { error: 'Only the independent counter can record reconciliations.' }
+export async function resolverItemReconciliacao(itemId: string, cases: number, units: number): Promise<{ error?: string }> {
+  const access = await getTeamCounterAccess()
+  if (!access) return { error: 'Not authenticated.' }
+  if (access.counterRole !== 'independente') return { error: 'Only the independent counter can record reconciliations.' }
 
   const admin = createAdminClient()
   const { error } = await admin
@@ -122,27 +99,21 @@ export async function resolverItemReconciliacao(
       status: 'resolvido',
     })
     .eq('id', itemId)
+    .eq('team_id', access.teamId)
 
   return error ? { error: error.message } : {}
 }
 
 export async function confirmarReconciliacao(): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
+  const access = await getTeamCounterAccess()
+  if (!access) return { error: 'Not authenticated.' }
+  if (access.counterRole !== 'independente') return { error: 'Only the independent counter can confirm the reconciliation.' }
 
-  const role = user.user_metadata?.counter_role
-  if (role !== 'independente') return { error: 'Only the independent counter can confirm the reconciliation.' }
-
-  const teamId = user.user_metadata?.team_id as string
   const admin = createAdminClient()
-
   const { data: remaining } = await admin
     .from('reconciliation_items')
     .select('id')
-    .eq('team_id', teamId)
+    .eq('team_id', access.teamId)
     .eq('status', 'discrepancia')
 
   if (remaining && remaining.length > 0) return { error: 'There are still pending discrepancies.' }
@@ -150,7 +121,7 @@ export async function confirmarReconciliacao(): Promise<{ error?: string }> {
   const { error } = await admin
     .from('teams')
     .update({ status: 'reconciliada' })
-    .eq('id', teamId)
+    .eq('id', access.teamId)
 
   return error ? { error: error.message } : {}
 }

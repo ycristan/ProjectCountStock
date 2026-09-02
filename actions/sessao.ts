@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 import { redirect } from 'next/navigation'
 import { getDefaultTare } from '@/actions/settings'
+import { getTeamCounterAccess, isAdmin } from '@/lib/authorization'
 
 type UploadState = { error?: string; success?: boolean; count?: number; skipped?: number } | null
 type SessaoState = { error?: string } | null
@@ -14,6 +15,7 @@ export async function uploadInventory(
   _prevState: UploadState,
   formData: FormData
 ): Promise<UploadState> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
   const file = formData.get('file') as File | null
   if (!file || file.size === 0) return { error: 'No file selected.' }
 
@@ -100,9 +102,7 @@ export async function criarSessao(
   const numEquipes = parseInt(formData.get('num_equipes') as string)
   if (!numEquipes || numEquipes < 1) return { error: 'Invalid number of teams.' }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') return { error: 'Not authorised.' }
+  if (!(await isAdmin())) return { error: 'Not authorised.' }
 
   const { box_tare_g, tolerance_g } = await getDefaultTare()
 
@@ -119,11 +119,8 @@ export async function criarSessao(
 }
 
 export async function buscarInventarioParaDownload() {
+  if (!(await isAdmin())) return null
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role === 'counter') return null
 
   const [items, bins] = await Promise.all([
     fetchAllRows<{
@@ -201,6 +198,7 @@ export async function criarEquipes(
   sessaoId: string,
   equipes: EquipeInput[]
 ): Promise<{ error?: string; credenciais?: Credencial[] }> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
   const supabase = await createClient()
   const admin = createAdminClient()
   const credenciais: Credencial[] = []
@@ -228,12 +226,7 @@ export async function criarEquipes(
       const { data: userData, error: userError } = await admin.auth.admin.createUser({
         email,
         password: userPin,
-        user_metadata: {
-          role: 'counter',
-          team_id: teamData.id,
-          counter_role: pessoa.role,
-          full_name: pessoa.nome,
-        },
+        user_metadata: { full_name: pessoa.nome },
         email_confirm: true,
       })
 
@@ -251,6 +244,14 @@ export async function criarEquipes(
 
       if (accountError) {
         return { error: `Error saving account: ${accountError.message}` }
+      }
+
+      const { error: accessError } = await admin
+        .from('app_user_access')
+        .insert({ user_id: userData.user.id, access_kind: 'team_counter' })
+      if (accessError) {
+        await admin.auth.admin.deleteUser(userData.user.id)
+        return { error: `Error saving account access: ${accessError.message}` }
       }
 
       credenciais.push({ team: equipe.team_name, team_pin: teamPin, role: pessoa.role, name: pessoa.nome, user_pin: userPin })
@@ -273,6 +274,7 @@ export type ContadorComCredencial = {
 }
 
 export async function listarEquipes(sessaoId: string): Promise<ContadorComCredencial[]> {
+  if (!(await isAdmin())) return []
   const supabase = await createClient()
   const admin = createAdminClient()
 
@@ -296,10 +298,7 @@ export async function listarEquipes(sessaoId: string): Promise<ContadorComCreden
 
   const nameMap: Record<string, string> = {}
   for (const u of users) {
-    const tid = u.user_metadata?.team_id as string
-    const role = u.user_metadata?.counter_role as string
-    const name = u.user_metadata?.full_name as string
-    if (tid && role) nameMap[`${tid}:${role}`] = name ?? ''
+    nameMap[u.id] = (u.user_metadata?.full_name as string) ?? ''
   }
 
   const teamMap = Object.fromEntries(teams.map((t) => [t.id, t]))
@@ -311,7 +310,7 @@ export async function listarEquipes(sessaoId: string): Promise<ContadorComCreden
     team_pin: teamMap[a.team_id]?.team_pin ?? '',
     role: a.role,
     user_pin: a.user_pin,
-    full_name: nameMap[`${a.team_id}:${a.role}`] ?? '',
+    full_name: nameMap[a.auth_user_id] ?? '',
   }))
 }
 
@@ -319,6 +318,7 @@ export async function renomearContador(
   authUserId: string,
   novoNome: string
 ): Promise<{ error?: string }> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
   const admin = createAdminClient()
   const { error } = await admin.auth.admin.updateUserById(authUserId, {
     user_metadata: { full_name: novoNome.trim() },
@@ -327,6 +327,7 @@ export async function renomearContador(
 }
 
 export async function deletarEquipe(teamId: string): Promise<{ error?: string }> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
   const admin = createAdminClient()
 
   const { data: accounts } = await admin
@@ -347,6 +348,7 @@ export async function deletarEquipe(teamId: string): Promise<{ error?: string }>
 }
 
 export async function limparContagens(teamId: string): Promise<{ error?: string }> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
   const admin = createAdminClient()
 
   await admin.from('count_entries').delete().eq('team_id', teamId)
@@ -364,13 +366,8 @@ export async function limparContagens(teamId: string): Promise<{ error?: string 
 }
 
 export async function confirmarIndependente(teamId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user || user.user_metadata?.counter_role !== 'independente') {
-    return { error: 'Unauthorized' }
-  }
-  if (user.user_metadata?.team_id !== teamId) {
+  const access = await getTeamCounterAccess()
+  if (!access || access.counterRole !== 'independente' || access.teamId !== teamId) {
     return { error: 'Unauthorized' }
   }
 
@@ -386,9 +383,7 @@ export async function confirmarIndependente(teamId: string): Promise<{ error?: s
 // ─── Session management ──────────────────────────────────────────────────────
 
 export async function forcarFecharSessao(sessionId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') return { error: 'Not authorised.' }
+  if (!(await isAdmin())) return { error: 'Not authorised.' }
 
   const admin = createAdminClient()
   const { data: teams } = await admin
@@ -407,9 +402,7 @@ export async function deletarSessao(
   sessionId: string,
   deleteTeams: boolean,
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') return { error: 'Not authorised.' }
+  if (!(await isAdmin())) return { error: 'Not authorised.' }
 
   const admin = createAdminClient()
 

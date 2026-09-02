@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
+import { isAdmin } from '@/lib/authorization'
 
 export type ItemInventario = {
   brand_code: string
@@ -15,6 +16,7 @@ export type ItemInventario = {
 }
 
 export async function listarInventario(): Promise<ItemInventario[]> {
+  if (!(await isAdmin())) return []
   const supabase = await createClient()
   const [items, bins] = await Promise.all([
     fetchAllRows<{
@@ -60,6 +62,7 @@ export async function editarItemInventario(
     bins: string[]
   }
 ): Promise<{ error?: string }> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
   const supabase = await createClient()
   const { bins, ...itemFields } = fields
   const { error } = await supabase.from('inventory_items').update(itemFields).eq('brand_code', brandCode)

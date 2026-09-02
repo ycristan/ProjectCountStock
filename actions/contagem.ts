@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
+import { getTeamCounterAccess } from '@/lib/authorization'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,13 +43,10 @@ export type LancarContagemResult = {
 // ponytail: loads all items once server-side; client filters in memory (eliminates per-keystroke round trips)
 export async function carregarInventario(): Promise<ItemBusca[]> {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return []
+  const access = await getTeamCounterAccess()
+  if (!access) return []
 
-  const teamId = user.user_metadata?.team_id as string
-  const counterRole = user.user_metadata?.counter_role as string
+  const { teamId, counterRole } = access
 
   const [items, binData, entries, { data: teamRow }] = await Promise.all([
     fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null }>(
@@ -127,13 +125,10 @@ export async function lancarContagem(
   }
 
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
+  const access = await getTeamCounterAccess()
+  if (!access) return { error: 'Not authenticated.' }
 
-  const teamId = user.user_metadata?.team_id as string
-  const counterRole = user.user_metadata?.counter_role as string
+  const { teamId, counterRole } = access
 
   const { data: item, error: itemError } = await supabase
     .from('inventory_items')

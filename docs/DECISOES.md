@@ -19,3 +19,9 @@
 ## Produto
 - O contador solo usa uma conta fixa administrada pela tela de configurações; credenciais nunca são documentadas.
 - A abordagem antiga de login solo por cookie/PIN foi abandonada; não reintroduzir sem uma nova especificação.
+
+
+## Autorização protegida
+- A fonte de autorização será a tabela protegida `app_user_access`, lida no servidor e nas políticas RLS. Ela poderá conter mais de um tipo de acesso por usuário.
+- `user_metadata` pode continuar a guardar apenas informação de apresentação, como nome; não concede permissões.
+- A migration de autorização precisa ser aplicada no Supabase antes de publicar o código que passa a depender dela.

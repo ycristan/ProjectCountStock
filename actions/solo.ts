@@ -1,22 +1,10 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase-admin'
-import { createClient } from '@/lib/supabase-server'
 import type { LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
 import { sendSoloResultsEmail } from '@/lib/send-solo-results-email'
 import { getDefaultTare } from '@/actions/settings'
-
-async function isAdmin(): Promise<boolean> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user?.user_metadata?.role === 'admin'
-}
-
-async function isSoloCounter(): Promise<boolean> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user?.user_metadata?.role === 'counter' && user?.user_metadata?.is_solo_counter === true
-}
+import { isAdmin, isSoloCounter } from '@/lib/authorization'
 
 export async function criarSoloSessaoCompleta(input: {
   title: string

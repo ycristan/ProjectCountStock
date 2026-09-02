@@ -1,18 +1,11 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase-admin'
-import { createClient } from '@/lib/supabase-server'
+import { isAdmin } from '@/lib/authorization'
 
-async function isAdmin(): Promise<boolean> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user?.user_metadata?.role === 'admin'
-}
-
-// ponytail: shared by criarSoloSessaoCompleta (solo.ts) and criarSessao (sessao.ts) —
-// both need the current tare/tolerance defaults but neither is itself the settings-page
-// data-loader, so this isn't gated by isAdmin() — callers are already admin-gated themselves
 export async function getDefaultTare(): Promise<{ box_tare_g: number; tolerance_g: number }> {
+  if (!(await isAdmin())) return { box_tare_g: 300, tolerance_g: 0 }
+
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('app_settings')
@@ -25,8 +18,6 @@ export async function getDefaultTare(): Promise<{ box_tare_g: number; tolerance_
     tolerance_g: data?.default_tolerance_g ?? 0,
   }
 }
-
-// ─── Defaults + notify e-mail ───────────────────────────────────────────────
 
 export async function buscarConfigSistema(): Promise<{
   default_box_tare_g: number
@@ -74,8 +65,6 @@ export async function salvarConfigSistema(input: {
   return error ? { error: error.message } : {}
 }
 
-// ─── Fixed solo counter account (one at a time) ─────────────────────────────
-
 function genPin(exclude: Set<string>): string {
   let pin: string
   do {
@@ -85,12 +74,19 @@ function genPin(exclude: Set<string>): string {
   return pin
 }
 
+async function getSoloCounterId(): Promise<string | null> {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('app_user_access')
+    .select('user_id')
+    .eq('access_kind', 'solo_counter')
+    .maybeSingle()
+  return data?.user_id ?? null
+}
+
 export async function statusContadorSoloFixo(): Promise<{ active: boolean }> {
   if (!(await isAdmin())) return { active: false }
-  const admin = createAdminClient()
-  const { data: { users }, error } = await admin.auth.admin.listUsers({ perPage: 1000 })
-  if (error) return { active: false }
-  return { active: users.some((u) => u.user_metadata?.is_solo_counter === true) }
+  return { active: Boolean(await getSoloCounterId()) }
 }
 
 export async function criarContadorSoloFixo(): Promise<{
@@ -101,45 +97,47 @@ export async function criarContadorSoloFixo(): Promise<{
   if (!(await isAdmin())) return { error: 'Unauthorized' }
   const admin = createAdminClient()
 
-  // ponytail: only one fixed solo counter at a time — creating a new one retires the old
-  const { data: { users: before }, error: listError1 } = await admin.auth.admin.listUsers({ perPage: 1000 })
-  if (listError1) return { error: `Error checking existing accounts: ${listError1.message}` }
-  const existing = before.find((u) => u.user_metadata?.is_solo_counter === true)
-  if (existing) {
-    const { error: delError } = await admin.auth.admin.deleteUser(existing.id)
-    if (delError) return { error: `Error retiring previous account: ${delError.message}` }
+  const existingId = await getSoloCounterId()
+  if (existingId) {
+    const { error } = await admin.auth.admin.deleteUser(existingId)
+    if (error) return { error: `Error retiring previous account: ${error.message}` }
   }
 
   const { data: teams } = await admin.from('teams').select('team_pin')
   const usedTeamPins = new Set((teams ?? []).map((t) => t.team_pin))
-  const { data: { users: after }, error: listError2 } = await admin.auth.admin.listUsers({ perPage: 1000 })
-  if (listError2) return { error: `Error checking existing logins: ${listError2.message}` }
-  for (const u of after) {
+  const { data: { users }, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  if (listError) return { error: `Error checking existing logins: ${listError.message}` }
+  for (const u of users) {
     if (u.email?.endsWith('@count.local')) usedTeamPins.add(u.email.slice(0, 4))
   }
 
   const teamPin = genPin(usedTeamPins)
   const userPin = genPin(new Set())
   const email = `${teamPin}${userPin}@count.local`
-
   const { data: userData, error: userError } = await admin.auth.admin.createUser({
     email,
     password: userPin,
-    user_metadata: { role: 'counter', is_solo_counter: true },
     email_confirm: true,
   })
   if (userError || !userData.user) return { error: `Error creating account: ${userError?.message}` }
+
+  const { error: accessError } = await admin
+    .from('app_user_access')
+    .insert({ user_id: userData.user.id, access_kind: 'solo_counter' })
+  if (accessError) {
+    await admin.auth.admin.deleteUser(userData.user.id)
+    return { error: `Error saving account access: ${accessError.message}` }
+  }
 
   return { team_pin: teamPin, user_pin: userPin }
 }
 
 export async function deletarContadorSoloFixo(): Promise<{ error?: string }> {
   if (!(await isAdmin())) return { error: 'Unauthorized' }
+  const existingId = await getSoloCounterId()
+  if (!existingId) return {}
+
   const admin = createAdminClient()
-  const { data: { users }, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 })
-  if (listError) return { error: listError.message }
-  const existing = users.find((u) => u.user_metadata?.is_solo_counter === true)
-  if (!existing) return {}
-  const { error } = await admin.auth.admin.deleteUser(existing.id)
+  const { error } = await admin.auth.admin.deleteUser(existingId)
   return error ? { error: error.message } : {}
 }
