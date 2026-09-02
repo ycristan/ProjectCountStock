@@ -22,13 +22,12 @@ values (
   'Synthetic security test team'
 );
 
-insert into public.counter_accounts (auth_user_id, team_id, role, username, user_pin)
+insert into public.counter_accounts (auth_user_id, team_id, role, username)
 values (
   '00000000-0000-0000-0000-000000000103',
   '00000000-0000-0000-0000-000000000201',
   'contador_1',
-  '99990001',
-  '0001'
+  '99990001'
 );
 
 insert into public.app_user_access (user_id, access_kind)
