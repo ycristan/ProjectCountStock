@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(10);
+select plan(12);
 
 -- Synthetic data only. This transaction is rolled back at the end of the test.
 insert into auth.users (id, email, raw_user_meta_data)
@@ -37,6 +37,21 @@ values
   ('00000000-0000-0000-0000-000000000104', 'solo_counter');
 
 select has_table('public', 'app_user_access', 'Protected authorization table exists');
+select has_column(
+  'public',
+  'counter_accounts',
+  'user_pin',
+  'Legacy user PIN column is present in a fresh database'
+);
+select results_eq(
+  $$select count(*) from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname in ('convert_count', 'finalize_team_count', 'combine_session_results')
+      and array_to_string(p.proconfig, ',') like '%search_path=pg_catalog, public, pg_temp%'$$,
+  array[3::bigint],
+  'Privileged legacy functions have a fixed search path'
+);
 select ok(
   not has_table_privilege('authenticated', 'public.app_user_access', 'select'),
   'Authenticated users cannot read the authorization table directly'
