@@ -64,6 +64,18 @@ export async function listarInventario(): Promise<ItemInventario[]> {
   }))
 }
 
+export async function podeAdicionarItemInventario(): Promise<boolean> {
+  if (!(await isAdmin())) return false
+  const supabase = await createClient()
+  const { data: openSession, error } = await supabase
+    .from('count_sessions')
+    .select('id')
+    .neq('status', 'fechada')
+    .limit(1)
+    .maybeSingle()
+  return !error && !openSession
+}
+
 function normalizeBins(bins: string[]): { bins?: string[]; error?: string } {
   const normalized = bins.map((bin) => bin.trim()).filter(Boolean)
   if (normalized.length > 4) return { error: 'Use at most four BIN locations.' }
