@@ -1,9 +1,9 @@
 import Link from 'next/link'
-import { listarInventario } from '@/actions/inventario'
+import { listarInventario, podeAdicionarItemInventario } from '@/actions/inventario'
 import { InventarioClient } from '@/components/InventarioClient'
 
 export default async function InventarioPage() {
-  const items = await listarInventario()
+  const [items, canAdd] = await Promise.all([listarInventario(), podeAdicionarItemInventario()])
   return (
     <div>
       <Link href="/admin" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
@@ -18,7 +18,7 @@ export default async function InventarioPage() {
           Upload .xlsx →
         </Link>
       </div>
-      <InventarioClient items={items} />
+      <InventarioClient items={items} canAdd={canAdd} />
     </div>
   )
 }
