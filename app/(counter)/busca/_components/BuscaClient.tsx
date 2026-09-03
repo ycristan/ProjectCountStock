@@ -84,6 +84,8 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
     () => (restrictToList && !termo.trim() ? items : filterItems(items, termo)),
     [items, termo, restrictToList]
   )
+  const activeResults = resultados.filter((item) => item.brand_active)
+  const inactiveResults = resultados.filter((item) => !item.brand_active)
 
   const handleVoltar = useCallback(() => {
     setTela('busca')
@@ -159,16 +161,31 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
         </p>
       )}
 
-      <ResultList
-        items={resultados}
-        onSelect={(item) => {
-          if (item.jaContado) {
-            setModalItem(item)
-          } else {
-            abrirForm(item, false)
-          }
-        }}
-      />
+      <div className="mt-3 space-y-4">
+        {activeResults.length > 0 && (
+          <section>
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              <span className="h-px flex-1 bg-emerald-200" /> Active <span className="h-px flex-1 bg-emerald-200" />
+            </div>
+            <ResultList items={activeResults} status="active" onSelect={(item) => {
+              if (item.jaContado) setModalItem(item)
+              else abrirForm(item, false)
+            }} />
+          </section>
+        )}
+        {inactiveResults.length > 0 && (
+          <section>
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rose-700">
+              <span className="h-px flex-1 bg-rose-200" /> Inactive <span className="h-px flex-1 bg-rose-200" />
+            </div>
+            <p className="mb-2 text-xs text-rose-700">This product is no longer in the current inventory, but can still be counted if found.</p>
+            <ResultList items={inactiveResults} status="inactive" onSelect={(item) => {
+              if (item.jaContado) setModalItem(item)
+              else abrirForm(item, false)
+            }} />
+          </section>
+        )}
+      </div>
 
       {!termo && !restrictToList && (
         <p className="text-sm text-slate-400 mt-4 text-center">
