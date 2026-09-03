@@ -28,6 +28,7 @@ export default async function SessaoSoloPage() {
     weight_avg: i.weight_avg ?? 0,
     box_tare_g: 300,
     bins: [],
+    brand_active: true,
     jaContado: false,
     entryExistente: null,
   }))

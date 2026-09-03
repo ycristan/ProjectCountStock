@@ -23,12 +23,11 @@ export default async function SoloCounterPage({ params }: { params: Promise<{ id
   if (!session || !session.assigned_to_counter || session.status !== 'open') notFound()
 
   const [inventory, entries, listItems] = await Promise.all([
-    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null }>(
+    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null; brand_active: boolean }>(
       (from, to) =>
         admin
           .from('inventory_items')
-          .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
-          .eq('brand_active', true)
+          .select('brand_code, brand_name, bpu, pallet_size, weight_avg, brand_active')
           .order('brand_code')
           .range(from, to)
     ),
@@ -55,6 +54,7 @@ export default async function SoloCounterPage({ params }: { params: Promise<{ id
         bpu: i.bpu,
         pallet_size: i.pallet_size,
         weight_avg: i.weight_avg ?? 0,
+        brand_active: i.brand_active,
         box_tare_g: session.box_tare_g,
         bins: [],
         jaContado: !!e,
