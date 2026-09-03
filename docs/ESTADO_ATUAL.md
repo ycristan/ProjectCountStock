@@ -1,25 +1,19 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-09-01
+Atualizado: 2026-09-03
 
 ## Situação observada
 - Produção Vercel: deployment mais recente estava pronto e sem erros de build observados.
-- O repositório possui memória detalhada do Claude, agora complementada por esta documentação compartilhada.
+- A autorização protegida por `app_user_access` já está em produção, com as migrations 026 a 028 aplicadas.
 - A aplicação tem fluxo de inventário, contagem em equipe, reconciliação, combinação e contagem solo.
 
+## Funcionalidade em preparação — inventário e busca
+- Cadastro manual de produto no Inventário, protegido para não ocorrer durante uma contagem.
+- Visões administrativas separadas para produtos ativos e inativos.
+- Busca de contagem com itens ativos primeiro e itens inativos também disponíveis e identificados.
+
 ## Prioridade P0 — segurança de autorização
-A auditoria identificou que permissões de administrador e contador dependem de `user_metadata` no Supabase. Esse campo pode ser alterado pelo próprio usuário autenticado e não pode ser usado como chave de autorização.
-
-A correção está em preparação na branch `codex/security-authorization-hardening`. A escolha técnica é uma tabela protegida, `app_user_access`, porque a autorização passa a ter efeito imediato — sem esperar a renovação de token.
-
-A correção deve:
-1. Mover função e vínculos de acesso para dados protegidos (`app_metadata` ou tabela de perfil controlada pelo banco).
-2. Atualizar as políticas RLS e o `proxy.ts`.
-3. Criar verificações centralizadas para administrador, contador e contador solo.
-4. Proteger todas as Server Actions, especialmente as que usam `service_role`.
-5. Validar que um contador não consegue administrar inventário, equipes ou sessões.
-
-Nenhuma nova funcionalidade deve passar à frente desta correção.
+Concluída em produção. A fonte de autorização é a tabela protegida `app_user_access`; permissões não dependem mais de dados editáveis pelo usuário.
 
 ## Depois da P0
 1. Contagem por peso: permitir adicionar rodadas e reconciliar por peso.
