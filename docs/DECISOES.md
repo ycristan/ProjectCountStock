@@ -25,3 +25,8 @@
 - A fonte de autorização será a tabela protegida `app_user_access`, lida no servidor e nas políticas RLS. Ela poderá conter mais de um tipo de acesso por usuário.
 - `user_metadata` pode continuar a guardar apenas informação de apresentação, como nome; não concede permissões.
 - A migration de autorização precisa ser aplicada no Supabase antes de publicar o código que passa a depender dela.
+
+## Inventário e itens inativos
+- O upload XLSX continua sendo a lista oficial do inventário atual: um item ausente no novo arquivo passa a inativo, sem ser apagado.
+- Um administrador pode adicionar um produto manualmente somente quando não existe uma sessão de contagem em andamento. O novo produto começa ativo.
+- A busca durante uma contagem inclui itens ativos e inativos. Ativos aparecem primeiro; inativos aparecem separados e identificados, mas continuam contáveis quando encontrados no armazém.
