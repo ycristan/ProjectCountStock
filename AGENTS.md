@@ -8,6 +8,13 @@ Leia `docs/README.md` antes de propor ou alterar qualquer coisa. Os documentos e
 - O agente é responsável por traduzir isso em solução técnica segura, explicar decisões em linguagem simples e executar o trabalho técnico.
 - Não presumir conhecimento técnico do usuário.
 
+## Integrações e ambientes
+- Para GitHub, Supabase, Vercel e demais serviços conectados, usar primeiro o conector ou a API oficial disponível na sessão.
+- Não usar navegador ou automação de tela como substituto de um conector disponível.
+- Se uma capacidade necessária não estiver realmente exposta pelo conector, informar isso imediatamente, em linguagem simples, antes de sugerir qualquer passo manual.
+- Não pedir ao Yuri para repetir informações de acesso, navegar por telas ou executar passos que o conector disponível possa realizar.
+- Nunca tentar autenticar sessões paralelas, abrir telas de login ou manipular abas pessoais do usuário sem pedido explícito.
+
 ## Fluxo de mudança
 - Trabalhar em branch; nunca enviar diretamente para `main` sem autorização explícita.
 - Abrir PR com resumo em português simples, riscos, validações e qualquer passo manual necessário.
