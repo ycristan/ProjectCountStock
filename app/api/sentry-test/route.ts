@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -5,5 +6,15 @@ export async function GET() {
     return new NextResponse('Not found', { status: 404 })
   }
 
-  throw new Error('[Sentry test] Erro controlado no servidor do Preview')
+  const error = new Error(
+    '[Sentry test] Erro controlado no servidor do Preview',
+  )
+
+  Sentry.captureException(error)
+  const sent = await Sentry.flush(3000)
+
+  return NextResponse.json(
+    { sent },
+    { status: sent ? 500 : 503 },
+  )
 }
