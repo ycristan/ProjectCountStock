@@ -31,6 +31,12 @@ jobs:
             supabase init
           fi
 
+      - name: Generate migration filename with CLI (temporary preparation)
+        run: |
+          supabase --version
+          supabase migration new --help
+          supabase migration new solo_inventory_write_guards
+
       - name: Start disposable Supabase
         run: supabase start
 
