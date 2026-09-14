@@ -25,3 +25,23 @@
 - A fonte de autorização será a tabela protegida `app_user_access`, lida no servidor e nas políticas RLS. Ela poderá conter mais de um tipo de acesso por usuário.
 - `user_metadata` pode continuar a guardar apenas informação de apresentação, como nome; não concede permissões.
 - A migration de autorização precisa ser aplicada no Supabase antes de publicar o código que passa a depender dela.
+
+## Inventory e Warehouses — 2026-09-14
+- Regras consolidadas em [INVENTORY_WAREHOUSES.md](./INVENTORY_WAREHOUSES.md); consultar antes de implementar.
+- Distinguir decisões explícitas de Yuri, propostas técnicas e pendências. Não inferir regras ausentes a partir de validações antigas.
+- PR #65 contém regras superadas; não fazer merge.
+- Fluxo acordado: revisar especificação, depois implementar em etapas verificáveis.
+- Trabalho de código pelo GitHub, sem clone local; conectores/API primeiro conforme AGENTS.md.
+
+### Warehouses — complemento aprovado
+- Uma planilha por warehouse; WHS obrigatório e único no arquivo. Importação afeta apenas essa warehouse, inclusive inativação de produtos ausentes.
+- Cadastro dinâmico, sem limitar a Main/Service; novos nomes exigem confirmação administrativa. Identificação interna estável permite renomear sem perder vínculos/histórico.
+- Brand Code permanece globalmente único. Sessão escolhe warehouse e restringe seus produtos.
+
+### Decisões finais aprovadas — 2026-09-14
+- BPU corrigido com duas aprovações recalcula registros da sessão aberta sem recontagem física; futuros usam novo BPU, fechados são imutáveis. Manter trilha de aprovação.
+- BPU 1 permite contagem por peso se Weight Avg > 0, além de Units; Cases/Pallets desativados.
+- Lista fechada iniciada não recebe novos produtos nem por administrador.
+- Exportação completa em ZIP, uma planilha por WHS com ativos/inativos, Status e WHS.
+- WHS ignora caixa e espaços nas pontas. Transferência bloqueada durante sessão ativa na origem ou destino (restrição aceita por enquanto).
+- Todos os produtos e sessões atuais pertencem a Main; migração preserva histórico/resultados. Não existem itens Service.

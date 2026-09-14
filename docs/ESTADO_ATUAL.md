@@ -1,34 +1,25 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-09-01
+Atualizado: 2026-09-14
 
-## Situação observada
-- Produção Vercel: deployment mais recente estava pronto e sem erros de build observados.
-- O repositório possui memória detalhada do Claude, agora complementada por esta documentação compartilhada.
-- A aplicação tem fluxo de inventário, contagem em equipe, reconciliação, combinação e contagem solo.
+## Confirmado
+- PR #66 (Sentry) e PR #67 (conectores primeiro) mergeadas.
+- Vercel consultada pelo conector em 14/09: produção project-count-stock-ylmm READY, commit 86c603bd9bd9b5a4414eafb58ddd62bea22c1a25, correspondente à PR #66.
+- Consulta de logs de produção da última hora não retornou erros/falhas fatais. Isso não prova ausência de erros em outros períodos.
+- Yuri confirmou visualmente eventos de teste do navegador e servidor no Sentry em Preview. Página e endpoint temporários foram removidos antes do merge.
+- Consulta direta ao Sentry pelo agente ainda não validada: na última tentativa faltava credencial de leitura. DSN de envio não concede leitura.
+- Histórico da conversa registra conclusão das PRs #63 (autorização) e #64 (manutenção do banco). A descrição anterior de P0 em preparação está desatualizada; não tratar como auditoria atual. Aplicação das migrations foi relatada na sessão anterior, não reverificada hoje.
 
-## Prioridade P0 — segurança de autorização
-A auditoria identificou que permissões de administrador e contador dependem de `user_metadata` no Supabase. Esse campo pode ser alterado pelo próprio usuário autenticado e não pode ser usado como chave de autorização.
+## Trabalho atual
+Consolidar e revisar [Inventory e Warehouses](./INVENTORY_WAREHOUSES.md).
+As regras descrevem a próxima implementação, não funcionalidades já publicadas.
+A PR #65 foi encerrada sem merge. Especificação em revisão na PR #68.
+Yuri aprovou uma planilha por warehouse, WHS obrigatório, atualização isolada e cadastro dinâmico com confirmação para warehouses novas. Essas regras ainda não foram implementadas.
+As sete definições pendentes foram aprovadas e incorporadas na PR #68, incluindo BPU, lista fechada, ZIP e migração para Main. Conferência estática inicial registrada na especificação; ainda faltam rastreamento integral de banco/relatórios e execução dos testes. Nenhum código ou banco foi alterado.
 
-A correção está em preparação na branch `codex/security-authorization-hardening`. A escolha técnica é uma tabela protegida, `app_user_access`, porque a autorização passa a ter efeito imediato — sem esperar a renovação de token.
-
-A correção deve:
-1. Mover função e vínculos de acesso para dados protegidos (`app_metadata` ou tabela de perfil controlada pelo banco).
-2. Atualizar as políticas RLS e o `proxy.ts`.
-3. Criar verificações centralizadas para administrador, contador e contador solo.
-4. Proteger todas as Server Actions, especialmente as que usam `service_role`.
-5. Validar que um contador não consegue administrar inventário, equipes ou sessões.
-
-Nenhuma nova funcionalidade deve passar à frente desta correção.
-
-## Depois da P0
-1. Contagem por peso: permitir adicionar rodadas e reconciliar por peso.
-2. Melhorar busca de inventário: filtro ativo/inativo, confirmação para itens inativos e informações de localização.
-3. Especificar separadamente a evolução do fluxo de finalização entre administrador e independente.
-4. Criar testes automatizados, CI, lockfile e corrigir o script de lint.
-5. Fazer limpeza de rotas/componentes legados somente após testes de regressão.
-
-## Riscos conhecidos
-- Operações de criar/apagar equipes ou importar inventário fazem várias alterações separadas; migrar gradualmente para operações transacionais.
-- PINs de quatro dígitos exigem proteção contra tentativas repetidas e auditoria de login.
-- Arquivos XLSX precisam de validação de tamanho, estrutura e conteúdo antes de alterar o inventário.
+## Cuidados e backlog preservados
+- Importações e outras operações com múltiplas gravações precisam ser transacionais.
+- Proteger PINs contra tentativas repetidas e validar limites/estrutura de XLSX.
+- Conferir estado atual de CI, lockfile e lint antes de propor trabalho duplicado.
+- Evoluções de contagem/reconciliação por peso e finalização admin/independente continuam no backlog; não estão automaticamente autorizadas por esta documentação.
+- Limpeza de código legado depende de análise e verificação de regressão.
