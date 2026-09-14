@@ -32,3 +32,8 @@
 - PR #65 contém regras superadas; não fazer merge.
 - Fluxo acordado: revisar especificação, depois implementar em etapas verificáveis.
 - Trabalho de código pelo GitHub, sem clone local; conectores/API primeiro conforme AGENTS.md.
+
+### Warehouses — complemento aprovado
+- Uma planilha por warehouse; WHS obrigatório e único no arquivo. Importação afeta apenas essa warehouse, inclusive inativação de produtos ausentes.
+- Cadastro dinâmico, sem limitar a Main/Service; novos nomes exigem confirmação administrativa. Identificação interna estável permite renomear sem perder vínculos/histórico.
+- Brand Code permanece globalmente único. Sessão escolhe warehouse e restringe seus produtos.

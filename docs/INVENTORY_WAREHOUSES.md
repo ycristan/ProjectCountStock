@@ -38,7 +38,7 @@ Brand Code é a chave para comparar a planilha com o inventário:
 - Código novo: criar o item.
 - Pallet Size ou Weight Avg vazio/zero: substituir o valor antigo e desativar o método correspondente. Não preservar o valor antigo.
 - Linha presente: aplicar seu Status, inclusive FALSE.
-- Código ausente: a regra acordada é torná-lo inativo; o alcance dessa regra com várias warehouses precisa ser fechado antes da implementação.
+- Código ausente: a regra acordada é torná-lo inativo; isso se aplica somente à warehouse identificada no arquivo. As demais não são alteradas.
 - Preservar os históricos de contagem; desativação não é exclusão.
 
 Se houver Brand Codes repetidos na planilha, interromper antes de gravar qualquer alteração. Mostrar em popup todas as linhas conflitantes e exigir que o administrador escolha qual manter para cada código. Nunca escolher automaticamente ou aceitar duplicatas.
@@ -72,12 +72,13 @@ Ainda é necessário definir o efeito de uma alteração em contagens já regist
 ## 6. Warehouses
 
 Hoje há Main Warehouse e Service Warehouse, mas o sistema não deve limitar a quantidade a duas.
-A planilha identifica as warehouses pela coluna WHS; o sistema deve identificar as warehouses distintas para alimentar a seleção de sessões.
+Uma planilha por warehouse, com coluna WHS obrigatória e o mesmo warehouse em todas as linhas. Arquivo com warehouses diferentes deve ser bloqueado antes de gravar. O sistema identifica o destino pela coluna e mostra ao administrador qual warehouse será atualizada.
 
 Ao criar uma sessão, o administrador escolhe uma warehouse. Seus contadores só podem acessar produtos daquela warehouse, inclusive na busca por nome, código e BIN.
 Brand Code continua globalmente único. Localizações podem ter nomes iguais em warehouses diferentes: buscar 40B numa sessão Main não deve mostrar um produto Service.
 
-Proposta técnica para revisão: manter um cadastro de warehouses alimentado pelo upload e pedir confirmação para nomes novos, evitando criar uma warehouse por erro de digitação. A confirmação de novos nomes foi proposta pelo agente, não confirmada explicitamente por Yuri.
+Aprovado por Yuri: manter cadastro dinâmico de warehouses alimentado pelo upload. Warehouse conhecida atualiza somente seu inventário; nome novo exige confirmação explícita do administrador antes da criação, evitando cadastros por erro de digitação. Cancelar não altera dados. Main e Service são os primeiros cadastros, não valores fixos no código. Terceira, quarta e demais warehouses não exigem mudança de código.
+Usar identificação interna estável separada do nome exibido: renomear não perde produtos, vínculos ou histórico.
 O isolamento deve ser validado no servidor e no acesso aos dados, não apenas no filtro visual.
 
 ## 7. Item desconhecido
@@ -98,12 +99,12 @@ Detalhes de apresentação, descarte e inclusão no relatório ainda precisam se
 ## 8. Pendências que realmente mudam o comportamento
 
 Estas perguntas surgem da combinação das regras; não exigem reexplicar o sistema:
-1. Upload com múltiplas warehouses: uma planilha representa todo o inventário da companhia ou apenas as warehouses nela incluídas? Omitir Service num upload Main deve ou não inativar Service?
+1. Download: definir como entregar o inventário completo em arquivos separados por warehouse, mantendo cada arquivo reutilizável no upload.
 2. Transferência: se WHS mudar para um Brand Code existente durante sessão ativa, como tratar contagens já feitas e a disponibilidade nas duas warehouses?
 3. Histórico: qual efeito de correção de BPU em quantidades anteriores? Em que momento sessões encerradas deixam de aceitar mudanças que afetem seus resultados?
 4. Solo com lista restrita: produto novo entra automaticamente nessa lista ou depende de atribuição?
 5. BPU = 1 com Weight Avg positivo: peso continua permitido? A decisão explícita desativou Cases e Pallets; o documento antigo PRODUTO diz somente unidades.
-6. Confirmação de nomes novos de WHS e padronização de espaços/maiúsculas: validar a proposta antes de torná-la regra.
+6. Padronização de espaços/maiúsculas em WHS: definir comparação para evitar cadastros equivalentes. A confirmação de warehouse nova já foi aprovada.
 7. Itens existentes e sessões atuais precisam receber warehouse na migração: confirmar mapeamento antes de alterar dados.
 
 ## 9. Plano técnico proposto e critérios de aceitação
@@ -120,6 +121,9 @@ Validar no banco e servidor:
 - Duplicatas e tentativas simultâneas não criam dois produtos.
 - Importação inválida ou cancelada não altera parcialmente o inventário.
 - Download/reupload preserva Status e WHS.
+- Upload Main não altera Service nem outras warehouses; itens ausentes são inativados somente na warehouse do arquivo.
+- Arquivo com WHS misturadas é rejeitado sem gravações; warehouse nova exige confirmação e fica disponível para sessões.
+- Renomear warehouse preserva seus vínculos e histórico.
 - BIN igual em warehouses distintas não causa vazamento entre sessões.
 - Inativo continua contável; criação durante sessão respeita warehouse e permissões.
 - Upload não contorna bloqueio de BPU; aprovação usa dois administradores distintos.
