@@ -68,3 +68,61 @@ test('CONTRACT: active solo count blocks direct BPU edits', async () => {
   })
   blocked(result, f.writes)
 })
+
+test('administrator can save in an open session', async () => {
+  const f = await fixture()
+  assert.equal((await f.solo.lancarSoloContagem(f.session.id, payload)).error, undefined)
+  assert.equal(f.writes.length, 1)
+})
+test('administrator cannot bypass restricted product list', async () => {
+  const f = await fixture({ allowed: false })
+  blocked(await f.solo.lancarSoloContagem(f.session.id, payload), f.writes)
+})
+test('administrator cannot write to a missing session', async () => {
+  const f = await fixture({ missingSession: true })
+  blocked(await f.solo.lancarSoloContagem(f.session.id, payload), f.writes)
+})
+test('session lookup failure prevents writes', async () => {
+  const f = await fixture({ readErrorTable: 'solo_sessions' })
+  blocked(await f.solo.lancarSoloContagem(f.session.id, payload), f.writes)
+})
+test('list can be prepared before the count starts', async () => {
+  const f = await fixture({ started: false, session: { counter_name: null } })
+  assert.equal((await f.solo.adicionarItemListaSolo(f.session.id, 'new')).error, undefined)
+  assert.equal(f.writes.length, 1)
+})
+test('existing entry freezes list even without a counter name', async () => {
+  const f = await fixture({ session: { counter_name: null } })
+  blocked(await f.solo.adicionarItemListaSolo(f.session.id, 'new'), f.writes)
+})
+test('closed list rejects additions even without entries', async () => {
+  const f = await fixture({ started: false, session: { status: 'closed', counter_name: null } })
+  blocked(await f.solo.adicionarItemListaSolo(f.session.id, 'new'), f.writes)
+})
+test('entry lookup failure does not unlock the list', async () => {
+  const f = await fixture({ readErrorTable: 'solo_entries', session: { counter_name: null } })
+  blocked(await f.solo.adicionarItemListaSolo(f.session.id, 'new'), f.writes)
+})
+test('list restriction cannot be disabled after start', async () => {
+  const f = await fixture()
+  blocked(await f.solo.atribuirSoloContador(f.session.id, true, false), f.writes)
+})
+const fields = bpu => ({ brand_name: 'Test', bpu, pallet_size: 0, weight_avg: 0, category: 'Test', category1: 'Test', bins: [] })
+test('unchanged BPU allows editing other fields during solo', async () => {
+  const f = await fixture()
+  assert.equal((await f.inventory.editarItemInventario('6323', fields(20))).error, undefined)
+  assert.ok(f.writes.length > 0)
+})
+test('BPU can change when no solo session is open', async () => {
+  const f = await fixture({ session: { status: 'closed' } })
+  assert.equal((await f.inventory.editarItemInventario('6323', fields(24))).error, undefined)
+  assert.equal(f.writes[0].payload.bpu, 24)
+})
+test('BPU cannot change if active-session lookup fails', async () => {
+  const f = await fixture({ readErrorTable: 'solo_sessions' })
+  blocked(await f.inventory.editarItemInventario('6323', fields(24)), f.writes)
+})
+test('inventory rejects zero BPU before any mutation', async () => {
+  const f = await fixture()
+  blocked(await f.inventory.editarItemInventario('6323', fields(0)), f.writes)
+})

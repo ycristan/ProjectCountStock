@@ -26,8 +26,8 @@ export async function fixture(options = {}) {
     restrict_to_list: true, counter_name: 'Test counter', ...options.session }
   const tables = {
     inventory_items: [item],
-    solo_sessions: [session],
-    solo_entries: [{ session_id: session.id, brand_code: 'existing', cases: 1 }],
+    solo_sessions: options.missingSession ? [] : [session],
+    solo_entries: options.started === false ? [] : [{ session_id: session.id, brand_code: 'existing', cases: 1 }],
     solo_session_items: options.allowed === false ? [] : [{ session_id: session.id, brand_code: item.brand_code }],
     item_bin_locations: [],
   }
@@ -36,9 +36,10 @@ export async function fixture(options = {}) {
     from(table) {
       if (!Object.hasOwn(tables, table)) throw new Error('Unmodelled table: ' + table)
       const filters = []
-      let operation = 'select', payload
+      let operation = 'select', payload, rowLimit = Infinity
       const query = {
         select() { return query },
+        limit(value) { rowLimit = value; return query },
         eq(key, value) { filters.push(row => row[key] === value); return query },
         is(key, value) { return query.eq(key, value) },
         update(value) { operation = 'update'; payload = value; return query },
@@ -50,7 +51,8 @@ export async function fixture(options = {}) {
         then(resolve, reject) { return execute(false).then(resolve, reject) },
       }
       async function execute(single) {
-        const rows = tables[table].filter(row => filters.every(filter => filter(row)))
+        if (operation === 'select' && options.readErrorTable === table) return { data: null, error: { message: 'Synthetic read failure' } }
+        const rows = tables[table].filter(row => filters.every(filter => filter(row))).slice(0, rowLimit)
         if (operation !== 'select') writes.push({ table, operation, payload })
         return { data: single ? rows[0] ?? null : rows, error: null }
       }
