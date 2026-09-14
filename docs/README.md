@@ -8,6 +8,8 @@ Este diretório é a fonte de verdade de contexto para trabalho contínuo no Cou
 3. [Arquitetura](./ARQUITETURA.md) — componentes técnicos e limites importantes.
 4. [Decisões](./DECISOES.md) — acordos que não devem ser rediscutidos a cada sessão.
 
+5. [Inventory e Warehouses](./INVENTORY_WAREHOUSES.md) — regras desejadas, pendências e critérios de teste para a próxima implementação.
+
 ## Como manter
 - Atualize estes documentos junto com mudanças relevantes de produto, segurança ou arquitetura.
 - Não armazene credenciais, PINs, tokens ou dados pessoais.

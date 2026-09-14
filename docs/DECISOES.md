@@ -25,3 +25,10 @@
 - A fonte de autorização será a tabela protegida `app_user_access`, lida no servidor e nas políticas RLS. Ela poderá conter mais de um tipo de acesso por usuário.
 - `user_metadata` pode continuar a guardar apenas informação de apresentação, como nome; não concede permissões.
 - A migration de autorização precisa ser aplicada no Supabase antes de publicar o código que passa a depender dela.
+
+## Inventory e Warehouses — 2026-09-14
+- Regras consolidadas em [INVENTORY_WAREHOUSES.md](./INVENTORY_WAREHOUSES.md); consultar antes de implementar.
+- Distinguir decisões explícitas de Yuri, propostas técnicas e pendências. Não inferir regras ausentes a partir de validações antigas.
+- PR #65 contém regras superadas; não fazer merge.
+- Fluxo acordado: revisar especificação, depois implementar em etapas verificáveis.
+- Trabalho de código pelo GitHub, sem clone local; conectores/API primeiro conforme AGENTS.md.
