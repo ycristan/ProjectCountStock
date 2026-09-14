@@ -32,3 +32,10 @@ Nenhuma nova funcionalidade deve passar à frente desta correção.
 - Operações de criar/apagar equipes ou importar inventário fazem várias alterações separadas; migrar gradualmente para operações transacionais.
 - PINs de quatro dígitos exigem proteção contra tentativas repetidas e auditoria de login.
 - Arquivos XLSX precisam de validação de tamanho, estrutura e conteúdo antes de alterar o inventário.
+
+## Testes isolados de Inventory — 2026-09-14
+- PR #69 (rascunho): https://github.com/ycristan/ProjectCountStock/pull/69
+- Execução https://github.com/ycristan/ProjectCountStock/actions/runs/34851928747 no commit 1f7282016b53fe9d03d2ed36c4f176ef73f75b17: 11 testes, 8 passaram, 3 falharam, nenhum skip/TODO.
+- Falhas de contrato na barreira das Server Actions: gravação administrativa em solo fechado, inclusão em lista iniciada e edição direta de BPU durante solo ativo.
+- Dependências de banco simuladas; não prova ausência de proteções SQL/RLS em produção. Aprovação dupla, recálculo persistido, peso e relatórios fechados ainda não testados integralmente.
+- Nenhuma alteração de aplicação/migration, nenhum merge. Regras consolidadas na PR #68 ainda separada.

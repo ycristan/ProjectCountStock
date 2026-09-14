@@ -25,3 +25,6 @@
 - A fonte de autorização será a tabela protegida `app_user_access`, lida no servidor e nas políticas RLS. Ela poderá conter mais de um tipo de acesso por usuário.
 - `user_metadata` pode continuar a guardar apenas informação de apresentação, como nome; não concede permissões.
 - A migration de autorização precisa ser aplicada no Supabase antes de publicar o código que passa a depender dela.
+
+## Testes de contrato — PR #69
+Executar funções reais com dependências simuladas sem produção. Manter falhas de regras pendentes visíveis; não inverter expectativas nem usar skip para aparentar aprovação. Cobertura da aplicação não substitui testes de banco e integração.
