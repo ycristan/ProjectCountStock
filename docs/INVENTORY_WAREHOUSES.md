@@ -25,7 +25,7 @@ Ativação/desativação manual por toggle. Download sempre do inventário compl
 | Status | Nova coluna obrigatória da planilha: TRUE = Active; FALSE = Inactive. |
 | WHS | Identifica a warehouse do produto na nova planilha. |
 
-BPU = 1 desativa Cases e Pallets. A relação entre BPU = 1 e contagem por peso está destacada nas pendências: não inventar uma decisão adicional.
+BPU = 1 desativa Cases e Pallets, mas permite Units e contagem por peso quando Weight Avg for maior que zero.
 As restrições devem valer também no servidor, não apenas nos botões.
 
 Ao digitar Brand Code no cadastro manual, mostrar códigos/produtos existentes que correspondam à sequência digitada, incluindo inativos. Se o código existir, editar/reativar o cadastro existente; nunca criar outro.
@@ -44,7 +44,7 @@ Brand Code é a chave para comparar a planilha com o inventário:
 Se houver Brand Codes repetidos na planilha, interromper antes de gravar qualquer alteração. Mostrar em popup todas as linhas conflitantes e exigir que o administrador escolha qual manter para cada código. Nunca escolher automaticamente ou aceitar duplicatas.
 
 A nova planilha deve incluir Status e WHS. O formato antigo deixa de ser aceito quando a nova implementação entrar em vigor, conforme decisão de Yuri.
-O download completo deve trazer essas mesmas colunas e ser reutilizável no upload sem reativar involuntariamente itens inativos.
+O download completo será um ZIP com uma planilha por warehouse, incluindo ativos e inativos e as colunas Status e WHS. Cada planilha deve ser reutilizável no upload sem reativar involuntariamente itens inativos.
 Nomes exatos dos demais cabeçalhos e formatos aceitos devem ser consolidados em um único modelo de importação/exportação.
 
 ## 4. Busca e inventário ao vivo
@@ -55,9 +55,9 @@ Ambos podem ser selecionados e contados. Não acrescentar bloqueio ou confirmaç
 
 Exemplo: busca Coca-Cola mostra produtos ativos correspondentes acima e Coca-Cola Vanilla inativa abaixo.
 
-O administrador pode criar, editar ou reativar produtos durante uma sessão. Um produto novo deve ficar disponível nas contagens ativas da sua warehouse.
+O administrador pode criar, editar ou reativar produtos durante uma sessão. Um produto novo deve ficar disponível nas contagens ativas de inventário completo da sua warehouse, exceto nas listas fechadas já iniciadas.
 Yuri exige aplicação viva: resultados chegam em tempo real aos administradores; alterações de inventário devem se refletir para os contadores, no mínimo após atualização da tela. A atualização automática é a direção desejada.
-Preservar restrições de acesso e listas específicas já atribuídas a contagens solo; a interação de produtos novos com essas listas requer definição.
+Lista fechada: após iniciar a contagem, não incluir produtos, nem automaticamente nem por ação manual do administrador. O cadastro no inventário continua permitido, sem alterar essa lista.
 
 ## 5. BPU durante contagens
 
@@ -67,7 +67,7 @@ Regra geral: não alterar BPU durante contagem.
 - Importação de planilha também deve respeitar essa proteção: não pode contorná-la.
 
 Não registrar senhas em logs, relatórios ou documentos. A implementação deve verificar duas identidades distintas e permissão no servidor.
-Ainda é necessário definir o efeito de uma alteração em contagens já registradas e sessões encerradas. Não recalcular históricos silenciosamente.
+Correção aprovada por dois administradores recalcula as contagens já registradas do produto na sessão em andamento, sem exigir nova contagem física. Preservar quantidades originais informadas: 20 Cases com BPU 20 = 400 Units; corrigindo para BPU 24, os mesmos 20 Cases = 480 Units. Sessões futuras usam o BPU corrigido. Sessões encerradas têm dados e resultados imutáveis; não recalcular nem alterar seus resultados. Registrar duas identidades aprovadoras, BPU anterior/novo e data da correção, nunca senhas. A proteção existente de sessões fechadas ainda precisa de verificação integral no código e banco.
 
 ## 6. Warehouses
 
@@ -79,6 +79,9 @@ Brand Code continua globalmente único. Localizações podem ter nomes iguais em
 
 Aprovado por Yuri: manter cadastro dinâmico de warehouses alimentado pelo upload. Warehouse conhecida atualiza somente seu inventário; nome novo exige confirmação explícita do administrador antes da criação, evitando cadastros por erro de digitação. Cancelar não altera dados. Main e Service são os primeiros cadastros, não valores fixos no código. Terceira, quarta e demais warehouses não exigem mudança de código.
 Usar identificação interna estável separada do nome exibido: renomear não perde produtos, vínculos ou histórico.
+Comparar nomes de WHS ignorando maiúsculas/minúsculas e espaços nas pontas: `Main`, `MAIN` e ` Main ` identificam a mesma warehouse.
+Transferência de produto: bloquear se houver sessão ativa na origem ou destino; permitir fora dessa condição. Yuri aceitou essa restrição por enquanto, sujeita a revisão futura. Upload também não pode contorná-la.
+Migração: todos os produtos e sessões existentes, inclusive encerradas, pertencem à Main Warehouse. Associar essa identificação preservando resultados e histórico; não existem itens Service atualmente. Essa associação inicial não autoriza alterações posteriores dos resultados fechados.
 O isolamento deve ser validado no servidor e no acesso aos dados, não apenas no filtro visual.
 
 ## 7. Item desconhecido
@@ -96,16 +99,14 @@ Registrar quantidades como informadas, sem inventar BPU ou conversões. A ocorr�
 É uma formalidade para possível inclusão no relatório final, sujeita à validação administrativa. Não exige um fluxo complexo de criação/associação automática de produto.
 Detalhes de apresentação, descarte e inclusão no relatório ainda precisam ser especificados.
 
-## 8. Pendências que realmente mudam o comportamento
+## 8. Verificações técnicas antes de implementar
 
-Estas perguntas surgem da combinação das regras; não exigem reexplicar o sistema:
-1. Download: definir como entregar o inventário completo em arquivos separados por warehouse, mantendo cada arquivo reutilizável no upload.
-2. Transferência: se WHS mudar para um Brand Code existente durante sessão ativa, como tratar contagens já feitas e a disponibilidade nas duas warehouses?
-3. Histórico: qual efeito de correção de BPU em quantidades anteriores? Em que momento sessões encerradas deixam de aceitar mudanças que afetem seus resultados?
-4. Solo com lista restrita: produto novo entra automaticamente nessa lista ou depende de atribuição?
-5. BPU = 1 com Weight Avg positivo: peso continua permitido? A decisão explícita desativou Cases e Pallets; o documento antigo PRODUTO diz somente unidades.
-6. Padronização de espaços/maiúsculas em WHS: definir comparação para evitar cadastros equivalentes. A confirmação de warehouse nova já foi aprovada.
-7. Itens existentes e sessões atuais precisam receber warehouse na migração: confirmar mapeamento antes de alterar dados.
+As sete dúvidas anteriores foram respondidas por Yuri e incorporadas acima. Não voltar a tratá-las como decisões em aberto.
+- Verificar imutabilidade de sessões fechadas em todos os caminhos de gravação e relatório.
+- Mapear cálculo por peso, reconciliação e resultados combinados para que correção de BPU não reinterprete unidades derivadas de peso como Cases físicos.
+- Definir tecnicamente o marco de início da lista fechada e proteger inclusões concorrentes.
+- Verificar efeito de sessões simultâneas sobre correção de BPU; não contornar o bloqueio de solo ativo nem aplicar correções a outra sessão sem a autorização exigida.
+- Detalhes de apresentação/validação do item desconhecido no relatório ainda serão especificados na etapa própria.
 
 ## 9. Plano técnico proposto e critérios de aceitação
 
@@ -128,6 +129,23 @@ Validar no banco e servidor:
 - Inativo continua contável; criação durante sessão respeita warehouse e permissões.
 - Upload não contorna bloqueio de BPU; aprovação usa dois administradores distintos.
 - Apenas Independente registra desconhecido, sempre com foto.
+- BPU 1 permite peso positivo, desabilitando Cases/Pallets.
+- Correção dupla converte 20 Cases de 400 para 480 Units sem nova contagem; resultados fechados não mudam.
+- Lista fechada iniciada rejeita inclusão manual/automática, inclusive por chamada direta.
+- Transferência é bloqueada durante sessão ativa na origem ou destino, inclusive via upload.
+- Migração associa registros existentes a Main sem mudar resultados; normalização de WHS não cria duplicatas.
+- ZIP contém uma planilha reutilizável por warehouse.
 - Contagens existentes e modalidades solo/equipes continuam preservadas.
 
 As verificações acima são planejadas; não foram executadas nesta PR documental.
+
+## Conferência inicial do código — 2026-09-14
+
+Leitura estática pontual, não auditoria completa nem teste executado:
+- `actions/contagem.ts:carregarInventario` filtra `brand_active = true` e não recebe escopo WHS: adaptar para Active/Inactive e isolamento da sessão.
+- `actions/solo.ts:adicionarItemListaSolo` valida administrador, mas não consulta início/status da sessão antes de inserir. Implementar regra de lista fechada no servidor e verificar garantias do banco.
+- `actions/solo.ts:lancarSoloContagemCounter` verifica sessão aberta; o caminho administrativo `lancarSoloContagem` não faz a mesma consulta. Não afirmar imutabilidade integral sem inspecionar proteções do banco e relatórios.
+- `actions/inventario.ts:editarItemInventario` atualiza BPU diretamente e grava item/BINs em operações separadas. Mapear proteções existentes do banco antes de implementar aprovação dupla e atomicidade.
+- `actions/contagem.ts` e `actions/solo.ts` guardam quantidades informadas e resultados convertidos. Isso ajuda no recálculo, mas peso, reconciliação e relatórios ainda precisam ser rastreados.
+
+Prioridade: caracterizar proteções de encerramento e cálculos com testes; depois implementar warehouse/importação e isolamento em conjunto antes de liberar Service. Não publicar importação multiwarehouse enquanto contadores ainda puderem acessar inventário sem escopo.

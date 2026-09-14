@@ -24,4 +24,4 @@ Sistema web para contagem física de inventário em warehouse. Ele reduz diverg�
 - Após o fechamento, não pode haver novas contagens naquela sessão.
 - Formato exibido de quantidade: `casos+unidades`, por exemplo `10+21`.
 - Contagem por peso desconta tara das caixas e converte peso líquido usando o peso médio do item.
-- Para BPU igual a 1, a contagem é somente em unidades.
+- Regra aprovada para a próxima implementação: BPU igual a 1 permite unidades e peso (Weight Avg > 0), mas não Cases/Pallets. Ver especificação Inventory e Warehouses; implementação ainda pendente.

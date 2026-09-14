@@ -15,7 +15,7 @@ Consolidar e revisar [Inventory e Warehouses](./INVENTORY_WAREHOUSES.md).
 As regras descrevem a próxima implementação, não funcionalidades já publicadas.
 A PR #65 foi encerrada sem merge. Especificação em revisão na PR #68.
 Yuri aprovou uma planilha por warehouse, WHS obrigatório, atualização isolada e cadastro dinâmico com confirmação para warehouses novas. Essas regras ainda não foram implementadas.
-Fechar as pendências da especificação antes de implementar os trechos dependentes.
+As sete definições pendentes foram aprovadas e incorporadas na PR #68, incluindo BPU, lista fechada, ZIP e migração para Main. Conferência estática inicial registrada na especificação; ainda faltam rastreamento integral de banco/relatórios e execução dos testes. Nenhum código ou banco foi alterado.
 
 ## Cuidados e backlog preservados
 - Importações e outras operações com múltiplas gravações precisam ser transacionais.
