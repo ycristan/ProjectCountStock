@@ -28,3 +28,9 @@
 
 ## Testes de contrato — PR #69
 Executar funções reais com dependências simuladas sem produção. Manter falhas de regras pendentes visíveis; não inverter expectativas nem usar skip para aparentar aprovação. Cobertura da aplicação não substitui testes de banco e integração.
+
+## Proteções solo implementadas em proposta — PR #69
+- Guardas na aplicação e no banco: fechados imutáveis, lista iniciada congelada, BPU bloqueado enquanto existir solo aberto. Campos restantes continuam editáveis com BPU inalterado.
+- Início durável: nome do contador já definido ou primeira entrada registrada; backfill preserva esse fato para sessões existentes. Não exigir recontagem.
+- Triggers invoker em schema privado mantêm as permissões atuais; não expõem RPC privilegiada. Testes de banco usam service_role para verificar também caminhos administrativos.
+- Sem aplicação em produção nem merge nesta etapa. Aprovação dupla de equipes não foi implementada aqui.
