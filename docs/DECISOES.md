@@ -45,3 +45,8 @@
 - Exportação completa em ZIP, uma planilha por WHS com ativos/inativos, Status e WHS.
 - WHS ignora caixa e espaços nas pontas. Transferência bloqueada durante sessão ativa na origem ou destino (restrição aceita por enquanto).
 - Todos os produtos e sessões atuais pertencem a Main; migração preserva histórico/resultados. Não existem itens Service.
+
+## Publicação das proteções solo — 2026-09-15
+- PR #69 e sua migration foram explicitamente autorizadas e publicadas. Não confundir esse escopo com implementação de warehouses ou aprovação dupla de equipes.
+- Migration no repositório: 20260914142358_solo_inventory_write_guards.sql; registro remoto do conector: 20260915071703 / solo_inventory_write_guards. Comparar nomes e SQL antes de sincronizar histórico; não reaplicar por divergência de timestamp.
+- Preservar testes e decisões da PR #69 ao atualizar esta branch documental em relação à main.

@@ -1,6 +1,6 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-09-14
+Atualizado: 2026-09-15
 
 ## Confirmado
 - PR #66 (Sentry) e PR #67 (conectores primeiro) mergeadas.
@@ -15,7 +15,7 @@ Consolidar e revisar [Inventory e Warehouses](./INVENTORY_WAREHOUSES.md).
 As regras descrevem a próxima implementação, não funcionalidades já publicadas.
 A PR #65 foi encerrada sem merge. Especificação em revisão na PR #68.
 Yuri aprovou uma planilha por warehouse, WHS obrigatório, atualização isolada e cadastro dinâmico com confirmação para warehouses novas. Essas regras ainda não foram implementadas.
-As sete definições pendentes foram aprovadas e incorporadas na PR #68, incluindo BPU, lista fechada, ZIP e migração para Main. Conferência estática inicial registrada na especificação; ainda faltam rastreamento integral de banco/relatórios e execução dos testes. Nenhum código ou banco foi alterado.
+As sete definições pendentes foram aprovadas e incorporadas na PR #68, incluindo BPU, lista fechada, ZIP e migração para Main. Conferência estática inicial registrada na especificação; ainda faltam rastreamento integral de banco/relatórios e execução dos testes. A PR #68 permanece documental; as proteções solo foram implementadas e publicadas separadamente pela PR #69, conforme atualização abaixo.
 
 ## Cuidados e backlog preservados
 - Importações e outras operações com múltiplas gravações precisam ser transacionais.
@@ -23,3 +23,12 @@ As sete definições pendentes foram aprovadas e incorporadas na PR #68, incluin
 - Conferir estado atual de CI, lockfile e lint antes de propor trabalho duplicado.
 - Evoluções de contagem/reconciliação por peso e finalização admin/independente continuam no backlog; não estão automaticamente autorizadas por esta documentação.
 - Limpeza de código legado depende de análise e verificação de regressão.
+
+## Publicação confirmada — 2026-09-15
+- Yuri autorizou aplicação no banco e merge da PR #69. Merge concluído: 6638fec7b5d54647270961191fd76200ea71969c.
+- Último head aprovado 61b1a6dd3d95e7bd8b6beeb498f5e0aae0d61f36 passou nos workflows de aplicação e banco (24 + 30 testes). Execuções: https://github.com/ycristan/ProjectCountStock/actions/runs/34856063111 e https://github.com/ycristan/ProjectCountStock/actions/runs/34856062990.
+- Supabase: SQL de supabase/migrations/20260914142358_solo_inventory_write_guards.sql aplicado pelo conector como solo_inventory_write_guards, versão remota 20260915071703. As versões numéricas diferem porque o conector atribui a data de aplicação; não reaplicar cegamente a migration. Quatro triggers habilitados e nenhum marcador de início pendente no backfill.
+- Vercel project-count-stock-ylmm: deployment dpl_7MPz8nbE6mxnThn6n62FpMhsMDEj READY em produção no commit do merge. https://project-count-stock-ylmm.vercel.app respondeu HTTP 200. Consulta de error/fatal deste deployment até 07:20 UTC não encontrou logs; não equivale a teste funcional autenticado completo.
+- Proteções publicadas: registros solo encerrados, lista iniciada e BPU durante solo aberto. Nenhuma nova funcionalidade de warehouse ou aprovação dupla de equipes foi publicada.
+- Advisor de segurança: proteção contra senhas vazadas desativada; não alterada nesta publicação. Aviso INFO de app_user_access sem políticas é coerente com acesso exclusivo via funções protegidas/service_role; não abrir acesso para eliminar o aviso.
+- A PR #68 continua sem merge e precisa preservar estas atualizações ao ser reconciliada com main.
