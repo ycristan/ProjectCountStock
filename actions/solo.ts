@@ -59,6 +59,17 @@ async function _saveSoloEntry(
   }
 
   const admin = createAdminClient()
+  const { data: session, error: sessionError } = await admin
+    .from('solo_sessions').select('status, restrict_to_list').eq('id', sessionId).single()
+  if (sessionError || !session || session.status !== 'open') {
+    return { error: 'Session is closed or unavailable.' }
+  }
+  if (session.restrict_to_list) {
+    const { data: allowed, error: listError } = await admin
+      .from('solo_session_items').select('brand_code')
+      .eq('session_id', sessionId).eq('brand_code', payload.brand_code).maybeSingle()
+    if (listError || !allowed) return { error: 'Item is not in the pre-selected list for this count.' }
+  }
   const { data: item, error: itemError } = await admin
     .from('inventory_items')
     .select('bpu, pallet_size, brand_name')
@@ -119,12 +130,28 @@ export async function encerrarSoloSessao(sessionId: string): Promise<{ error?: s
 
 // ─── Assignment (admin) ──────────────────────────────────────────────────────
 
+// Shared by every administrative path that can change a restricted list.
+async function checkSoloListEditable(sessionId: string): Promise<{ error?: string }> {
+  const admin = createAdminClient()
+  const { data: session, error } = await admin.from('solo_sessions')
+    .select('status, counter_name').eq('id', sessionId).single()
+  if (error || !session || session.status !== 'open') return { error: 'Session is closed or unavailable.' }
+  if (session.counter_name) return { error: 'The count has started; its list can no longer be changed.' }
+  const { data: entry, error: entryError } = await admin.from('solo_entries')
+    .select('id').eq('session_id', sessionId).limit(1).maybeSingle()
+  if (entryError) return { error: 'Unable to verify whether the count has started.' }
+  if (entry) return { error: 'The count has started; its list can no longer be changed.' }
+  return {}
+}
+
 export async function atribuirSoloContador(
   sessionId: string,
   assigned: boolean,
   restrict: boolean,
 ): Promise<{ error?: string }> {
   if (!(await isAdmin())) return { error: 'Unauthorized' }
+  const guard = await checkSoloListEditable(sessionId)
+  if (guard.error) return guard
   const admin = createAdminClient()
   const { error } = await admin
     .from('solo_sessions')
@@ -135,6 +162,8 @@ export async function atribuirSoloContador(
 
 export async function adicionarItemListaSolo(sessionId: string, brandCode: string): Promise<{ error?: string }> {
   if (!(await isAdmin())) return { error: 'Unauthorized' }
+  const guard = await checkSoloListEditable(sessionId)
+  if (guard.error) return guard
   const admin = createAdminClient()
   const { error } = await admin
     .from('solo_session_items')
@@ -144,6 +173,8 @@ export async function adicionarItemListaSolo(sessionId: string, brandCode: strin
 
 export async function removerItemListaSolo(sessionId: string, brandCode: string): Promise<{ error?: string }> {
   if (!(await isAdmin())) return { error: 'Unauthorized' }
+  const guard = await checkSoloListEditable(sessionId)
+  if (guard.error) return guard
   const admin = createAdminClient()
   const { error } = await admin
     .from('solo_session_items')

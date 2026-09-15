@@ -1,0 +1,25 @@
+name: Inventory rule contracts
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'actions/**'
+      - 'lib/**'
+      - 'tests/inventory/**'
+      - '.github/workflows/inventory-rule-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run real server actions with isolated test doubles
+        run: node --experimental-vm-modules --test --test-reporter=tap tests/inventory/*.test.mjs

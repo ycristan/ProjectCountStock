@@ -32,3 +32,18 @@ Nenhuma nova funcionalidade deve passar à frente desta correção.
 - Operações de criar/apagar equipes ou importar inventário fazem várias alterações separadas; migrar gradualmente para operações transacionais.
 - PINs de quatro dígitos exigem proteção contra tentativas repetidas e auditoria de login.
 - Arquivos XLSX precisam de validação de tamanho, estrutura e conteúdo antes de alterar o inventário.
+
+## Testes isolados de Inventory — 2026-09-14
+- PR #69 (rascunho): https://github.com/ycristan/ProjectCountStock/pull/69
+- Execução https://github.com/ycristan/ProjectCountStock/actions/runs/34851928747 no commit 1f7282016b53fe9d03d2ed36c4f176ef73f75b17: 11 testes, 8 passaram, 3 falharam, nenhum skip/TODO.
+- Falhas de contrato na barreira das Server Actions: gravação administrativa em solo fechado, inclusão em lista iniciada e edição direta de BPU durante solo ativo.
+- Dependências de banco simuladas; não prova ausência de proteções SQL/RLS em produção. Aprovação dupla, recálculo persistido, peso e relatórios fechados ainda não testados integralmente.
+- Nenhuma alteração de aplicação/migration, nenhum merge. Regras consolidadas na PR #68 ainda separada.
+
+## Correções dos três contratos — 2026-09-14
+- PR #69 agora contém correções de Server Actions e migration proposta; deixou de ser apenas diagnóstico.
+- Commit validado: 625a6e5903e94e7168f02e97e124845c66e3e6bb. Aplicação: 24 testes passaram (https://github.com/ycristan/ProjectCountStock/actions/runs/34855714811). Banco descartável: 30 testes passaram (12 existentes + 18 novos), migration aplicada e lint sem erros (https://github.com/ycristan/ProjectCountStock/actions/runs/34855714520). Build Vercel Preview passou.
+- Consulta somente leitura à produção confirmou políticas administrativas sem guardas de estado e ausência de triggers nas quatro tabelas verificadas. Nenhuma mudança foi aplicada ao banco real.
+- Migration 20260914142358_solo_inventory_write_guards.sql protege registros solo encerrados, lista iniciada e BPU durante solo aberto; inclui marcador durável de início e bloqueios transacionais.
+- Para publicar: revisão e autorização explícita, aplicar migration no banco correto, depois merge/deploy. Preview usa banco de produção e não substitui testes isolados.
+- Escopo ainda separado: aprovação dupla/reprocessamento em equipes, warehouses e renderização histórica dos relatórios. Não houve teste de carga concorrente. Mais detalhes em tests/inventory/README.md.
