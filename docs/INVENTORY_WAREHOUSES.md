@@ -45,7 +45,31 @@ Se houver Brand Codes repetidos na planilha, interromper antes de gravar qualque
 
 A nova planilha deve incluir Status e WHS. O formato antigo deixa de ser aceito quando a nova implementação entrar em vigor, conforme decisão de Yuri.
 O download completo será um ZIP com uma planilha por warehouse, incluindo ativos e inativos e as colunas Status e WHS. Cada planilha deve ser reutilizável no upload sem reativar involuntariamente itens inativos.
-Nomes exatos dos demais cabeçalhos e formatos aceitos devem ser consolidados em um único modelo de importação/exportação.
+### Cabeçalhos definitivos — aprovados em 2026-09-16
+
+Upload e download usarão exatamente estes 13 cabeçalhos, nesta ordem no modelo exportado:
+
+| Cabeçalho | Valor obrigatório por produto | Regra |
+| --- | --- | --- |
+| Brand Code | Sim | Texto único globalmente; preservar zeros iniciais. |
+| Brand Name | Sim | Nome do produto. |
+| Category | Sim | Categoria principal. |
+| Category1 | Sim | Categoria complementar. |
+| BPU | Sim | Inteiro maior ou igual a 1. Substitui Brand Purchase Unit. |
+| Pallet Size | Não | Vazio ou zero desativa pallets. |
+| Weight AVG | Não | Peso médio em gramas; vazio ou zero desativa peso. |
+| BIN Location 1 | Não | Localização opcional. |
+| BIN Location 2 | Não | Localização adicional opcional. |
+| BIN Location 3 | Não | Localização adicional opcional. |
+| BIN Location 4 | Não | Localização adicional opcional. |
+| Status | Sim | TRUE = Active; FALSE = Inactive. |
+| WHS | Sim | Mesmo warehouse em todas as linhas do arquivo. |
+
+Todas as 13 colunas devem existir no arquivo, inclusive as de valores opcionais.
+Opcional refere-se à célula, não à presença do cabeçalho.
+A ordem das colunas no upload pode variar: identificar por nome, não por posição.
+O novo modelo só entra em vigor com a implementação; esta aprovação documental não altera o importador em produção.
+
 
 ## 4. Busca e inventário ao vivo
 

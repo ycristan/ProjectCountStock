@@ -1,6 +1,6 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-09-15
+Atualizado: 2026-09-16
 
 ## Confirmado
 - PR #66 (Sentry) e PR #67 (conectores primeiro) mergeadas.
@@ -32,3 +32,6 @@ As sete definições pendentes foram aprovadas e incorporadas na PR #68, incluin
 - Proteções publicadas: registros solo encerrados, lista iniciada e BPU durante solo aberto. Nenhuma nova funcionalidade de warehouse ou aprovação dupla de equipes foi publicada.
 - Advisor de segurança: proteção contra senhas vazadas desativada; não alterada nesta publicação. Aviso INFO de app_user_access sem políticas é coerente com acesso exclusivo via funções protegidas/service_role; não abrir acesso para eliminar o aviso.
 - A PR #68 continua sem merge e precisa preservar estas atualizações ao ser reconciliada com main.
+
+## Modelo de planilha — 2026-09-16
+Yuri confirmou os 13 cabeçalhos definitivos, incluindo BPU, Status e WHS. Registrados na especificação da PR #68. Importador em produção ainda não foi alterado para o novo modelo.

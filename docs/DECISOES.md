@@ -50,3 +50,8 @@
 - PR #69 e sua migration foram explicitamente autorizadas e publicadas. Não confundir esse escopo com implementação de warehouses ou aprovação dupla de equipes.
 - Migration no repositório: 20260914142358_solo_inventory_write_guards.sql; registro remoto do conector: 20260915071703 / solo_inventory_write_guards. Comparar nomes e SQL antes de sincronizar histórico; não reaplicar por divergência de timestamp.
 - Preservar testes e decisões da PR #69 ao atualizar esta branch documental em relação à main.
+
+## Cabeçalhos aprovados — 2026-09-16
+- Modelo único: Brand Code, Brand Name, Category, Category1, BPU, Pallet Size, Weight AVG, BIN Location 1, BIN Location 2, BIN Location 3, BIN Location 4, Status, WHS.
+- BPU substitui Brand Purchase Unit. Weight AVG é em gramas.
+- Todas as colunas presentes, qualquer ordem no upload; valores opcionais podem ficar vazios. Regras detalhadas em INVENTORY_WAREHOUSES.md.
