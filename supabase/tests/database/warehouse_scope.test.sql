@@ -45,9 +45,21 @@ select lives_ok($$select public.create_warehouse_solo_session('Scope solo','0000
 'Valid scoped solo session and list created together');
 select lives_ok($$select public.create_warehouse_solo_session('Scope free','00000000-0000-0000-0000-000000000910',true,false,'{}',300)$$,
 'Unrestricted solo remains scoped to warehouse');
+-- Direct authenticated writes cannot update the durable start marker.
+select throws_ok($$insert into public.solo_entries(session_id,brand_code,units)
+select id,'scope-service',1 from public.solo_sessions where title='Scope free'$$,
+'42501','permission denied for table solo_sessions','Direct client cannot bypass server-owned solo writes');
+-- Match the role used after authorization by solo Server Actions; retain a positive control.
+reset role;
+set local role service_role;
+select lives_ok($$insert into public.solo_entries(session_id,brand_code,units)
+select id,'scope-service',1 from public.solo_sessions where title='Scope free'$$,
+'Authorized server can count a product in its warehouse');
 select throws_ok($$insert into public.solo_entries(session_id,brand_code,units)
 select id,'scope-main',1 from public.solo_sessions where title='Scope free'$$,
 'P0001','Product does not belong to the session warehouse','Admin solo entry also checks warehouse');
+reset role;
+set local role authenticated;
 select throws_ok($$insert into public.solo_session_items(session_id,brand_code)
 select id,'scope-main' from public.solo_sessions where title='Scope solo'$$,
 'P0001','Product does not belong to the session warehouse','Restricted list cannot include another warehouse');
