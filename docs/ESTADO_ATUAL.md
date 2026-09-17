@@ -2,6 +2,18 @@
 
 Atualizado: 2026-09-17
 
+## Correção ZIP e observabilidade — 2026-09-17
+- Causa do incidente confirmada na Vercel: em 13:57:20 UTC, /api/admin/inventario, deployment dpl_Dof71dK96ZhecacCH5uJ1qnBSYg2, erro "column inventory_items.warehouse_id does not exist". Preview consulta banco sem a migration. Não é evidência de perda de credencial Sentry.
+- Commit de correção: ea9e7564a20abfee3ca859c756a97cf5cee11dce. Endpoint captura falha, retorna mensagem segura/503 e referência; botão faz fetch e mostra alerta dentro de Inventory, sem navegar para página genérica. Não gera ZIP sem schema, não aplica migration e não usa fallback silencioso para outro formato.
+- Captura explícita com Sentry, espera limitada de flush (2s), evento sanitizado e fallback console.error com motivo/eventId/status de envio. Flush não prova recepção no painel. Sem dados de inventário, sessão ou mensagem bruta do banco no evento explícito.
+- withSentryConfig adicionado mantendo limite do upload. Estava ausente também na main; não afirmar que era a única causa de ausência do evento. Source map upload desativado; não exige token de upload. Instrumentation e captureRequestError existentes preservados.
+- 12 testes novos: schema ausente, erro retornado pela consulta, falha inesperada, sucesso ZIP, autorização, limite de tamanho, envio explícito/flush, Sentry sem configuração/indisponível e integração do build. Total 257: [130 contratos](https://github.com/ycristan/ProjectCountStock/actions/runs/35231336832), [37 XLSX](https://github.com/ycristan/ProjectCountStock/actions/runs/35231336988), [90 SQL](https://github.com/ycristan/ProjectCountStock/actions/runs/35231336946); upgrade preservado, lint sem erros.
+- Preview READY: https://project-count-stock-ylmm-gvw2sfp0g-ycristans-projects.vercel.app/admin/inventario . Testes simulam transporte Sentry; não provam recebimento real. Avaliação visual autenticada ainda pendente.
+- Plugin Sentry instalado/enabled, sem apps dependentes; catálogo não retornou conector Sentry. Skill instalada exige SENTRY_AUTH_TOKEN. Sem credencial de leitura nesta sessão. Yuri informou não saber configurar: orientar pelo Windows, nunca pedir chave no chat. Não alegar que token "sumiu".
+- Bloqueio restante: confirmar o evento real no Sentry e o fluxo autenticado do Preview. Produção não alterada; não declarar monitoramento totalmente validado antes disso.
+
+
+
 ## Ponto de retomada — PR #70, 2026-09-17
 Este bloco prevalece sobre os relatos históricos abaixo. Produção permanece na main; nenhum merge ou migration real autorizado/executado nesta etapa.
 
