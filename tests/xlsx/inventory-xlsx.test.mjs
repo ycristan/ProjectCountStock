@@ -188,3 +188,35 @@ test('macro and embedded file containers rejected', async () => {
 test('ordinary ZIP cannot masquerade as XLSX', async () => {
   await assert.rejects(readInventoryXlsx(archive([{name:'note.txt',data:'hello'}]),'bad.xlsx'),/not another ZIP/)
 })
+
+async function rewriteSheet(wb, rewrite) {
+  const zip = await yauzl.fromBufferPromise(bytes(wb))
+  const entries = []
+  for await (const entry of zip.eachEntry()) {
+    const stream = await zip.openReadStreamPromise(entry)
+    const chunks = []
+    for await (const chunk of stream) chunks.push(chunk)
+    let data = Buffer.concat(chunks)
+    if (entry.fileName === 'xl/worksheets/sheet1.xml') data = Buffer.from(rewrite(data.toString()))
+    entries.push({name:entry.fileName,data})
+  }
+  return archive(entries)
+}
+test('underreported worksheet dimension cannot silently drop products', async () => {
+  const other = [...dataRow]; other[0] = 'another'
+  const input = await rewriteSheet(workbook([dataRow,other]),
+    xml => xml.replace('ref="A1:M3"','ref="A1:M2"'))
+  const result = await readInventoryXlsx(input,'short-dimension.xlsx')
+  assert.equal(result.ok,true)
+  assert.equal(result.items.length,2)
+})
+test('underreported dimension cannot bypass maximum row', async () => {
+  const input = await rewriteSheet(workbook(), xml =>
+    xml.replace('r="2"','r="50002"').replace(/r="([A-M])2"/g, (_,column) => 'r="'+column+'50002"'))
+  await assert.rejects(readInventoryXlsx(input,'hidden-row.xlsx'),/limits|50,000/)
+})
+test('excessive XML cell count rejected before synchronous parsing', async () => {
+  const input = archive([{name:'xl/worksheets/sheet1.xml',
+    data:'<c/>'.repeat((INVENTORY_FILE_LIMITS.rows+1)*13+1)}])
+  await assert.rejects(readInventoryXlsx(input,'many-cells.xlsx'),/safe cell count/)
+})

@@ -23,6 +23,7 @@ async function checkXlsxContainer(buffer: Buffer): Promise<void> {
       let entries = 0
       let declaredBytes = 0
       let actualBytes = 0
+      let xmlCells = 0
       const names = new Set<string>()
       const fail = (message: string) => {
         if (settled) return
@@ -49,8 +50,18 @@ async function checkXlsxContainer(buffer: Buffer): Promise<void> {
         zip.openReadStream(entry, (streamError, stream) => {
           if (settled) { stream?.destroy(); return }
           if (streamError || !stream) return fail('The XLSX archive cannot be read.')
+          let cellTagTail = ''
           stream.on('error', () => fail('The XLSX archive is damaged or unsupported.'))
           stream.on('data', (chunk: Buffer) => {
+            if (/\.xml$/i.test(entry.fileName)) {
+              const text = cellTagTail + chunk.toString('utf8')
+              xmlCells += (text.match(/<c(?=[\s/>:])/g) ?? []).length
+              cellTagTail = text.slice(-2)
+              if (xmlCells > (INVENTORY_FILE_LIMITS.rows + 1) * 13) {
+                stream.destroy()
+                return fail('The workbook exceeds the safe cell count.')
+              }
+            }
             actualBytes += chunk.length
             if (actualBytes > INVENTORY_FILE_LIMITS.expandedBytes) {
               stream.destroy()
@@ -88,7 +99,7 @@ export async function readInventoryXlsx(
   try {
     workbook = XLSX.read(buffer, {
       type: 'buffer', cellFormula: true, cellDates: true, cellNF: true,
-      cellHTML: false, cellText: true, sheetRows: INVENTORY_FILE_LIMITS.rows + 2,
+      cellHTML: false, cellText: true,
     })
   } catch {
     throw new InventoryFileError('The workbook could not be read. Save it again as .xlsx.')
@@ -102,7 +113,8 @@ export async function readInventoryXlsx(
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   if (!sheet) throw new InventoryFileError('No inventory worksheet was found.')
   if (sheet['!merges']?.length) throw new InventoryFileError('Unmerge the cells before importing.')
-  // Detect truncated input instead of silently importing only the first N products.
+  // Never truncate to N rows during parsing: a malformed declared range must not
+  // hide later products. Bounded archive/cell sizes are checked before parsing.
   for (const ref of [sheet['!ref'], sheet['!fullref']]) {
     if (ref && XLSX.utils.decode_range(ref).e.r > INVENTORY_FILE_LIMITS.rows) {
       throw new InventoryFileError('The workbook exceeds 50,000 product rows.')
