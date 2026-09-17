@@ -5,6 +5,14 @@ on:
     branches: [main]
     paths:
       - 'supabase/**'
+      - 'tests/http/**'
+      - 'app/**'
+      - 'lib/**'
+      - 'components/**'
+      - '*sentry*'
+      - 'instrumentation*'
+      - 'next.config.ts'
+      - 'package*.json'
       - '.github/workflows/database-security-tests.yml'
   workflow_dispatch:
 
@@ -60,6 +68,16 @@ jobs:
 
       - name: Lint database functions
         run: supabase db lint --level error
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: HTTP export and real SDK transport integration (disposable only)
+        run: |
+          supabase status --help
+          npm ci --ignore-scripts
+          node tests/http/inventory-export.mjs
 
       - name: Stop disposable Supabase
         if: always()
