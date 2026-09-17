@@ -66,3 +66,11 @@ Ainda NÃO implementado/liberado:
 - O novo leitor e RPC não estão conectados ao importador publicado. Regras de leitura antigas continuam; NÃO aplicar/publicar esta migration sozinha nem liberar Service.
 - Não há teste de carga/conexões concorrentes; as proteções usam lock transacional compartilhado, mas testes desta etapa são sequenciais.
 - Nenhuma migration aplicada à produção, nenhum merge. PR #70 permanece rascunho.
+
+## Revisão final desta etapa — 2026-09-17
+- Código validado: `65439149f0cb0e68296f6398a0392740e0b31e34`.
+- Total agora **206 testes aprovados**: 105 aplicação (https://github.com/ycristan/ProjectCountStock/actions/runs/35202826934), 29 XLSX real (https://github.com/ycristan/ProjectCountStock/actions/runs/35202826939) e 72 banco (https://github.com/ycristan/ProjectCountStock/actions/runs/35202826682).
+- Migração com histórico sintético passou novamente; lint sem erros; status Vercel Preview success para o mesmo commit.
+- Acrescentados limites de células antes do parser e três testes para dimensões de worksheet incorretas/excesso de células. Não truncar o arquivo para cumprir limite: arquivo inválido deve ser rejeitado, nunca parcialmente importado.
+- Próxima etapa: Server Actions/interface de importação e isolamento de sessões/consultas por WHS, antes de conceder execução ao RPC. O leitor novo ainda não está ligado ao upload. Continuam pendentes UI unificada/manual/toggle e ZIP.
+- Nada aplicado ao banco real, nenhum merge. PR #70 continua rascunho. Os commits posteriores a esse código validado nesta etapa são documentação.
