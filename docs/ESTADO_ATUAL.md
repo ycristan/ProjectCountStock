@@ -2,6 +2,20 @@
 
 Atualizado: 2026-09-17
 
+## Fluxo integrado validado — 2026-09-17, commit 95a1ecb8cc8380edfb1a32674d48b6cddecf4503
+- Execução: https://github.com/ycristan/ProjectCountStock/actions/runs/35233358896 .
+- Aplicação compilada iniciada no runner do GitHub contra Supabase descartável. Autenticação real via Supabase SSR, cookies reais de usuário sintético, GET HTTP real da página Inventory e endpoint ZIP.
+- Download comprovado: ZIP aberto, XLSX lidos, Main/Service separados, Status inativo e código 006323 preservados; acesso sem login redirecionado, sem arquivo.
+- Incidente reproduzido renomeando coluna apenas no banco descartável. Endpoint devolveu 503 compreensível e eventId; SDK real enviou envelope ao coletor HTTP isolado, com correlação e sem email/senha/chave/cookie de autenticação. Log fallback confirmado.
+- Isto NÃO prova recebimento na conta hospedada Sentry e NÃO é teste de cliques/hidratação num navegador. Não confundir essas camadas.
+- As outras suítes passaram: 130 contratos (https://github.com/ycristan/ProjectCountStock/actions/runs/35233358890), 37 XLSX (https://github.com/ycristan/ProjectCountStock/actions/runs/35233358870), 90 SQL no job acima. Preservação de nove tabelas históricas e lint também passaram; Preview success.
+- Workflow agora exige esse teste integrado para mudanças nos caminhos cobertos. Credenciais exclusivamente sintéticas no runner; script recusa execução fora do GitHub e URLs diferentes de 127.0.0.1:54321.
+- Nenhuma mudança no app de produção nem migration aplicada. O ZIP no Preview continua indisponível por schema antigo, agora com tratamento explícito; o teste comprova que funciona com schema novo.
+- Próxima fronteira de autorização: publicação coordenada do código PR #70 e migration. Antes dela, conferir schema/histórico remoto, bloquear temporariamente importações/criações durante a janela e confirmar snapshot/recuperação disponível. Não liberar Service com código antigo; não reverter cegamente para código antigo após cadastrar outras WHS.
+- Leitura remota da conta Sentry continua pendente; não pedir token no Windows. Acompanhamento via conector Vercel permanece utilizável. Produção só poderá ser declarada validada após verificação pós-publicação, incluindo recebimento de evento no Sentry.
+
+
+
 ## Correção ZIP e observabilidade — 2026-09-17
 - Causa do incidente confirmada na Vercel: em 13:57:20 UTC, /api/admin/inventario, deployment dpl_Dof71dK96ZhecacCH5uJ1qnBSYg2, erro "column inventory_items.warehouse_id does not exist". Preview consulta banco sem a migration. Não é evidência de perda de credencial Sentry.
 - Commit de correção: ea9e7564a20abfee3ca859c756a97cf5cee11dce. Endpoint captura falha, retorna mensagem segura/503 e referência; botão faz fetch e mostra alerta dentro de Inventory, sem navegar para página genérica. Não gera ZIP sem schema, não aplica migration e não usa fallback silencioso para outro formato.
