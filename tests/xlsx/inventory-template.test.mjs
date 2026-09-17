@@ -21,7 +21,9 @@ test('template exports one worksheet and exactly the approved headers in order',
   assert.deepEqual(wb.SheetNames, ['Inventory'])
   const rows = XLSX.utils.sheet_to_json(wb.Sheets.Inventory, { header: 1, blankrows: false })
   assert.deepEqual(rows[0], [...format.INVENTORY_HEADERS])
-  assert.equal(rows.length, 1)
+  // SheetJS retains explicitly formatted empty strings as the blank input row.
+  assert.equal(rows.length, 2)
+  assert.deepEqual(rows[1], Array(13).fill(''))
   assert.equal(INVENTORY_TEMPLATE_FILENAME, 'inventory-template.xlsx')
 })
 test('blank template has no products, formulas or extra instructions', async () => {
