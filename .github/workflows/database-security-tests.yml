@@ -54,7 +54,9 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/warehouse-after.sql
 
       - name: Run database authorization tests
-        run: supabase test db
+        run: |
+          supabase test db --help
+          supabase test db supabase/tests/database
 
       - name: Lint database functions
         run: supabase db lint --level error
