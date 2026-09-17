@@ -116,7 +116,10 @@ select throws_ok($$select public.import_warehouse_inventory('Service',jsonb_buil
  'Open solo destination prevents transfer');
 select throws_ok($$select public.import_warehouse_inventory('Main',jsonb_build_array(pg_temp.import_item('006323',30)))$$,
  'P0001','BPU cannot change while a solo count is open','Existing solo BPU protection survives import');
+-- Closing solo is intentionally server-only in the existing schema.
+set local role service_role;
 update public.solo_sessions set status='closed' where id='00000000-0000-0000-0000-000000000812';
+set local role authenticated;
 select lives_ok($$select public.import_warehouse_inventory('Service',
  jsonb_build_array(pg_temp.import_item('006323'),pg_temp.import_item('s')))$$,'Transfer allowed after counts close');
 select is((select count(*) from public.inventory_items where brand_code='006323'),1::bigint,'Transfer retains globally unique Brand Code');
