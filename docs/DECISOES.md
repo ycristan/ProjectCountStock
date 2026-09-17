@@ -84,3 +84,8 @@
 - Comunicação breve: progresso relevante, riscos ou decisões necessárias. Build isolado não é entrega funcional.
 - Interromper apenas por decisão de negócio não documentada, acesso indispensável, custo ou autorização de produção. Não confundir autonomia técnica com autorização para merge/migration em produção.
 - Ao encerrar, registrar estado verificável, evidências, pendências e próximo passo no repositório. Entregar link e roteiro curto de avaliação; não transferir testes técnicos rotineiros ao usuário.
+
+## Sem armazenamento local — regra reforçada
+- Não criar clones, arquivos do projeto, tokens ou variáveis de ambiente do projeto no computador de Yuri. Não orientar configuração de SENTRY_AUTH_TOKEN no Windows.
+- Testes descartáveis nos runners do GitHub continuam permitidos, sem segredos de produção. Credenciais sintéticas são geradas no runner e não são registradas no repositório.
+- Falta de acesso de leitura ao Sentry não autoriza solicitar armazenamento local nem declarar a captura do aplicativo inoperante.
