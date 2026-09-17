@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { Buffer } from 'node:buffer'
+import { crc32, deflateRawSync } from 'node:zlib'
 import * as XLSX from 'xlsx'
 import * as yauzl from 'yauzl'
 import { loadSource } from '../inventory/source-fixture.mjs'
@@ -129,4 +130,61 @@ test('export data to real XLSX then reimport preserves all approved fields', asy
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(format.inventoryExportRows(input.warehouseName,input.items)), 'Inventory')
   assert.deepEqual(plain(await read(wb)),plain(input))
+})
+
+// Synthetic archives for negative tests; never used by production code.
+function archive(entries) {
+  const local = [], central = []
+  let offset = 0
+  for (const entry of entries) {
+    const name = Buffer.from(entry.name)
+    const data = Buffer.from(entry.data ?? '')
+    const compressed = deflateRawSync(data)
+    const size = entry.declaredSize ?? data.length
+    const header = Buffer.alloc(30)
+    header.writeUInt32LE(0x04034b50,0); header.writeUInt16LE(20,4)
+    header.writeUInt16LE(8,8); header.writeUInt32LE(crc32(data),14)
+    header.writeUInt32LE(compressed.length,18); header.writeUInt32LE(size,22)
+    header.writeUInt16LE(name.length,26)
+    local.push(header,name,compressed)
+    const record = Buffer.alloc(46)
+    record.writeUInt32LE(0x02014b50,0); record.writeUInt16LE(20,4); record.writeUInt16LE(20,6)
+    record.writeUInt16LE(8,10); record.writeUInt32LE(crc32(data),16)
+    record.writeUInt32LE(compressed.length,20); record.writeUInt32LE(size,24)
+    record.writeUInt16LE(name.length,28); record.writeUInt32LE(offset,42)
+    central.push(record,name)
+    offset += header.length+name.length+compressed.length
+  }
+  const directory = Buffer.concat(central)
+  const end = Buffer.alloc(22)
+  end.writeUInt32LE(0x06054b50,0); end.writeUInt16LE(entries.length,8)
+  end.writeUInt16LE(entries.length,10); end.writeUInt32LE(directory.length,12)
+  end.writeUInt32LE(offset,16)
+  return Buffer.concat([...local,directory,end])
+}
+test('small compressed archive with excessive expanded size rejected before XLSX parsing', async () => {
+  const input = archive([{ name:'xl/worksheets/sheet1.xml',
+    data:Buffer.alloc(INVENTORY_FILE_LIMITS.expandedBytes+1,65) }])
+  assert.ok(input.length < INVENTORY_FILE_LIMITS.bytes)
+  await assert.rejects(readInventoryXlsx(input,'bomb.xlsx'),/expanded workbook/)
+})
+test('lying expanded size is detected while streaming', async () => {
+  const input = archive([{ name:'xl/worksheets/sheet1.xml',data:'A'.repeat(100000),declaredSize:1 }])
+  await assert.rejects(readInventoryXlsx(input,'bad.xlsx'),/damaged|cannot be read/)
+})
+test('excessive archive entry count rejected', async () => {
+  const input = archive(Array.from({length:501},(_,index)=>({name:'part'+index,data:''})))
+  await assert.rejects(readInventoryXlsx(input,'many.xlsx'),/expanded workbook/)
+})
+test('duplicate ZIP paths rejected', async () => {
+  const input = archive([{name:'same',data:'a'},{name:'same',data:'b'}])
+  await assert.rejects(readInventoryXlsx(input,'duplicate.xlsx'),/duplicate archive/)
+})
+test('macro and embedded file containers rejected', async () => {
+  for (const name of ['xl/vbaProject.bin','xl/embeddings/object.bin']) {
+    await assert.rejects(readInventoryXlsx(archive([{name,data:'x'}]),'bad.xlsx'),/macros and embedded/)
+  }
+})
+test('ordinary ZIP cannot masquerade as XLSX', async () => {
+  await assert.rejects(readInventoryXlsx(archive([{name:'note.txt',data:'hello'}]),'bad.xlsx'),/not another ZIP/)
 })
