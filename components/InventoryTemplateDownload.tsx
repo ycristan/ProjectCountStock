@@ -26,7 +26,7 @@ export function InventoryTemplateDownload() {
         {downloading ? 'Preparing template...' : 'Download Excel template'}
       </button>
       <p className="mt-2 text-sm text-amber-800">
-        New format preview: the current upload does not accept this template yet.
+        Use this template with Check spreadsheet below before confirming the import.
       </p>
       <details className="mt-2 text-sm text-slate-600">
         <summary className="cursor-pointer">How to fill in the template</summary>

@@ -1,5 +1,6 @@
 'use server'
 
+import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import type { LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
 import { sendSoloResultsEmail } from '@/lib/send-solo-results-email'
@@ -8,6 +9,7 @@ import { isAdmin, isSoloCounter } from '@/lib/authorization'
 
 export async function criarSoloSessaoCompleta(input: {
   title: string
+  warehouseId: string
   assignedToCounter: boolean
   restrictToList: boolean
   itemCodes: string[]
@@ -16,29 +18,16 @@ export async function criarSoloSessaoCompleta(input: {
   const title = input.title.trim()
   if (!title) return { error: 'Title is required.' }
 
-  const admin = createAdminClient()
+  if (!input.warehouseId) return { error: 'Choose a warehouse.' }
+  const db = await createClient()
   const { box_tare_g } = await getDefaultTare()
+  const { data, error } = await db.rpc('create_warehouse_solo_session', {
+    p_title: title, p_warehouse_id: input.warehouseId,
+    p_assigned: input.assignedToCounter, p_restrict: input.restrictToList,
+    p_codes: input.itemCodes, p_tare: box_tare_g,
+  })
+  return error ? { error: error.message } : { id: data }
 
-  const { data, error } = await admin
-    .from('solo_sessions')
-    .insert({
-      title,
-      assigned_to_counter: input.assignedToCounter,
-      restrict_to_list: input.restrictToList,
-      box_tare_g,
-    })
-    .select('id')
-    .single()
-  if (error || !data) return { error: error?.message ?? 'Error creating session.' }
-
-  if (input.restrictToList && input.itemCodes.length > 0) {
-    const { error: itemsError } = await admin
-      .from('solo_session_items')
-      .insert(input.itemCodes.map((brand_code) => ({ session_id: data.id, brand_code })))
-    if (itemsError) return { error: `Session created but failed to save item list: ${itemsError.message}` }
-  }
-
-  return { id: data.id }
 }
 
 // ponytail: shared by the admin path (lancarSoloContagem) and the counter path
@@ -60,7 +49,7 @@ async function _saveSoloEntry(
 
   const admin = createAdminClient()
   const { data: session, error: sessionError } = await admin
-    .from('solo_sessions').select('status, restrict_to_list').eq('id', sessionId).single()
+    .from('solo_sessions').select('status, restrict_to_list, warehouse_id').eq('id', sessionId).single()
   if (sessionError || !session || session.status !== 'open') {
     return { error: 'Session is closed or unavailable.' }
   }
@@ -74,6 +63,7 @@ async function _saveSoloEntry(
     .from('inventory_items')
     .select('bpu, pallet_size, brand_name')
     .eq('brand_code', payload.brand_code)
+    .eq('warehouse_id', session.warehouse_id)
     .single()
 
   if (itemError || !item) return { error: 'Item not found.' }

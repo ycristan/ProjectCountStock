@@ -26,15 +26,13 @@ create trigger test_fail_import_bin before insert on public.item_bin_locations
 for each row execute function pg_temp.fail_import_bin();
 
 select has_table('public', 'warehouses', 'Dynamic warehouse registry exists');
-select ok(not has_function_privilege('authenticated',
+select ok(has_function_privilege('authenticated',
  'public.import_warehouse_inventory(text,jsonb,boolean)', 'execute'),
- 'Draft import endpoint remains unavailable until complete scoped integration');
+ 'Authenticated import is exposed only with protected admin check and warehouse scoping');
 select ok(not has_function_privilege('anon',
  'public.import_warehouse_inventory(text,jsonb,boolean)', 'execute'), 'No anonymous import permission');
 select ok(not has_table_privilege('anon', 'public.warehouses', 'select'), 'No anonymous warehouse listing');
 
--- Enable the draft endpoint ONLY inside this rolled-back disposable test.
-grant execute on function public.import_warehouse_inventory(text,jsonb,boolean) to authenticated;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000801', true);
 

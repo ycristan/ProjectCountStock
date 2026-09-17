@@ -194,3 +194,200 @@ $$;
 -- will grant EXECUTE only when scoped reads/writes and the replacement UI are ready.
 revoke all on function public.import_warehouse_inventory(text, jsonb, boolean)
 from public, anon, authenticated, service_role;
+
+
+-- Scope public inventory reads to protected assignments, never editable JWT metadata.
+create function private.can_read_warehouse(p_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $
+  select auth.uid() is not null and (
+    exists (select 1 from public.counter_accounts a
+      join public.teams t on t.id = a.team_id
+      join public.count_sessions s on s.id = t.session_id
+      where a.auth_user_id = auth.uid() and s.warehouse_id = p_id)
+    or (private.is_solo_counter() and exists (
+      select 1 from public.solo_sessions s
+      where s.warehouse_id = p_id and s.assigned_to_counter and s.status = 'open'
+    ))
+  );
+$;
+revoke all on function private.can_read_warehouse(uuid) from public, anon;
+grant execute on function private.can_read_warehouse(uuid) to authenticated;
+
+drop policy counter_read on public.inventory_items;
+create policy counter_read on public.inventory_items for select to authenticated
+using (private.can_read_warehouse(warehouse_id));
+drop policy counter_read on public.item_bin_locations;
+create policy counter_read on public.item_bin_locations for select to authenticated
+using (exists (select 1 from public.inventory_items i
+  where i.brand_code = item_bin_locations.brand_code and private.can_read_warehouse(i.warehouse_id)));
+drop policy counter_read on public.count_sessions;
+create policy counter_read on public.count_sessions for select to authenticated
+using (exists (select 1 from public.teams t where t.session_id = count_sessions.id and t.id = public.my_team_id()));
+drop policy all_read on public.combined_results;
+
+-- Reject cross-warehouse writes even via service_role. Inventory transfers are
+-- already serialized against session creation and prohibited during active counts.
+create function private.guard_count_warehouse()
+returns trigger language plpgsql security invoker set search_path = ''
+as $
+declare wh uuid; item_wh uuid;
+begin
+  if tg_table_name in ('solo_entries', 'solo_session_items') then
+    select warehouse_id into wh from public.solo_sessions where id = new.session_id;
+  elsif tg_table_name = 'combined_results' then
+    select warehouse_id into wh from public.count_sessions where id = new.session_id;
+  else
+    select s.warehouse_id into wh from public.count_sessions s
+      join public.teams t on t.session_id = s.id where t.id = new.team_id;
+  end if;
+  select warehouse_id into item_wh from public.inventory_items where brand_code = new.brand_code;
+  if wh is null or item_wh is distinct from wh then
+    raise exception 'Product does not belong to the session warehouse';
+  end if;
+  return new;
+end;
+$;
+create trigger guard_count_warehouse before insert or update on public.count_entries
+for each row execute function private.guard_count_warehouse();
+create trigger guard_reconciliation_warehouse before insert or update on public.reconciliation_items
+for each row execute function private.guard_count_warehouse();
+create trigger guard_combined_warehouse before insert or update on public.combined_results
+for each row execute function private.guard_count_warehouse();
+create trigger guard_solo_warehouse before insert or update on public.solo_entries
+for each row execute function private.guard_count_warehouse();
+create trigger guard_solo_list_warehouse before insert or update on public.solo_session_items
+for each row execute function private.guard_count_warehouse();
+revoke all on function private.guard_count_warehouse() from public, anon, authenticated;
+
+-- Creation and the selected item list succeed or fail together.
+create function public.create_warehouse_solo_session(
+  p_title text, p_warehouse_id uuid, p_assigned boolean, p_restrict boolean,
+  p_codes text[], p_tare numeric
+) returns uuid language plpgsql security invoker set search_path = ''
+as $
+declare result_id uuid;
+begin
+  if not public.is_admin() then raise exception 'Unauthorized'; end if;
+  perform pg_catalog.pg_advisory_xact_lock(6969, 1);
+  if p_title is null or btrim(p_title) = '' then raise exception 'Title is required'; end if;
+  if not exists (select 1 from public.warehouses where id = p_warehouse_id) then raise exception 'Warehouse unavailable'; end if;
+  if p_assigned is null or p_restrict is null or p_codes is null or p_tare is null or p_tare < 0 then raise exception 'Invalid session settings'; end if;
+  if p_restrict and cardinality(p_codes) = 0 then raise exception 'Select at least one product'; end if;
+  if exists (select 1 from unnest(p_codes) code where not exists (
+    select 1 from public.inventory_items i where i.brand_code = code and i.warehouse_id = p_warehouse_id
+  )) then raise exception 'Product does not belong to the session warehouse'; end if;
+  insert into public.solo_sessions(title, warehouse_id, assigned_to_counter, restrict_to_list, box_tare_g)
+  values (btrim(p_title), p_warehouse_id, p_assigned, p_restrict, p_tare) returning id into result_id;
+  if p_restrict then
+    insert into public.solo_session_items(session_id, brand_code)
+    select result_id, code from (select distinct unnest(p_codes) as code) codes;
+  end if;
+  return result_id;
+end;
+$;
+revoke all on function public.create_warehouse_solo_session(text, uuid, boolean, boolean, text[], numeric) from public, anon;
+grant execute on function public.create_warehouse_solo_session(text, uuid, boolean, boolean, text[], numeric) to authenticated;
+
+CREATE OR REPLACE FUNCTION combine_session_results(p_session_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $
+DECLARE
+  v_brand_code TEXT;
+  v_bpu        INT;
+  v_team       RECORD;
+  v_total      BIGINT;
+  v_contrib    JSONB;
+BEGIN
+  perform pg_catalog.pg_advisory_xact_lock(6969, 1);
+  if not exists (select 1 from public.count_sessions where id = p_session_id and status <> 'fechada') then
+    raise exception 'Session closed or unavailable';
+  end if;
+  DELETE FROM combined_results WHERE session_id = p_session_id;
+
+  FOR v_brand_code, v_bpu IN
+    SELECT ii.brand_code, COALESCE(NULLIF(ii.bpu, 0), 1)
+    FROM   inventory_items ii
+    WHERE ii.warehouse_id = (select warehouse_id from public.count_sessions where id = p_session_id)
+    ORDER BY ii.brand_code
+  LOOP
+    v_total   := 0;
+    v_contrib := '[]'::JSONB;
+
+    FOR v_team IN
+      SELECT t.id        AS team_id,
+             t.team_name,
+             ri.status,
+             ri.contador_1_cases,    ri.contador_1_units,
+             ri.contador_2_cases,    ri.contador_2_units,
+             ri.independente_cases,  ri.independente_units,
+             ri.reconciliated_cases, ri.reconciliated_units
+      FROM   teams t
+      LEFT JOIN reconciliation_items ri
+             ON ri.team_id    = t.id
+            AND ri.brand_code = v_brand_code
+      WHERE  t.session_id = p_session_id
+        AND  t.status     = 'reconciliada'
+      ORDER BY t.team_name
+    LOOP
+      IF v_team.status = 'resolvido' THEN
+        v_total := v_total
+          + (COALESCE(v_team.reconciliated_cases, 0)::BIGINT * v_bpu)
+          + COALESCE(v_team.reconciliated_units, 0);
+      ELSIF v_team.independente_cases IS NOT NULL THEN
+        v_total := v_total
+          + (COALESCE(v_team.independente_cases, 0)::BIGINT * v_bpu)
+          + COALESCE(v_team.independente_units, 0);
+      ELSIF v_team.contador_1_cases IS NOT NULL THEN
+        -- ponytail: C1=C2, no discrepancy — C1 is official
+        v_total := v_total
+          + (COALESCE(v_team.contador_1_cases, 0)::BIGINT * v_bpu)
+          + COALESCE(v_team.contador_1_units, 0);
+      END IF;
+
+      v_contrib := v_contrib || jsonb_build_array(jsonb_build_object(
+        'team_id',             v_team.team_id,
+        'team_name',           v_team.team_name,
+        'independente_cases',  v_team.independente_cases,
+        'independente_units',  v_team.independente_units,
+        'contador_1_cases',    v_team.contador_1_cases,
+        'contador_1_units',    v_team.contador_1_units,
+        'contador_2_cases',    v_team.contador_2_cases,
+        'contador_2_units',    v_team.contador_2_units,
+        'reconciliated_cases', v_team.reconciliated_cases,
+        'reconciliated_units', v_team.reconciliated_units,
+        'had_discrepancy',     (v_team.status = 'resolvido')
+      ));
+    END LOOP;
+
+    INSERT INTO combined_results (
+      session_id, brand_code,
+      total_cases, total_units,
+      contributing_teams, status
+    ) VALUES (
+      p_session_id, v_brand_code,
+      (v_total / v_bpu)::INT,
+      (v_total % v_bpu)::INT,
+      v_contrib,
+      'Avl'
+    )
+    ON CONFLICT (session_id, brand_code) DO UPDATE SET
+      total_cases        = EXCLUDED.total_cases,
+      total_units        = EXCLUDED.total_units,
+      contributing_teams = EXCLUDED.contributing_teams,
+      status             = EXCLUDED.status;
+  END LOOP;
+
+  -- fix: encerra a sessão (enum já previa 'fechada', nunca era usado)
+  UPDATE count_sessions SET status = 'fechada' WHERE id = p_session_id;
+END;
+$$;
+
+
+-- Only server-side, authorized administrative actions may combine results.
+revoke all on function public.combine_session_results(uuid) from public, anon, authenticated;
+grant execute on function public.combine_session_results(uuid) to service_role;
+-- Import remains disabled until all scoped paths pass the integration suite.
+
+-- Replacement upload and scoped session paths ship together with this migration.
+grant execute on function public.import_warehouse_inventory(text,jsonb,boolean) to authenticated;

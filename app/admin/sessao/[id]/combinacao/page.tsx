@@ -1,3 +1,4 @@
+import { isAdmin } from '@/lib/authorization'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
@@ -29,14 +30,16 @@ export default async function CombinacaoPage({
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user?.user_metadata?.role !== 'admin') redirect('/login')
+  if (!(await isAdmin())) redirect('/login')
 
   const { data: session } = await supabase
     .from('count_sessions')
-    .select('id, created_at, status')
+    .select('id, created_at, status, warehouse_id')
     .eq('id', sessionId)
     .single()
+
+  if (!session) redirect('/admin/sessoes')
+  const storedResults = session.status === 'fechada' ? await fetchAllRows<{ brand_code: string; total_cases: number; total_units: number }>((from, to) => supabase.from('combined_results').select('brand_code, total_cases, total_units').eq('session_id', sessionId).range(from, to)) : []
 
   const { data: teams } = await supabase
     .from('teams')
@@ -122,6 +125,7 @@ export default async function CombinacaoPage({
         supabase
           .from('inventory_items')
           .select('brand_code, brand_name, bpu, category, category1')
+          .eq('warehouse_id', session.warehouse_id)
           .range(from, to)
     ),
   ])
@@ -188,6 +192,7 @@ export default async function CombinacaoPage({
         reconciliated_cases: r.reconciliated_cases,
         reconciliated_units: r.reconciliated_units,
       }))}
+      storedResults={session.status === 'fechada' ? storedResults : undefined}
       inventory={inventory}
       isConfirmed={(existing?.length ?? 0) > 0}
       counters={counters}

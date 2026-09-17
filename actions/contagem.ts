@@ -13,6 +13,8 @@ export type EntryExistente = {
 }
 
 export type ItemBusca = {
+  brand_active?: boolean
+  warehouse_id?: string
   brand_code: string
   brand_name: string
   bpu: number
@@ -48,13 +50,17 @@ export async function carregarInventario(): Promise<ItemBusca[]> {
 
   const { teamId, counterRole } = access
 
-  const [items, binData, entries, { data: teamRow }] = await Promise.all([
-    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null }>(
+  const { data: teamRow } = await supabase.from('teams').select('session_id').eq('id', teamId).single()
+  if (!teamRow) return []
+  const { data: sessionRow } = await supabase.from('count_sessions').select('warehouse_id, box_tare_g').eq('id', teamRow.session_id).single()
+  if (!sessionRow?.warehouse_id) return []
+  const [items, binData, entries] = await Promise.all([
+    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null; brand_active: boolean }>(
       (from, to) =>
         supabase
           .from('inventory_items')
-          .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
-          .eq('brand_active', true)
+          .select('brand_code, brand_name, bpu, pallet_size, weight_avg, brand_active')
+          .eq('warehouse_id', sessionRow.warehouse_id)
           .order('brand_code', { ascending: true })
           .range(from, to)
     ),
@@ -70,18 +76,9 @@ export async function carregarInventario(): Promise<ItemBusca[]> {
         .eq('is_joint_recount', false)
         .range(from, to)
     ),
-    supabase.from('teams').select('session_id').eq('id', teamId).single(),
   ])
 
-  let box_tare_g = 300
-  if (teamRow?.session_id) {
-    const { data: sessionRow } = await supabase
-      .from('count_sessions')
-      .select('box_tare_g')
-      .eq('id', teamRow.session_id)
-      .single()
-    if (sessionRow?.box_tare_g) box_tare_g = sessionRow.box_tare_g
-  }
+  const box_tare_g = sessionRow.box_tare_g ?? 300
 
   const entryMap = Object.fromEntries(entries.map((e) => [e.brand_code, e]))
   const binMap: Record<string, string[]> = {}
@@ -93,6 +90,7 @@ export async function carregarInventario(): Promise<ItemBusca[]> {
   return items.map((item) => {
     const entry = entryMap[item.brand_code]
     return {
+      brand_active: item.brand_active,
       brand_code: item.brand_code,
       brand_name: item.brand_name,
       bpu: item.bpu,
@@ -130,10 +128,16 @@ export async function lancarContagem(
 
   const { teamId, counterRole } = access
 
+  const { data: team } = await supabase.from('teams').select('session_id').eq('id', teamId).single()
+  if (!team) return { error: 'Session unavailable.' }
+  const { data: session } = await supabase.from('count_sessions').select('warehouse_id, status').eq('id', team.session_id).single()
+  if (!session || session.status === 'fechada') return { error: 'Session closed or unavailable.' }
+
   const { data: item, error: itemError } = await supabase
     .from('inventory_items')
     .select('bpu, pallet_size, brand_name')
     .eq('brand_code', payload.brand_code)
+    .eq('warehouse_id', session.warehouse_id)
     .single()
 
   if (itemError || !item) return { error: 'Item not found.' }

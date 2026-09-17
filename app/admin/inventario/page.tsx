@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { InventoryTemplateDownload } from '@/components/InventoryTemplateDownload'
+import { InventoryUpload } from '@/components/InventoryUpload'
 import { listarInventario } from '@/actions/inventario'
 import { InventarioClient } from '@/components/InventarioClient'
 

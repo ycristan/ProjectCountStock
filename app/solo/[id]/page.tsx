@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase-server'
+import { isSoloCounter } from '@/lib/authorization'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 import type { ItemBusca } from '@/actions/contagem'
@@ -7,28 +7,24 @@ import { SoloCounterClient } from './_components/SoloCounterClient'
 
 export default async function SoloCounterPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'counter' || user.user_metadata?.is_solo_counter !== true) {
-    notFound()
-  }
+  if (!(await isSoloCounter())) notFound()
 
   const admin = createAdminClient()
   const { data: session } = await admin
     .from('solo_sessions')
-    .select('id, title, status, assigned_to_counter, restrict_to_list, counter_name, box_tare_g')
+    .select('id, title, status, assigned_to_counter, restrict_to_list, counter_name, box_tare_g, warehouse_id')
     .eq('id', id)
     .single()
 
   if (!session || !session.assigned_to_counter || session.status !== 'open') notFound()
 
   const [inventory, entries, listItems] = await Promise.all([
-    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null }>(
+    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null; brand_active: boolean }>(
       (from, to) =>
         admin
           .from('inventory_items')
-          .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
-          .eq('brand_active', true)
+          .select('brand_code, brand_name, bpu, pallet_size, weight_avg, brand_active')
+          .eq('warehouse_id', session.warehouse_id)
           .order('brand_code')
           .range(from, to)
     ),
@@ -43,6 +39,9 @@ export default async function SoloCounterPage({ params }: { params: Promise<{ id
   ])
 
   const allowedCodes = session.restrict_to_list ? new Set(listItems.map((i) => i.brand_code)) : null
+  const binRows = await fetchAllRows<{ brand_code: string; bin_location: string }>((from, to) => admin.from('item_bin_locations').select('brand_code, bin_location, inventory_items!inner(warehouse_id)').eq('inventory_items.warehouse_id', session.warehouse_id).range(from, to))
+  const binsByCode: Record<string, string[]> = {}
+  for (const row of binRows) (binsByCode[row.brand_code] ??= []).push(row.bin_location)
   const entryMap = Object.fromEntries(entries.map((e) => [e.brand_code, e]))
 
   const items: ItemBusca[] = inventory
@@ -50,13 +49,14 @@ export default async function SoloCounterPage({ params }: { params: Promise<{ id
     .map((i) => {
       const e = entryMap[i.brand_code]
       return {
+        brand_active: i.brand_active,
         brand_code: i.brand_code,
         brand_name: i.brand_name,
         bpu: i.bpu,
         pallet_size: i.pallet_size,
         weight_avg: i.weight_avg ?? 0,
         box_tare_g: session.box_tare_g,
-        bins: [],
+        bins: binsByCode[i.brand_code] ?? [],
         jaContado: !!e,
         entryExistente: e ? { pallets: e.pallets, cases: e.cases, units: e.units } : null,
       }
