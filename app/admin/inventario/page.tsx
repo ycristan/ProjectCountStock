@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { InventoryTemplateDownload } from '@/components/InventoryTemplateDownload'
 import { listarInventario } from '@/actions/inventario'
 import { InventarioClient } from '@/components/InventarioClient'
 
@@ -18,6 +19,7 @@ export default async function InventarioPage() {
           Upload .xlsx →
         </Link>
       </div>
+      <InventoryTemplateDownload />
       <InventarioClient items={items} />
     </div>
   )

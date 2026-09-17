@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react'
 import { uploadInventory, buscarInventarioParaDownload } from '@/actions/sessao'
 import Link from 'next/link'
+import { InventoryTemplateDownload } from '@/components/InventoryTemplateDownload'
 import * as XLSX from 'xlsx'
 
 type UploadState = { error?: string; success?: boolean; count?: number; skipped?: number } | null
@@ -71,6 +72,7 @@ export default function UploadPage() {
       <p className="text-sm text-slate-500 mb-6">
         .xlsx file with columns: Brand Code, Brand Name, Brand Purchase Unit, Pallet Size, Weight AVG, Category, Category1, BIN Location 1–4.
       </p>
+      <InventoryTemplateDownload />
       <form action={formAction} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">File</label>
