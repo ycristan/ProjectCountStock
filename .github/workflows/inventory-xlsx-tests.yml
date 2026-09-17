@@ -8,6 +8,9 @@ on:
       - 'package*.json'
       - '.github/workflows/inventory-xlsx-tests.yml'
   workflow_dispatch:
+concurrency:
+  group: inventory-xlsx-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -22,9 +25,6 @@ jobs:
         with:
           node-version: '24'
       - name: Install dependencies without lifecycle scripts
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run real XLSX roundtrip and rejection tests
         run: node --experimental-vm-modules --test --test-reporter=tap tests/xlsx/*.test.mjs
-      - name: Export generated dependency lock (temporary)
-        run: |
-          node -e "console.log('LOCKFILE_START'); console.log(require('node:fs').readFileSync('package-lock.json','utf8')); console.log('LOCKFILE_END')"
