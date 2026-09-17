@@ -73,3 +73,8 @@
 - Importação e mudanças de ciclo de sessão/inventário usam o lock transacional já existente, tomado antes dos locks de linha. Leituras e contagens comuns não ganham esse lock global diretamente; medir contenção antes de elevar a escala.
 - A biblioteca Excel do npm estava na versão antiga 0.18.5. Esta branch usa a distribuição oficial SheetJS 0.20.3 e lockfile; validar importações/exportações legadas antes de publicar a mudança de dependência.
 - Referências técnicas consultadas: https://supabase.com/docs/guides/database/functions ; https://docs.sheetjs.com/docs/getting-started/installation/nodejs/ ; https://github.com/thejoshwolfe/yauzl . Changelog markdown do Supabase indisponível ao leitor web; referências de funções/CLI verificadas na documentação oficial.
+
+## Template Excel para download — 2026-09-17
+- Pedido explícito de Yuri: disponibilizar download do modelo do novo upload dentro do app.
+- Reutilizar os 13 cabeçalhos do validador. Uma folha, sem produtos fictícios ou linhas instrutivas importáveis; instruções ficam na interface.
+- Enquanto o upload antigo existir, mostrar aviso claro de incompatibilidade com o novo formato. Não publicar a PR antes dos critérios de isolamento/importação já estabelecidos.

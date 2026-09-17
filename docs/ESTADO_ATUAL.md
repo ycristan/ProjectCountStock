@@ -74,3 +74,14 @@ Ainda NÃO implementado/liberado:
 - Acrescentados limites de células antes do parser e três testes para dimensões de worksheet incorretas/excesso de células. Não truncar o arquivo para cumprir limite: arquivo inválido deve ser rejeitado, nunca parcialmente importado.
 - Próxima etapa: Server Actions/interface de importação e isolamento de sessões/consultas por WHS, antes de conceder execução ao RPC. O leitor novo ainda não está ligado ao upload. Continuam pendentes UI unificada/manual/toggle e ZIP.
 - Nada aplicado ao banco real, nenhum merge. PR #70 continua rascunho. Os commits posteriores a esse código validado nesta etapa são documentação.
+
+## Template para download — 2026-09-17
+- Implementado na PR #70: botão `Download Excel template` em /admin/inventario e /admin/upload, com instruções de preenchimento e aviso de novo formato ainda não aceito pelo upload atual.
+- `lib/inventory-template.ts` reutiliza INVENTORY_HEADERS e SheetJS: uma folha Inventory, 13 cabeçalhos, linha vazia de entrada formatada (códigos como texto). Não contém produtos fictícios, fórmulas nem instruções dentro dos dados. Copiar a linha formatada ao acrescentar produtos.
+- Componente cliente carrega o gerador sob demanda, mostra preparação/erro e não acessa o banco. Sem dependências novas. O download do inventário atual permanece separado.
+- Commit validado: `d88aa963ca09eeb674d73bc5608bf49a9f986fc2`. **212 testes aprovados**: 105 contratos (https://github.com/ycristan/ProjectCountStock/actions/runs/35209068512), 35 XLSX incluindo 6 novos (https://github.com/ycristan/ProjectCountStock/actions/runs/35209068238), 72 banco (https://github.com/ycristan/ProjectCountStock/actions/runs/35209068426). Upgrade histórico passou, lint sem erros, Vercel Preview success.
+- O teste XLSX grava/reabre o modelo, preenche e passa pelo leitor real: preserva código 006323, Status FALSE, BPU 1 e opcionais vazios. Modelo vazio não é aceito como importação. Verifica também cabeçalhos, formatação, ausência de dados/fórmulas e chamada de download.
+- Um teste inicial assumia que sheet_to_json omitiria a linha com strings vazias formatadas; corrigido para verificar explicitamente as 13 células vazias. Nenhum teste removido ou ignorado.
+- Revisão React: gerador carregado sob demanda, botão type=button, estado de preparação, erro acessível e nenhuma mudança nas fronteiras de autorização.
+- Não executado teste visual autenticado nem abertura manual no Excel. Geração/releitura automática e compilação não provam interação real do navegador.
+- Nenhum merge, mudança de produção ou aplicação de migration. PR #70 continua rascunho. Próximos passos já autorizados de implementação: novo upload/duplicatas/confirmação e isolamento WHS antes da liberação. Este template não conclui o módulo Inventory nem libera Service.
