@@ -1,3 +1,4 @@
+import { InventoryDownload } from '@/components/InventoryDownload'
 import Link from 'next/link'
 import { InventoryUpload } from '@/components/InventoryUpload'
 import { listarInventario } from '@/actions/inventario'
@@ -19,7 +20,7 @@ export default async function InventarioPage() {
           Upload .xlsx →
         </Link>
       </div>
-      <a href="/api/admin/inventario" className="mb-4 inline-block rounded-xl border px-4 py-2 text-sm">Download full inventory (ZIP)</a>
+      <InventoryDownload />
       <InventoryUpload />
       <InventarioClient items={items} />
     </div>

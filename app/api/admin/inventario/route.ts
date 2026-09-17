@@ -1,3 +1,4 @@
+import { reportInventoryExportError } from '@/lib/report-inventory-export-error'
 import { isAdmin } from '@/lib/authorization'
 import { createClient } from '@/lib/supabase-server'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
@@ -6,6 +7,7 @@ import type { InventoryImportItem } from '@/lib/inventory-import'
 
 export async function GET() {
   if (!(await isAdmin())) return Response.json({ error: 'Unauthorized' }, { status: 403 })
+  try {
   const db = await createClient()
   const [{ data: warehouses, error }, items, bins] = await Promise.all([
     db.from('warehouses').select('id, name').order('name'),
@@ -14,7 +16,8 @@ export async function GET() {
     fetchAllRows<{ brand_code: string; bin_location: string }>((from, to) =>
       db.from('item_bin_locations').select('brand_code, bin_location').order('brand_code').order('bin_location').range(from, to)),
   ])
-  if (error || !warehouses) return Response.json({ error: 'Warehouse export unavailable.' }, { status: 503 })
+  if (error) throw new Error(error.message)
+  if (!warehouses) throw new Error('Warehouse data unavailable')
   const binMap = new Map<string, string[]>()
   for (const bin of bins) binMap.set(bin.brand_code, [...(binMap.get(bin.brand_code) ?? []), bin.bin_location])
   const archive = createInventoryArchive(warehouses.map(w => ({
@@ -28,4 +31,15 @@ export async function GET() {
     'Content-Disposition': 'attachment; filename="inventory-all-warehouses.zip"',
     'Cache-Control': 'private, no-store',
   } })
+  } catch (error) {
+    const message = error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' ? error.message : ''
+    const schemaUnavailable = /(?:warehouse_id|warehouses).*(?:does not exist|schema cache)|(?:could not find).*(?:warehouse_id|warehouses)/i.test(message)
+    const eventId = await reportInventoryExportError(schemaUnavailable ? 'schema_unavailable' : 'export_failed')
+    return Response.json({
+      error: schemaUnavailable
+        ? 'ZIP export is not available yet: the warehouse database update has not been applied. No inventory was changed.'
+        : 'Unable to download the inventory. Please try again later.',
+      eventId,
+    }, { status: schemaUnavailable ? 503 : 500, headers: { 'Cache-Control': 'private, no-store' } })
+  }
 }
