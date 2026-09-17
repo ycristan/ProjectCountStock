@@ -34,20 +34,23 @@ WHS isolation and historical report rendering are separate work. Stored closed s
 quantities are immutable; this is not a claim that every historical report already
 snapshots every inventory attribute. See PR #68 for the complete desired behavior.
 
-## Approved import format — PR #70
-`import-format.test.mjs` adds 81 pure tests, executed by the existing workflow
-without npm, database credentials or network access. Together with the original
-24 action tests: 105 passed on ad3b15fb6761bc0693baac179f5cbca42358f0c1.
-Run: https://github.com/ycristan/ProjectCountStock/actions/runs/35194500249
-
-Coverage: all 13 required headers and arbitrary order, mandatory values,
-optional zeros/blanks, invalid numeric/boolean input, explicit inactive status,
-WHS normalization and mixed-WHS rejection, all duplicate candidates,
-explicit/stale/forged choices, leading-zero strings, no partial payload,
-and export/reimport of the in-memory matrix.
-
-Limits: NOT real XLSX parsing, NOT database/RLS/concurrency tests, NOT proof of
-new warehouse confirmation or persisted atomicity. The pure module is deliberately
-not wired to the old importer. The XLSX adapter must reject formula/error cells,
-preserve formatted identifiers and apply file/resource limits. Future server
-actions must rerun validation and enforce authorization; client preview is not trusted.
+## PR #70 — verified Excel and database foundation
+- Pure/action tests: 105; run 35196624244.
+- Real XLSX tests: 26; run 35196624259. Run with
+  `npm ci --ignore-scripts` followed by
+  `node --experimental-vm-modules --test --test-reporter=tap tests/xlsx/*.test.mjs`.
+- PostgreSQL: 72 pgTAP assertions; run 35196624242, schema lint clean.
+  Use `supabase test db supabase/tests/database`; the sibling migrations directory
+  contains upgrade setup/assertion fixtures, not standalone pgTAP suites.
+- Upgrade verification in the disposable GitHub runner resets ONLY the local
+  database to 20260914142358, inserts closed-history fixtures, applies the new
+  migration, and compares all prior columns of nine tables. It asserts Main
+  associations and the original four enabled guard triggers.
+- Real XLSX coverage includes roundtrip, inactive status, optional values,
+  zero-padding, formula/error/date rejection, duplicate choices, mixed WHS,
+  extra/hidden sheets, merged cells, truncation, row/byte/ZIP limits and forged sizes.
+- Database tests temporarily grant RPC execute inside their rollback transaction
+  to exercise authenticated admin RLS. The migration grants no API execute access.
+  A synthetic BIN trigger fails after item upsert to test full rollback.
+- No production database connection or credentials are used. No concurrency load
+  test, full counter isolation, UI flow or live data import has been validated yet.

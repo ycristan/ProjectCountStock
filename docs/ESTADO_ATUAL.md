@@ -44,3 +44,25 @@ Yuri confirmou os 13 cabeçalhos definitivos, incluindo BPU, Status e WHS. Regis
 - Ainda pendentes: adaptador XLSX seguro (incluindo formato de códigos, fórmulas/erros e limites), warehouse no banco, transação de importação, interface de duplicatas/confirmação, isolamento completo dos contadores e download ZIP. Aprovação dupla e desconhecidos permanecem etapas próprias.
 - Não houve migration, alteração do banco de produção ou merge. Importador publicado continua no formato antigo. Não publicar multiwarehouse até que a separação dos contadores também esteja implementada e testada.
 - Regras da PR #68 copiadas para esta branch; PR #68 não foi mergeada. Histórico das proteções da PR #69 preservado.
+
+## Continuação da PR #70 — base Excel/banco validada em 2026-09-17
+Commit validado: `50893212d48aea32183741bdbafd8e64603d7d49`.
+- Aplicação: 105 testes passaram; https://github.com/ycristan/ProjectCountStock/actions/runs/35196624244
+- Excel real: 26 testes passaram; https://github.com/ycristan/ProjectCountStock/actions/runs/35196624259
+- Banco descartável: 72 testes passaram (30 existentes + 42 de warehouses/importação), lint sem erros; https://github.com/ycristan/ProjectCountStock/actions/runs/35196624242
+- A mesma execução recriou o schema anterior, inseriu histórico sintético, aplicou a nova migration e comparou nove tabelas: campos antigos preservados; produtos/sessões associados a Main; quatro guardas anteriores habilitadas.
+- Vercel informou status success para esse commit (Preview), não um teste funcional autenticado de produção.
+
+Implementado na branch:
+- `lib/inventory-xlsx.ts`: leitura de XLSX com uma folha visível, preservação de códigos textuais e zero-padding; rejeita fórmulas, erros/datas, células mescladas e dados além dos limites. Inspeção do arquivo compactado antes do parser: 4 MiB enviados, 32 MiB expandidos, até 500 entradas e 50.000 linhas de produtos. Limites técnicos; não limitam a quantidade de warehouses.
+- SheetJS fixado em 0.20.3 pela distribuição oficial; yauzl 3.4.0 para inspeção por streaming. `package-lock.json` gerado pelo npm no runner descartável, versionado e utilizado por `npm ci` no teste XLSX. Nenhum clone local.
+- `20260917073526_warehouse_inventory_import.sql`, nome gerado pelo Supabase CLI 2.117.0: cadastro dinâmico, IDs/FKs/índices, associação inicial a Main via nova coluna com default constante (sem desligar triggers de fechados), importação transacional e validação no banco.
+- Importação exige administrador protegido, confirmação para WHS nova, código globalmente único; aplica Status e zeros, substitui BINs e desativa ausentes apenas na WHS alvo. Falha posterior nos BINs reverte inclusive itens/warehouse recém-criados, conforme teste.
+- Transferência bloqueada com sessão ativa na origem/destino. BPU continua bloqueado durante solo aberto e a importação normal não pode corrigir BPU com equipe aberta; aprovação dupla continua fora deste bloco.
+- O novo RPC está SEM permissão de execução para anon/authenticated/service_role, deliberadamente. Testes concedem acesso apenas dentro de transação descartada.
+
+Ainda NÃO implementado/liberado:
+- Server Actions e interface do novo upload/confirmação, Warehouse na criação de sessões, isolamento completo de consultas/RLS/relatórios e ZIP por warehouse.
+- O novo leitor e RPC não estão conectados ao importador publicado. Regras de leitura antigas continuam; NÃO aplicar/publicar esta migration sozinha nem liberar Service.
+- Não há teste de carga/conexões concorrentes; as proteções usam lock transacional compartilhado, mas testes desta etapa são sequenciais.
+- Nenhuma migration aplicada à produção, nenhum merge. PR #70 permanece rascunho.

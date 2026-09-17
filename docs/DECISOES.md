@@ -63,3 +63,13 @@
 - Resolução de duplicatas revalida a linha escolhida; seleção inexistente/repetida é rejeitada. WHS misturadas continuam proibidas mesmo se uma linha de outra WHS seria descartada.
 - Comparação de WHS normaliza apenas caixa e espaços nas pontas; não assumir que "Main" e "Main Warehouse" são sinônimos. O adaptador deverá preservar os identificadores formatados de Excel antes da validação.
 - Validador não cria warehouses, não autoriza usuários e não substitui a futura transação/constraints. Ativação do novo importador depende de warehouse e isolamento de sessões prontos em conjunto.
+
+## Base técnica da importação — 2026-09-17
+- Importação em uma única função transacional SECURITY INVOKER, com autorização administrativa protegida e revalidação do payload no banco. Não expor o RPC até concluir o isolamento de leitura/gravação das sessões e substituir o upload antigo.
+- Cadastro de WHS e substituição de produtos/BINs fazem parte da mesma transação; qualquer erro reverte tudo. Desativação de ausentes usa warehouse_id, nunca o inventário inteiro.
+- Associação inicial de registros a Main usa ADD COLUMN com default constante para não disparar UPDATE de sessões fechadas. Teste de upgrade compara todos os campos anteriores de nove tabelas.
+- Identidade da warehouse de uma sessão fica fixa desde sua criação. Mudança do nome da warehouse preserva IDs e vínculos. Transferência de produto respeita contagens ativas na origem/destino.
+- Edição/importação comum de BPU fica bloqueada enquanto houver equipe aberta; não introduzir bypass até existir operação dedicada com duas identidades aprovadoras e recálculo seguro. Preservada também a trava de solo da PR #69.
+- Importação e mudanças de ciclo de sessão/inventário usam o lock transacional já existente, tomado antes dos locks de linha. Leituras e contagens comuns não ganham esse lock global diretamente; medir contenção antes de elevar a escala.
+- A biblioteca Excel do npm estava na versão antiga 0.18.5. Esta branch usa a distribuição oficial SheetJS 0.20.3 e lockfile; validar importações/exportações legadas antes de publicar a mudança de dependência.
+- Referências técnicas consultadas: https://supabase.com/docs/guides/database/functions ; https://docs.sheetjs.com/docs/getting-started/installation/nodejs/ ; https://github.com/thejoshwolfe/yauzl . Changelog markdown do Supabase indisponível ao leitor web; referências de funções/CLI verificadas na documentação oficial.
