@@ -31,12 +31,6 @@ jobs:
             supabase init
           fi
 
-      - name: Generate warehouse migration filename (temporary)
-        run: |
-          supabase --version
-          supabase migration new --help
-          supabase migration new warehouse_inventory_import
-
       - name: Start disposable Supabase
         run: supabase start
 
