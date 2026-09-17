@@ -43,10 +43,10 @@ select throws_ok($$select public.create_warehouse_solo_session('Atomic failure',
 select is((select count(*) from public.solo_sessions where title='Atomic failure'),0::bigint,'Invalid list leaves no orphan session');
 select lives_ok($$select public.create_warehouse_solo_session('Scope solo','00000000-0000-0000-0000-000000000910',true,true,array['scope-service'],300)$$,
 'Valid scoped solo session and list created together');
-select lives_ok($select public.create_warehouse_solo_session('Scope free','00000000-0000-0000-0000-000000000910',true,false,'{}',300)$,
+select lives_ok($$select public.create_warehouse_solo_session('Scope free','00000000-0000-0000-0000-000000000910',true,false,'{}',300)$$,
 'Unrestricted solo remains scoped to warehouse');
-select throws_ok($insert into public.solo_entries(session_id,brand_code,units)
-select id,'scope-main',1 from public.solo_sessions where title='Scope free'$,
+select throws_ok($$insert into public.solo_entries(session_id,brand_code,units)
+select id,'scope-main',1 from public.solo_sessions where title='Scope free'$$,
 'P0001','Product does not belong to the session warehouse','Admin solo entry also checks warehouse');
 select throws_ok($$insert into public.solo_session_items(session_id,brand_code)
 select id,'scope-main' from public.solo_sessions where title='Scope solo'$$,
