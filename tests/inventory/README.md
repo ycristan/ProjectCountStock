@@ -33,3 +33,21 @@ Two-administrator team approval, automatic recalculation of persisted team resul
 WHS isolation and historical report rendering are separate work. Stored closed solo
 quantities are immutable; this is not a claim that every historical report already
 snapshots every inventory attribute. See PR #68 for the complete desired behavior.
+
+## Approved import format — PR #70
+`import-format.test.mjs` adds 81 pure tests, executed by the existing workflow
+without npm, database credentials or network access. Together with the original
+24 action tests: 105 passed on ad3b15fb6761bc0693baac179f5cbca42358f0c1.
+Run: https://github.com/ycristan/ProjectCountStock/actions/runs/35194500249
+
+Coverage: all 13 required headers and arbitrary order, mandatory values,
+optional zeros/blanks, invalid numeric/boolean input, explicit inactive status,
+WHS normalization and mixed-WHS rejection, all duplicate candidates,
+explicit/stale/forged choices, leading-zero strings, no partial payload,
+and export/reimport of the in-memory matrix.
+
+Limits: NOT real XLSX parsing, NOT database/RLS/concurrency tests, NOT proof of
+new warehouse confirmation or persisted atomicity. The pure module is deliberately
+not wired to the old importer. The XLSX adapter must reject formula/error cells,
+preserve formatted identifiers and apply file/resource limits. Future server
+actions must rerun validation and enforce authorization; client preview is not trusted.

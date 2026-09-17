@@ -26,11 +26,40 @@
 - `user_metadata` pode continuar a guardar apenas informação de apresentação, como nome; não concede permissões.
 - A migration de autorização precisa ser aplicada no Supabase antes de publicar o código que passa a depender dela.
 
-## Testes de contrato — PR #69
-Executar funções reais com dependências simuladas sem produção. Manter falhas de regras pendentes visíveis; não inverter expectativas nem usar skip para aparentar aprovação. Cobertura da aplicação não substitui testes de banco e integração.
+## Inventory e Warehouses — 2026-09-14
+- Regras consolidadas em [INVENTORY_WAREHOUSES.md](./INVENTORY_WAREHOUSES.md); consultar antes de implementar.
+- Distinguir decisões explícitas de Yuri, propostas técnicas e pendências. Não inferir regras ausentes a partir de validações antigas.
+- PR #65 contém regras superadas; não fazer merge.
+- Fluxo acordado: revisar especificação, depois implementar em etapas verificáveis.
+- Trabalho de código pelo GitHub, sem clone local; conectores/API primeiro conforme AGENTS.md.
 
-## Proteções solo implementadas em proposta — PR #69
-- Guardas na aplicação e no banco: fechados imutáveis, lista iniciada congelada, BPU bloqueado enquanto existir solo aberto. Campos restantes continuam editáveis com BPU inalterado.
-- Início durável: nome do contador já definido ou primeira entrada registrada; backfill preserva esse fato para sessões existentes. Não exigir recontagem.
-- Triggers invoker em schema privado mantêm as permissões atuais; não expõem RPC privilegiada. Testes de banco usam service_role para verificar também caminhos administrativos.
-- Sem aplicação em produção nem merge nesta etapa. Aprovação dupla de equipes não foi implementada aqui.
+### Warehouses — complemento aprovado
+- Uma planilha por warehouse; WHS obrigatório e único no arquivo. Importação afeta apenas essa warehouse, inclusive inativação de produtos ausentes.
+- Cadastro dinâmico, sem limitar a Main/Service; novos nomes exigem confirmação administrativa. Identificação interna estável permite renomear sem perder vínculos/histórico.
+- Brand Code permanece globalmente único. Sessão escolhe warehouse e restringe seus produtos.
+
+### Decisões finais aprovadas — 2026-09-14
+- BPU corrigido com duas aprovações recalcula registros da sessão aberta sem recontagem física; futuros usam novo BPU, fechados são imutáveis. Manter trilha de aprovação.
+- BPU 1 permite contagem por peso se Weight Avg > 0, além de Units; Cases/Pallets desativados.
+- Lista fechada iniciada não recebe novos produtos nem por administrador.
+- Exportação completa em ZIP, uma planilha por WHS com ativos/inativos, Status e WHS.
+- WHS ignora caixa e espaços nas pontas. Transferência bloqueada durante sessão ativa na origem ou destino (restrição aceita por enquanto).
+- Todos os produtos e sessões atuais pertencem a Main; migração preserva histórico/resultados. Não existem itens Service.
+
+## Publicação das proteções solo — 2026-09-15
+- PR #69 e sua migration foram explicitamente autorizadas e publicadas. Não confundir esse escopo com implementação de warehouses ou aprovação dupla de equipes.
+- Migration no repositório: 20260914142358_solo_inventory_write_guards.sql; registro remoto do conector: 20260915071703 / solo_inventory_write_guards. Comparar nomes e SQL antes de sincronizar histórico; não reaplicar por divergência de timestamp.
+- Preservar testes e decisões da PR #69 ao atualizar esta branch documental em relação à main.
+
+## Cabeçalhos aprovados — 2026-09-16
+- Modelo único: Brand Code, Brand Name, Category, Category1, BPU, Pallet Size, Weight AVG, BIN Location 1, BIN Location 2, BIN Location 3, BIN Location 4, Status, WHS.
+- BPU substitui Brand Purchase Unit. Weight AVG é em gramas.
+- Todas as colunas presentes, qualquer ordem no upload; valores opcionais podem ficar vazios. Regras detalhadas em INVENTORY_WAREHOUSES.md.
+
+## Testes e implementação incremental — 2026-09-17
+- Preservar contratos da PR #69: funções reais com dependências simuladas, sem usar skip/inverter expectativas para aparentar aprovação; testes da aplicação não substituem banco.
+- Proteções da PR #69 foram publicadas em 15/09, conforme registro acima; referências antigas a "proposta, sem produção" descrevem a etapa anterior à publicação.
+- PR #70 começa pelo formato/validação sem ligar gravações. Não aceitar parcialmente uma planilha inválida, nem desativar tudo ao receber arquivo vazio.
+- Resolução de duplicatas revalida a linha escolhida; seleção inexistente/repetida é rejeitada. WHS misturadas continuam proibidas mesmo se uma linha de outra WHS seria descartada.
+- Comparação de WHS normaliza apenas caixa e espaços nas pontas; não assumir que "Main" e "Main Warehouse" são sinônimos. O adaptador deverá preservar os identificadores formatados de Excel antes da validação.
+- Validador não cria warehouses, não autoriza usuários e não substitui a futura transação/constraints. Ativação do novo importador depende de warehouse e isolamento de sessões prontos em conjunto.

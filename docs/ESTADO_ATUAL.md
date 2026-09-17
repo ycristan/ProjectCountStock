@@ -1,49 +1,46 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-09-01
+Atualizado: 2026-09-17
 
-## Situação observada
-- Produção Vercel: deployment mais recente estava pronto e sem erros de build observados.
-- O repositório possui memória detalhada do Claude, agora complementada por esta documentação compartilhada.
-- A aplicação tem fluxo de inventário, contagem em equipe, reconciliação, combinação e contagem solo.
+## Confirmado
+- PR #66 (Sentry) e PR #67 (conectores primeiro) mergeadas.
+- Vercel consultada pelo conector em 14/09: produção project-count-stock-ylmm READY, commit 86c603bd9bd9b5a4414eafb58ddd62bea22c1a25, correspondente à PR #66.
+- Consulta de logs de produção da última hora não retornou erros/falhas fatais. Isso não prova ausência de erros em outros períodos.
+- Yuri confirmou visualmente eventos de teste do navegador e servidor no Sentry em Preview. Página e endpoint temporários foram removidos antes do merge.
+- Consulta direta ao Sentry pelo agente ainda não validada: na última tentativa faltava credencial de leitura. DSN de envio não concede leitura.
+- Histórico da conversa registra conclusão das PRs #63 (autorização) e #64 (manutenção do banco). A descrição anterior de P0 em preparação está desatualizada; não tratar como auditoria atual. Aplicação das migrations foi relatada na sessão anterior, não reverificada hoje.
 
-## Prioridade P0 — segurança de autorização
-A auditoria identificou que permissões de administrador e contador dependem de `user_metadata` no Supabase. Esse campo pode ser alterado pelo próprio usuário autenticado e não pode ser usado como chave de autorização.
+## Trabalho atual
+Consolidar e revisar [Inventory e Warehouses](./INVENTORY_WAREHOUSES.md).
+As regras descrevem a próxima implementação, não funcionalidades já publicadas.
+A PR #65 foi encerrada sem merge. Especificação em revisão na PR #68.
+Yuri aprovou uma planilha por warehouse, WHS obrigatório, atualização isolada e cadastro dinâmico com confirmação para warehouses novas. Essas regras ainda não foram implementadas.
+As sete definições pendentes foram aprovadas e incorporadas na PR #68, incluindo BPU, lista fechada, ZIP e migração para Main. Conferência estática inicial registrada na especificação; ainda faltam rastreamento integral de banco/relatórios e execução dos testes. A PR #68 permanece documental; as proteções solo foram implementadas e publicadas separadamente pela PR #69, conforme atualização abaixo.
 
-A correção está em preparação na branch `codex/security-authorization-hardening`. A escolha técnica é uma tabela protegida, `app_user_access`, porque a autorização passa a ter efeito imediato — sem esperar a renovação de token.
+## Cuidados e backlog preservados
+- Importações e outras operações com múltiplas gravações precisam ser transacionais.
+- Proteger PINs contra tentativas repetidas e validar limites/estrutura de XLSX.
+- Conferir estado atual de CI, lockfile e lint antes de propor trabalho duplicado.
+- Evoluções de contagem/reconciliação por peso e finalização admin/independente continuam no backlog; não estão automaticamente autorizadas por esta documentação.
+- Limpeza de código legado depende de análise e verificação de regressão.
 
-A correção deve:
-1. Mover função e vínculos de acesso para dados protegidos (`app_metadata` ou tabela de perfil controlada pelo banco).
-2. Atualizar as políticas RLS e o `proxy.ts`.
-3. Criar verificações centralizadas para administrador, contador e contador solo.
-4. Proteger todas as Server Actions, especialmente as que usam `service_role`.
-5. Validar que um contador não consegue administrar inventário, equipes ou sessões.
+## Publicação confirmada — 2026-09-15
+- Yuri autorizou aplicação no banco e merge da PR #69. Merge concluído: 6638fec7b5d54647270961191fd76200ea71969c.
+- Último head aprovado 61b1a6dd3d95e7bd8b6beeb498f5e0aae0d61f36 passou nos workflows de aplicação e banco (24 + 30 testes). Execuções: https://github.com/ycristan/ProjectCountStock/actions/runs/34856063111 e https://github.com/ycristan/ProjectCountStock/actions/runs/34856062990.
+- Supabase: SQL de supabase/migrations/20260914142358_solo_inventory_write_guards.sql aplicado pelo conector como solo_inventory_write_guards, versão remota 20260915071703. As versões numéricas diferem porque o conector atribui a data de aplicação; não reaplicar cegamente a migration. Quatro triggers habilitados e nenhum marcador de início pendente no backfill.
+- Vercel project-count-stock-ylmm: deployment dpl_7MPz8nbE6mxnThn6n62FpMhsMDEj READY em produção no commit do merge. https://project-count-stock-ylmm.vercel.app respondeu HTTP 200. Consulta de error/fatal deste deployment até 07:20 UTC não encontrou logs; não equivale a teste funcional autenticado completo.
+- Proteções publicadas: registros solo encerrados, lista iniciada e BPU durante solo aberto. Nenhuma nova funcionalidade de warehouse ou aprovação dupla de equipes foi publicada.
+- Advisor de segurança: proteção contra senhas vazadas desativada; não alterada nesta publicação. Aviso INFO de app_user_access sem políticas é coerente com acesso exclusivo via funções protegidas/service_role; não abrir acesso para eliminar o aviso.
+- A PR #68 continua sem merge e precisa preservar estas atualizações ao ser reconciliada com main.
 
-Nenhuma nova funcionalidade deve passar à frente desta correção.
+## Modelo de planilha — 2026-09-16
+Yuri confirmou os 13 cabeçalhos definitivos, incluindo BPU, Status e WHS. Registrados na especificação da PR #68. Importador em produção ainda não foi alterado para o novo modelo.
 
-## Depois da P0
-1. Contagem por peso: permitir adicionar rodadas e reconciliar por peso.
-2. Melhorar busca de inventário: filtro ativo/inativo, confirmação para itens inativos e informações de localização.
-3. Especificar separadamente a evolução do fluxo de finalização entre administrador e independente.
-4. Criar testes automatizados, CI, lockfile e corrigir o script de lint.
-5. Fazer limpeza de rotas/componentes legados somente após testes de regressão.
-
-## Riscos conhecidos
-- Operações de criar/apagar equipes ou importar inventário fazem várias alterações separadas; migrar gradualmente para operações transacionais.
-- PINs de quatro dígitos exigem proteção contra tentativas repetidas e auditoria de login.
-- Arquivos XLSX precisam de validação de tamanho, estrutura e conteúdo antes de alterar o inventário.
-
-## Testes isolados de Inventory — 2026-09-14
-- PR #69 (rascunho): https://github.com/ycristan/ProjectCountStock/pull/69
-- Execução https://github.com/ycristan/ProjectCountStock/actions/runs/34851928747 no commit 1f7282016b53fe9d03d2ed36c4f176ef73f75b17: 11 testes, 8 passaram, 3 falharam, nenhum skip/TODO.
-- Falhas de contrato na barreira das Server Actions: gravação administrativa em solo fechado, inclusão em lista iniciada e edição direta de BPU durante solo ativo.
-- Dependências de banco simuladas; não prova ausência de proteções SQL/RLS em produção. Aprovação dupla, recálculo persistido, peso e relatórios fechados ainda não testados integralmente.
-- Nenhuma alteração de aplicação/migration, nenhum merge. Regras consolidadas na PR #68 ainda separada.
-
-## Correções dos três contratos — 2026-09-14
-- PR #69 agora contém correções de Server Actions e migration proposta; deixou de ser apenas diagnóstico.
-- Commit validado: 625a6e5903e94e7168f02e97e124845c66e3e6bb. Aplicação: 24 testes passaram (https://github.com/ycristan/ProjectCountStock/actions/runs/34855714811). Banco descartável: 30 testes passaram (12 existentes + 18 novos), migration aplicada e lint sem erros (https://github.com/ycristan/ProjectCountStock/actions/runs/34855714520). Build Vercel Preview passou.
-- Consulta somente leitura à produção confirmou políticas administrativas sem guardas de estado e ausência de triggers nas quatro tabelas verificadas. Nenhuma mudança foi aplicada ao banco real.
-- Migration 20260914142358_solo_inventory_write_guards.sql protege registros solo encerrados, lista iniciada e BPU durante solo aberto; inclui marcador durável de início e bloqueios transacionais.
-- Para publicar: revisão e autorização explícita, aplicar migration no banco correto, depois merge/deploy. Preview usa banco de produção e não substitui testes isolados.
-- Escopo ainda separado: aprovação dupla/reprocessamento em equipes, warehouses e renderização histórica dos relatórios. Não houve teste de carga concorrente. Mais detalhes em tests/inventory/README.md.
+## Implementação iniciada — PR #70, 2026-09-17
+- Branch `codex/inventory-warehouse-import`, criada de main 6638fec7b5d54647270961191fd76200ea71969c; PR https://github.com/ycristan/ProjectCountStock/pull/70 em rascunho.
+- Primeiro bloco: `lib/inventory-import.ts`, validador puro do formato aprovado e matriz de exportação. Não está conectado a nenhuma tela/Server Action e não acessa banco.
+- Cabeçalhos obrigatórios em qualquer ordem; WHS única; Status explícito; BPU >= 1; opcionais vazios viram zero; todos os grupos duplicados exigem escolha explícita de linha. Não retorna payload parcial em caso de erro.
+- Commit ad3b15fb6761bc0693baac179f5cbca42358f0c1: 105 testes de aplicação passaram (24 existentes + 81 do novo formato), zero falhas/skip/TODO. Evidência: https://github.com/ycristan/ProjectCountStock/actions/runs/35194500249. São testes sintéticos de código real; não provam isolamento SQL nem leitura de arquivos XLSX.
+- Ainda pendentes: adaptador XLSX seguro (incluindo formato de códigos, fórmulas/erros e limites), warehouse no banco, transação de importação, interface de duplicatas/confirmação, isolamento completo dos contadores e download ZIP. Aprovação dupla e desconhecidos permanecem etapas próprias.
+- Não houve migration, alteração do banco de produção ou merge. Importador publicado continua no formato antigo. Não publicar multiwarehouse até que a separação dos contadores também esteja implementada e testada.
+- Regras da PR #68 copiadas para esta branch; PR #68 não foi mergeada. Histórico das proteções da PR #69 preservado.
