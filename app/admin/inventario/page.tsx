@@ -19,7 +19,8 @@ export default async function InventarioPage() {
           Upload .xlsx →
         </Link>
       </div>
-      <InventoryTemplateDownload />
+      <a href="/api/admin/inventario" className="mb-4 inline-block rounded-xl border px-4 py-2 text-sm">Download full inventory (ZIP)</a>
+      <InventoryUpload />
       <InventarioClient items={items} />
     </div>
   )

@@ -199,7 +199,7 @@ from public, anon, authenticated, service_role;
 -- Scope public inventory reads to protected assignments, never editable JWT metadata.
 create function private.can_read_warehouse(p_id uuid)
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select auth.uid() is not null and (
     exists (select 1 from public.counter_accounts a
       join public.teams t on t.id = a.team_id
@@ -210,7 +210,7 @@ as $
       where s.warehouse_id = p_id and s.assigned_to_counter and s.status = 'open'
     ))
   );
-$;
+$$;
 revoke all on function private.can_read_warehouse(uuid) from public, anon;
 grant execute on function private.can_read_warehouse(uuid) to authenticated;
 
@@ -230,7 +230,7 @@ drop policy all_read on public.combined_results;
 -- already serialized against session creation and prohibited during active counts.
 create function private.guard_count_warehouse()
 returns trigger language plpgsql security invoker set search_path = ''
-as $
+as $$
 declare wh uuid; item_wh uuid;
 begin
   if tg_table_name in ('solo_entries', 'solo_session_items') then
@@ -247,7 +247,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 create trigger guard_count_warehouse before insert or update on public.count_entries
 for each row execute function private.guard_count_warehouse();
 create trigger guard_reconciliation_warehouse before insert or update on public.reconciliation_items
@@ -265,7 +265,7 @@ create function public.create_warehouse_solo_session(
   p_title text, p_warehouse_id uuid, p_assigned boolean, p_restrict boolean,
   p_codes text[], p_tare numeric
 ) returns uuid language plpgsql security invoker set search_path = ''
-as $
+as $$
 declare result_id uuid;
 begin
   if not public.is_admin() then raise exception 'Unauthorized'; end if;
@@ -285,13 +285,13 @@ begin
   end if;
   return result_id;
 end;
-$;
+$$;
 revoke all on function public.create_warehouse_solo_session(text, uuid, boolean, boolean, text[], numeric) from public, anon;
 grant execute on function public.create_warehouse_solo_session(text, uuid, boolean, boolean, text[], numeric) to authenticated;
 
 CREATE OR REPLACE FUNCTION combine_session_results(p_session_id UUID)
 RETURNS VOID
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp as $$
 DECLARE
   v_brand_code TEXT;
   v_bpu        INT;
