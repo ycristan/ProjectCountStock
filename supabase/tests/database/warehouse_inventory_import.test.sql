@@ -57,7 +57,7 @@ select lives_ok($$select public.import_warehouse_inventory(' MAIN ',
  jsonb_build_array(pg_temp.import_item('006323',24,false,'[]')))$$, 'Main normalization updates same warehouse');
 select is((select count(*) from public.warehouses),3::bigint,'Name case/space does not duplicate warehouse');
 select results_eq($$select brand_active,pallet_size,weight_avg from public.inventory_items where brand_code='006323'$$,
- $$values(false,0,0::numeric)$$,'Inactive status and zero optional values overwrite previous data');
+ $values (false,0,0::numeric)$$,'Inactive status and zero optional values overwrite previous data');
 select is((select count(*) from public.item_bin_locations where brand_code='006323'),0::bigint,'Empty BIN array clears old BINs');
 select is((select brand_active from public.inventory_items where brand_code='absent'),false,'Missing Main product becomes inactive');
 select results_eq($$select brand_code,brand_active from public.inventory_items where brand_code in ('s','t') order by brand_code$$,
@@ -86,7 +86,7 @@ select results_eq($$select brand_code,brand_active from public.inventory_items
  where brand_code in ('006323','absent') order by brand_code$$,
  $$values ('006323'::text,true),('absent'::text,true)$$,'Earlier item changes and inactivation rolled back');
 select results_eq($$select bin_location from public.item_bin_locations where brand_code='006323'$$,
- $$values('40B'::text)$$,'Deleted old BIN restored on failure');
+ $values ('40B'::text)$$,'Deleted old BIN restored on failure');
 select throws_ok($$select public.import_warehouse_inventory('Rollback WHS',
  jsonb_build_array(pg_temp.import_item('new',24,true,'["FAIL_BIN"]')),true)$$,
  'P0001','Synthetic BIN failure','Failure in new warehouse also rolls back');
