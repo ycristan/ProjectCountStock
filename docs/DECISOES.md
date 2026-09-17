@@ -78,3 +78,9 @@
 - Pedido explícito de Yuri: disponibilizar download do modelo do novo upload dentro do app.
 - Reutilizar os 13 cabeçalhos do validador. Uma folha, sem produtos fictícios ou linhas instrutivas importáveis; instruções ficam na interface.
 - Enquanto o upload antigo existir, mostrar aviso claro de incompatibilidade com o novo formato. Não publicar a PR antes dos critérios de isolamento/importação já estabelecidos.
+
+## Execução por entregas — 2026-09-17
+- Após aprovar uma entrega, Yuri não precisa autorizar cada passo técnico nem pedir continuidade. O agente executa implementação, correções e testes até concluir ou encontrar impedimento real.
+- Comunicação breve: progresso relevante, riscos ou decisões necessárias. Build isolado não é entrega funcional.
+- Interromper apenas por decisão de negócio não documentada, acesso indispensável, custo ou autorização de produção. Não confundir autonomia técnica com autorização para merge/migration em produção.
+- Ao encerrar, registrar estado verificável, evidências, pendências e próximo passo no repositório. Entregar link e roteiro curto de avaliação; não transferir testes técnicos rotineiros ao usuário.

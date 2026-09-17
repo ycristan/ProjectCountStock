@@ -2,6 +2,25 @@
 
 Atualizado: 2026-09-17
 
+## Ponto de retomada — PR #70, 2026-09-17
+Este bloco prevalece sobre os relatos históricos abaixo. Produção permanece na main; nenhum merge ou migration real autorizado/executado nesta etapa.
+
+- Branch: `codex/inventory-warehouse-import`. Código/testes: `1e671e77653901fdf8cb51b2f2320052a5010b75`.
+- Implementados: upload com revisão/revalidação e diálogo de duplicatas; confirmação da WHS; importação transacional; criação de sessões por WHS; consultas/gravações/RLS e combinação limitadas à WHS; busca agrupada Active/Inactive; ZIP com uma planilha por WHS.
+- Upload antigo desativado na branch. Migration agora concede EXECUTE de importação a authenticated, mantendo autorização administrativa interna. Relatos antigos de RPC desconectado/revogado descrevem etapas anteriores.
+- Confirmar importação no Preview é bloqueado no servidor: Preview compartilha banco de produção. Não testar criação/edição/contagem nesse banco.
+- Validação: **245 testes aprovados**, commit `1e671e77653901fdf8cb51b2f2320052a5010b75`: [118 contratos](https://github.com/ycristan/ProjectCountStock/actions/runs/35227550115), [37 Excel/ZIP](https://github.com/ycristan/ProjectCountStock/actions/runs/35227550147), [90 banco](https://github.com/ycristan/ProjectCountStock/actions/runs/35227550006). Upgrade com histórico sintético preservado e lint sem erros. Vercel Preview READY no mesmo commit (`dpl_GrgSC1nQmvK6PV1fTzZRh3yJ9JGz`). Não substitui teste visual autenticado.
+- Preview compilado: https://project-count-stock-ylmm-keckm9l3e-ycristans-projects.vercel.app/admin/upload . Consulta pelo conector retornou 302 para autenticação Vercel; não houve teste visual autenticado, nem afirmação de E2E completo.
+- Correções de validação: referência antiga do componente e delimitadores SQL; corrigidos sem remover testes. O teste solo foi alinhado ao service_role usado pela Server Action, mantendo a expectativa de bloqueio por warehouse e acrescentando controle positivo e bloqueio do cliente direto.
+- Avaliação segura no Preview: selecionar XLSX e Check spreadsheet; conferir erros/Status/WHS; duplicar Brand Code e escolher linha no diálogo; conferir resumo. Não usar dados fictícios em produção.
+- Sessões por WHS e ZIP dependem do schema novo; ainda não disponíveis funcionalmente no banco real. Não aplicar migration isoladamente: coordenar banco e código, verificar compatibilidade do intervalo e pedir autorização de publicação.
+- Fora deste bloco: completar Inventory unificado/manual/toggle/filtros, aprovação dupla de BPU/recálculo e itens desconhecidos. Não apresentar este pacote como conclusão dessas funcionalidades.
+- Próximo passo após validação: avaliação autenticada do fluxo e preparação da publicação coordenada, sem inferir autorização de merge ou alteração de produção. Não pedir ao usuário para repetir regras já documentadas.
+
+
+## Histórico das etapas anteriores
+
+
 ## Confirmado
 - PR #66 (Sentry) e PR #67 (conectores primeiro) mergeadas.
 - Vercel consultada pelo conector em 14/09: produção project-count-stock-ylmm READY, commit 86c603bd9bd9b5a4414eafb58ddd62bea22c1a25, correspondente à PR #66.
