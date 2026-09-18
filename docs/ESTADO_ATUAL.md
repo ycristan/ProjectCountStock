@@ -1,5 +1,23 @@
 # Estado atual e prioridades
 
+Atualizado: 2026-09-18
+
+## Publicação executada — 2026-09-18
+- Autorização explícita de Yuri confirmada na conversa; PR #70 mergeada em 8eac774b0eaf5192477a20940bf237a28a397589.
+- Migration versionada 20260917073526_warehouse_inventory_import.sql aplicada integralmente pelo conector Supabase; histórico remoto 20260918120659 / warehouse_inventory_import. Não reaplicar por diferença de timestamp.
+- Backup local autorizado excepcionalmente pelo usuário: pg_dump custom; leitura integral/schema/data pelo pg_restore com exit 0. Totais de 14 tabelas public coincidiram com produção antes da migration. Não houve ensaio de restauração em banco separado; não afirmar recuperação integral testada. Não enviar backup ao repositório: contém dados sensíveis e auth. Dump não inclui arquivos binários do Storage nem roles globais; restauração requer planejamento, especialmente schemas geridos/Vault.
+- Após migration: hashes de todos os campos anteriores e totais de 14 tabelas idênticos ao pré-migration. 2279 itens, 4 sessões equipe, 45 solo associados a Main. 0 equipe aberta e 2 solo abertas preservadas. Triggers anteriores e novos habilitados.
+- Três workflows do head d56299e passaram: 35233873980 (banco/HTTP), 35233874175 (contratos), 35233874004 (XLSX). Vercel Preview success. Teste HTTP usa banco descartável e coletor Sentry isolado, não comprova recebimento na conta hospedada.
+- Produção Vercel READY: dpl_BRHWyWZFZEjZ7XNUhXNr4ydLKnE3, commit 8eac774b0eaf5192477a20940bf237a28a397589; alias project-count-stock-ylmm.vercel.app. Página pública HTTP 200. Consultas sem sessão a Inventory/ZIP devolvem HTML de login, não validam download autenticado. Nenhum log error/fatal encontrado neste deployment na consulta de 18/09 após 12:07 UTC.
+- Publicação concluída; verificação funcional autenticada em produção e leitura/recepção na conta Sentry permanecem pendentes. Não afirmar que todos os fluxos de produção foram testados.
+- Advisor mantém aviso preexistente de proteção de senhas vazadas desativada e INFO esperado de app_user_access sem policies (acesso protegido por funções/service_role). Nenhum novo aviso de segurança retornado.
+- Não reverter cegamente código antigo após cadastrar outra WHS. Preferir correção compatível; recuperação de banco deve preservar gravações posteriores ao backup. Não executar restore --clean diretamente em produção.
+
+
+## Histórico anterior — não representa pendência de publicação
+
+# Estado atual e prioridades
+
 Atualizado: 2026-09-17
 
 ## Fluxo integrado validado — 2026-09-17, commit 95a1ecb8cc8380edfb1a32674d48b6cddecf4503
