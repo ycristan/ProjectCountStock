@@ -5,9 +5,20 @@ on:
     branches: [main]
     paths:
       - 'supabase/**'
+      - 'tests/http/**'
+      - 'app/**'
+      - 'lib/**'
+      - 'components/**'
+      - '*sentry*'
+      - 'instrumentation*'
+      - 'next.config.ts'
+      - 'package*.json'
       - '.github/workflows/database-security-tests.yml'
   workflow_dispatch:
 
+concurrency:
+  group: database-security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 
@@ -34,11 +45,39 @@ jobs:
       - name: Start disposable Supabase
         run: supabase start
 
+      - name: Verify migration preserves existing closed counts (disposable database only)
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '54322'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: |
+          test "$GITHUB_ACTIONS" = "true"
+          supabase db reset --help
+          supabase migration up --help
+          supabase db reset --local --version 20260914142358 --no-seed
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/warehouse-before.sql
+          supabase migration up --local
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/warehouse-after.sql
+
       - name: Run database authorization tests
-        run: supabase test db
+        run: |
+          supabase test db --help
+          supabase test db supabase/tests/database
 
       - name: Lint database functions
         run: supabase db lint --level error
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: HTTP export and real SDK transport integration (disposable only)
+        run: |
+          supabase status --help
+          npm ci --ignore-scripts
+          node tests/http/inventory-export.mjs
 
       - name: Stop disposable Supabase
         if: always()

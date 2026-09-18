@@ -1,3 +1,4 @@
+import { listWarehouses } from '@/lib/warehouse-access'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
@@ -7,20 +8,22 @@ import { SoloSessionWizard } from './_components/SoloSessionWizard'
 
 export default async function SessaoSoloPage() {
   const admin = createAdminClient()
-  const [inventoryRaw, { active }] = await Promise.all([
-    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null }>(
+  const [inventoryRaw, { active }, warehouses] = await Promise.all([
+    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; pallet_size: number; weight_avg: number | null; warehouse_id: string; brand_active: boolean }>(
       (from, to) =>
         admin
           .from('inventory_items')
-          .select('brand_code, brand_name, bpu, pallet_size, weight_avg')
-          .eq('brand_active', true)
+          .select('brand_code, brand_name, bpu, pallet_size, weight_avg, warehouse_id, brand_active')
           .order('brand_code')
           .range(from, to)
     ),
     statusContadorSoloFixo(),
+    listWarehouses(),
   ])
 
   const inventory: ItemBusca[] = inventoryRaw.map((i) => ({
+    warehouse_id: i.warehouse_id,
+    brand_active: i.brand_active,
     brand_code: i.brand_code,
     brand_name: i.brand_name,
     bpu: i.bpu,
@@ -39,7 +42,7 @@ export default async function SessaoSoloPage() {
       </Link>
       <h2 className="text-xl font-semibold text-slate-900 mb-4">New Solo Count Session</h2>
       <div className="max-w-md">
-        <SoloSessionWizard inventory={inventory} soloCounterActive={active} />
+        <SoloSessionWizard warehouses={warehouses} inventory={inventory} soloCounterActive={active} />
       </div>
     </div>
   )

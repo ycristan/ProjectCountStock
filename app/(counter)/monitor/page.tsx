@@ -1,21 +1,18 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase-server'
+import { getTeamCounterAccess } from '@/lib/authorization'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 import { MonitorClient } from './_components/MonitorClient'
 
 export default async function MonitorPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (user?.user_metadata?.counter_role !== 'independente') {
-    redirect('/busca')
-  }
-
-  const teamId = user.user_metadata?.team_id as string
+  const access = await getTeamCounterAccess()
+  if (!access || access.counterRole !== 'independente') redirect('/busca')
+  const teamId = access.teamId
   const admin = createAdminClient()
+  const { data: team } = await admin.from('teams').select('session_id').eq('id', teamId).single()
+  if (!team) redirect('/busca')
+  const { data: session } = await admin.from('count_sessions').select('warehouse_id').eq('id', team.session_id).single()
+  if (!session) redirect('/busca')
 
   const [{ data: entries }, inventory, { data: counters }, { data: teamData }] =
     await Promise.all([
@@ -29,6 +26,7 @@ export default async function MonitorPage() {
         admin
           .from('inventory_items')
           .select('brand_code, brand_name')
+          .eq('warehouse_id', session.warehouse_id)
           .order('brand_code', { ascending: true })
           .range(from, to)
       ),

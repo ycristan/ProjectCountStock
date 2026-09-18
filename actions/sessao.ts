@@ -1,6 +1,5 @@
 'use server'
 
-import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
@@ -11,88 +10,9 @@ import { getTeamCounterAccess, isAdmin } from '@/lib/authorization'
 type UploadState = { error?: string; success?: boolean; count?: number; skipped?: number } | null
 type SessaoState = { error?: string } | null
 
-export async function uploadInventory(
-  _prevState: UploadState,
-  formData: FormData
-): Promise<UploadState> {
-  if (!(await isAdmin())) return { error: 'Unauthorized' }
-  const file = formData.get('file') as File | null
-  if (!file || file.size === 0) return { error: 'No file selected.' }
-
-  const buffer = await file.arrayBuffer()
-  const workbook = XLSX.read(buffer)
-  const sheet = workbook.Sheets[workbook.SheetNames[0]]
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet)
-
-  const allItems = rows.map((row) => ({
-    brand_code: String(row['Brand Code'] ?? row['brand_code'] ?? '').trim(),
-    brand_name: String(row['Brand Name'] ?? row['brand_name'] ?? '').trim(),
-    bpu: Number(row['Brand Purchase Unit'] ?? row['bpu'] ?? 0),
-    pallet_size: Number(row['Pallet Size'] ?? row['pallet_size'] ?? 0),
-    weight_avg: Number(row['Weight AVG'] ?? row['weight_avg'] ?? 0),
-    category: String(row['Category'] ?? row['category'] ?? '').trim(),
-    category1: String(row['Category1'] ?? row['category1'] ?? '').trim(),
-    bins: [1, 2, 3, 4]
-      .map((i) => String(row[`BIN Location ${i}`] ?? '').trim())
-      .filter(Boolean),
-  }))
-
-  // ponytail: brand_code é o único campo obrigatório; bpu/pallet_size podem ser 0
-  const items = allItems.filter((i) => !!i.brand_code)
-  const skipped = allItems.length - items.length
-
-  if (items.length === 0)
-    return { error: 'No items with Brand Code found in the file.' }
-
-  const supabase = await createClient()
-
-  const { error: itemsError } = await supabase.from('inventory_items').upsert(
-    items.map(({ brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1 }) => ({
-      brand_code,
-      brand_name,
-      bpu,
-      pallet_size,
-      weight_avg,
-      category,
-      category1,
-      brand_active: true,
-    }))
-  )
-  if (itemsError) return { error: `Error saving items: ${itemsError.message}` }
-
-  const newCodes = items.map((i) => i.brand_code)
-  const notIn = `(${newCodes.join(',')})`
-
-  // ponytail: deactivate instead of delete — old brand_codes stay referenced by count history (FK
-  // from combined_results/count_entries/reconciliation_items), hard delete violates that constraint
-  const { error: deactivateError } = await supabase
-    .from('inventory_items')
-    .update({ brand_active: false })
-    .not('brand_code', 'in', notIn)
-  if (deactivateError) return { error: `Error deactivating old items: ${deactivateError.message}` }
-
-  const { error: delOldBinsError } = await supabase
-    .from('item_bin_locations')
-    .delete()
-    .not('brand_code', 'in', notIn)
-  if (delOldBinsError) return { error: `Error removing old BINs: ${delOldBinsError.message}` }
-
-  // ponytail: delete + insert garante replace limpo dos BINs por item
-  const { error: delBinsError } = await supabase
-    .from('item_bin_locations')
-    .delete()
-    .in('brand_code', newCodes)
-  if (delBinsError) return { error: `Error updating BINs: ${delBinsError.message}` }
-
-  const binRows = items.flatMap(({ brand_code, bins }) =>
-    bins.map((bin_location) => ({ brand_code, bin_location }))
-  )
-  if (binRows.length > 0) {
-    const { error: binsError } = await supabase.from('item_bin_locations').insert(binRows)
-    if (binsError) return { error: `Error saving BINs: ${binsError.message}` }
-  }
-
-  return { success: true, count: items.length, skipped: skipped > 0 ? skipped : undefined }
+// Legacy endpoint cannot bypass review or warehouse scoping.
+export async function uploadInventory(_prevState: UploadState, _formData: FormData): Promise<UploadState> {
+  return { error: 'Use Inventory > Import inventory to review the new-format spreadsheet.' }
 }
 
 export async function criarSessao(
@@ -104,12 +24,17 @@ export async function criarSessao(
 
   if (!(await isAdmin())) return { error: 'Not authorised.' }
 
+  const warehouseId = formData.get('warehouse_id')
+  if (typeof warehouseId !== 'string' || !warehouseId) return { error: 'Choose a warehouse.' }
+  const db = await createClient()
+  const { data: warehouse, error: warehouseError } = await db.from('warehouses').select('id').eq('id', warehouseId).single()
+  if (warehouseError || !warehouse) return { error: 'Warehouse is unavailable.' }
   const { box_tare_g, tolerance_g } = await getDefaultTare()
 
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('count_sessions')
-    .insert({ status: 'aberta', box_tare_g, tolerance_g })
+    .insert({ status: 'aberta', box_tare_g, tolerance_g, warehouse_id: warehouse.id })
     .select('id')
     .single()
 

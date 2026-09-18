@@ -4,8 +4,8 @@ import { createContext, SourceTextModule, SyntheticModule } from 'node:vm'
 
 // Execute the repository's actual functions. Only external dependencies are replaced.
 // No process, fetch, SDK, environment credentials or unrestricted imports are exposed.
-export async function loadSource(path, mocks = {}) {
-  const context = createContext({ console })
+export async function loadSource(path, mocks = {}, globals = {}) {
+  const context = createContext({ console, ...globals })
   const source = await readFile(new URL('../../' + path, import.meta.url), 'utf8')
   const module = new SourceTextModule(stripTypeScriptTypes(source), { context, identifier: path })
   await module.link((specifier) => {
@@ -21,8 +21,8 @@ export async function loadSource(path, mocks = {}) {
 
 export async function fixture(options = {}) {
   const writes = []
-  const item = { brand_code: '6323', brand_name: 'Test product', bpu: 20, pallet_size: 0, ...options.item }
-  const session = { id: 'session-test', status: 'open', assigned_to_counter: true,
+  const item = { warehouse_id: 'warehouse-main', brand_code: '6323', brand_name: 'Test product', bpu: 20, pallet_size: 0, ...options.item }
+  const session = { warehouse_id: 'warehouse-main', id: 'session-test', status: 'open', assigned_to_counter: true,
     restrict_to_list: true, counter_name: 'Test counter', ...options.session }
   const tables = {
     inventory_items: [item],

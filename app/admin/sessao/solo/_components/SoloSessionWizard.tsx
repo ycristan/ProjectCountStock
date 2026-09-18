@@ -10,12 +10,14 @@ type Step = 'title' | 'who' | 'list' | 'review'
 type ListedItem = { brand_code: string; brand_name: string }
 
 type Props = {
+  warehouses: { id: string; name: string }[]
   inventory: ItemBusca[]
   soloCounterActive: boolean
 }
 
-export function SoloSessionWizard({ inventory, soloCounterActive }: Props) {
+export function SoloSessionWizard({ inventory, soloCounterActive, warehouses }: Props) {
   const [step, setStep] = useState<Step>('title')
+  const [warehouseId, setWarehouseId] = useState('')
   const [title, setTitle] = useState('')
   const [assignedToCounter, setAssignedToCounter] = useState(false)
   const [restrictToList, setRestrictToList] = useState(false)
@@ -28,6 +30,7 @@ export function SoloSessionWizard({ inventory, soloCounterActive }: Props) {
     startTransition(async () => {
       const res = await criarSoloSessaoCompleta({
         title,
+        warehouseId,
         assignedToCounter,
         restrictToList,
         itemCodes: itemCodes.map((i) => i.brand_code),
@@ -40,6 +43,12 @@ export function SoloSessionWizard({ inventory, soloCounterActive }: Props) {
   if (step === 'title') {
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+        <label className="block text-sm font-medium">Warehouse
+          <select value={warehouseId} onChange={e => { setWarehouseId(e.target.value); setItemCodes([]) }} required className="mt-2 w-full rounded-xl border p-3">
+            <option value="" disabled>Choose a warehouse</option>
+            {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </select>
+        </label>
         <h3 className="font-semibold text-slate-900">Title</h3>
         <input
           value={title}
@@ -50,7 +59,7 @@ export function SoloSessionWizard({ inventory, soloCounterActive }: Props) {
         />
         <button
           onClick={() => setStep('who')}
-          disabled={!title.trim()}
+          disabled={!title.trim() || !warehouseId}
           className="w-full bg-slate-900 text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-40"
         >
           Next →
@@ -124,7 +133,7 @@ export function SoloSessionWizard({ inventory, soloCounterActive }: Props) {
             Restricted list
           </button>
         </div>
-        {restrictToList && <SoloItemListStep inventory={inventory} items={itemCodes} onChange={setItemCodes} />}
+        {restrictToList && <SoloItemListStep inventory={inventory.filter(i => i.warehouse_id === warehouseId)} items={itemCodes} onChange={setItemCodes} />}
         <div className="flex gap-2">
           <button onClick={() => setStep('who')} className="px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-500">← Back</button>
           <button
@@ -143,6 +152,7 @@ export function SoloSessionWizard({ inventory, soloCounterActive }: Props) {
     <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
       <h3 className="font-semibold text-slate-900">Review &amp; Confirm</h3>
       <dl className="text-sm space-y-2">
+        <div className="flex justify-between"><dt>Warehouse</dt><dd>{warehouses.find(w => w.id === warehouseId)?.name}</dd></div>
         <div className="flex justify-between"><dt className="text-slate-500">Title</dt><dd className="font-semibold text-slate-900">{title}</dd></div>
         <div className="flex justify-between"><dt className="text-slate-500">Who counts</dt><dd className="font-semibold text-slate-900">{assignedToCounter ? 'Solo counter' : 'Myself'}</dd></div>
         <div className="flex justify-between"><dt className="text-slate-500">Item list</dt><dd className="font-semibold text-slate-900">{restrictToList ? `Restricted (${itemCodes.length} items)` : 'Free add'}</dd></div>

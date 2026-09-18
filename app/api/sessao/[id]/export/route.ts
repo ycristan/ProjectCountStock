@@ -1,3 +1,4 @@
+import { isAdmin } from '@/lib/authorization'
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase-server'
@@ -27,18 +28,24 @@ function official(r: ReconcRow): { cases: number; units: number } {
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') {
+  if (!(await isAdmin())) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
   const { id: sessionId } = await params
 
+  const { data: session } = await supabase.from('count_sessions').select('warehouse_id, status').eq('id', sessionId).single()
+  if (!session) return new NextResponse('Session unavailable', { status: 404 })
+  const storedResults = session.status === 'fechada'
+    ? await fetchAllRows<{ brand_code: string; total_cases: number; total_units: number }>((from, to) => supabase.from('combined_results').select('brand_code, total_cases, total_units').eq('session_id', sessionId).range(from, to))
+    : null
+  const storedMap = new Map(storedResults?.map(r => [r.brand_code, r]))
+
   const [{ data: teams }, inventory] = await Promise.all([
     supabase.from('teams').select('id, team_name').eq('session_id', sessionId).eq('status', 'reconciliada').order('team_name'),
     fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; category: string; category1: string }>(
       (from, to) =>
-        supabase.from('inventory_items').select('brand_code, brand_name, bpu, category, category1').range(from, to)
+        supabase.from('inventory_items').select('brand_code, brand_name, bpu, category, category1').eq('warehouse_id', session.warehouse_id).range(from, to)
     ),
   ])
 
@@ -131,10 +138,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   // ponytail: item não contado por nenhuma equipe entra no merge final como 0 (não imputado a equipe).
   // Fonte = inventário inteiro; mergedForCode devolve {0,0} para código sem contagem.
-  const allCodes = [...inventory.map((i) => i.brand_code)].sort()
+  const allCodes = [...(storedResults ?? inventory).map((i) => i.brand_code)].sort()
 
   // ponytail: merged de todas as equipes por item — soma o valor oficial em unidades e re-normaliza pelo BPU
   function mergedForCode(code: string): { cases: number; units: number } {
+    if (storedResults) {
+      const saved = storedMap.get(code)
+      return { cases: saved?.total_cases ?? 0, units: saved?.total_units ?? 0 }
+    }
     const bpu = invMap[code]?.bpu ?? 1
     let totalUnits = 0
     for (const t of teamList) {

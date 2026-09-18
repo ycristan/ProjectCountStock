@@ -33,3 +33,24 @@ Two-administrator team approval, automatic recalculation of persisted team resul
 WHS isolation and historical report rendering are separate work. Stored closed solo
 quantities are immutable; this is not a claim that every historical report already
 snapshots every inventory attribute. See PR #68 for the complete desired behavior.
+
+## PR #70 — verified Excel and database foundation
+- Pure/action tests: 105; run 35196624244.
+- Real XLSX tests: 26; run 35196624259. Run with
+  `npm ci --ignore-scripts` followed by
+  `node --experimental-vm-modules --test --test-reporter=tap tests/xlsx/*.test.mjs`.
+- PostgreSQL: 72 pgTAP assertions; run 35196624242, schema lint clean.
+  Use `supabase test db supabase/tests/database`; the sibling migrations directory
+  contains upgrade setup/assertion fixtures, not standalone pgTAP suites.
+- Upgrade verification in the disposable GitHub runner resets ONLY the local
+  database to 20260914142358, inserts closed-history fixtures, applies the new
+  migration, and compares all prior columns of nine tables. It asserts Main
+  associations and the original four enabled guard triggers.
+- Real XLSX coverage includes roundtrip, inactive status, optional values,
+  zero-padding, formula/error/date rejection, duplicate choices, mixed WHS,
+  extra/hidden sheets, merged cells, truncation, row/byte/ZIP limits and forged sizes.
+- Database tests temporarily grant RPC execute inside their rollback transaction
+  to exercise authenticated admin RLS. The migration grants no API execute access.
+  A synthetic BIN trigger fails after item upsert to test full rollback.
+- No production database connection or credentials are used. No concurrency load
+  test, full counter isolation, UI flow or live data import has been validated yet.

@@ -61,6 +61,7 @@ type Props = {
   teams: Team[]
   initialEntries: EntryRow[]
   initialReconc: ReconcRow[]
+  storedResults?: { brand_code: string; total_cases: number; total_units: number }[]
   inventory: InvItem[]
   isConfirmed: boolean
   counters: Record<string, Record<string, string>>
@@ -99,6 +100,7 @@ export function CombinacaoClient({
   initialEntries,
   initialReconc,
   inventory,
+  storedResults,
   isConfirmed,
   counters,
 }: Props) {
@@ -237,7 +239,8 @@ export function CombinacaoClient({
 
   // ponytail: merge final lista todo o inventário; item não contado por nenhuma equipe = 0
   // (getMerged devolve {0,0} para código sem reconciliação). Não é imputado a nenhuma equipe.
-  const reconcCodes = [...inventory.map((i) => i.brand_code)].sort()
+  const reconcCodes = [...(storedResults ?? inventory).map((i) => i.brand_code)].sort()
+  const storedMap = new Map(storedResults?.map(r => [r.brand_code, r]))
 
   function cName(teamId: string, role: string, fallback: string) {
     const name = counters[teamId]?.[role]
@@ -245,6 +248,10 @@ export function CombinacaoClient({
   }
 
   function getMerged(code: string) {
+    if (storedResults) {
+      const saved = storedMap.get(code)
+      return { cases: saved?.total_cases ?? 0, units: saved?.total_units ?? 0 }
+    }
     const bpu = invMap[code]?.bpu ?? 1
     const total = reconcilidaTeams.reduce((s, t) => {
       const ri = reconcMap[t.id]?.[code]
