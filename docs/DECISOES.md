@@ -89,3 +89,19 @@
 - Não criar clones, arquivos do projeto, tokens ou variáveis de ambiente do projeto no computador de Yuri. Não orientar configuração de SENTRY_AUTH_TOKEN no Windows.
 - Testes descartáveis nos runners do GitHub continuam permitidos, sem segredos de produção. Credenciais sintéticas são geradas no runner e não são registradas no repositório.
 - Falta de acesso de leitura ao Sentry não autoriza solicitar armazenamento local nem declarar a captura do aplicativo inoperante.
+
+
+## Publicação executada — 2026-09-18
+- Autorização explícita de Yuri confirmada na conversa; PR #70 mergeada em 8eac774b0eaf5192477a20940bf237a28a397589.
+- Migration versionada 20260917073526_warehouse_inventory_import.sql aplicada integralmente pelo conector Supabase; histórico remoto 20260918120659 / warehouse_inventory_import. Não reaplicar por diferença de timestamp.
+- Backup local autorizado excepcionalmente pelo usuário: pg_dump custom; leitura integral/schema/data pelo pg_restore com exit 0. Totais de 14 tabelas public coincidiram com produção antes da migration. Não houve ensaio de restauração em banco separado; não afirmar recuperação integral testada. Não enviar backup ao repositório: contém dados sensíveis e auth. Dump não inclui arquivos binários do Storage nem roles globais; restauração requer planejamento, especialmente schemas geridos/Vault.
+- Após migration: hashes de todos os campos anteriores e totais de 14 tabelas idênticos ao pré-migration. 2279 itens, 4 sessões equipe, 45 solo associados a Main. 0 equipe aberta e 2 solo abertas preservadas. Triggers anteriores e novos habilitados.
+- Três workflows do head d56299e passaram: 35233873980 (banco/HTTP), 35233874175 (contratos), 35233874004 (XLSX). Vercel Preview success. Teste HTTP usa banco descartável e coletor Sentry isolado, não comprova recebimento na conta hospedada.
+- Produção Vercel READY: dpl_BRHWyWZFZEjZ7XNUhXNr4ydLKnE3, commit 8eac774b0eaf5192477a20940bf237a28a397589; alias project-count-stock-ylmm.vercel.app. Página pública HTTP 200. Consultas sem sessão a Inventory/ZIP devolvem HTML de login, não validam download autenticado. Nenhum log error/fatal encontrado neste deployment na consulta de 18/09 após 12:07 UTC.
+- Publicação concluída; verificação funcional autenticada em produção e leitura/recepção na conta Sentry permanecem pendentes. Não afirmar que todos os fluxos de produção foram testados.
+- Advisor mantém aviso preexistente de proteção de senhas vazadas desativada e INFO esperado de app_user_access sem policies (acesso protegido por funções/service_role). Nenhum novo aviso de segurança retornado.
+- Não reverter cegamente código antigo após cadastrar outra WHS. Preferir correção compatível; recuperação de banco deve preservar gravações posteriores ao backup. Não executar restore --clean diretamente em produção.
+
+
+### Exceção de backup autorizada — 2026-09-18
+Yuri autorizou backup local e instalação da ferramenta necessária para esse fim. Isso não autoriza clones/arquivos do projeto ou tokens locais. Senha foi informada pelo usuário diretamente ao cliente, não entregue ao agente. Nunca publicar ou enviar backup real para Actions/repositório público.
