@@ -140,3 +140,8 @@ Ainda NÃO implementado/liberado:
 - Risco preexistente fora desta correção: counter_read_team permite leitura de contagens da própria equipe via API. Filtro de papel na aplicação não equivale a isolamento cego no banco. Não mudar essa política silenciosamente neste hotfix.
 - PR70 já foi publicada em 18/09, com migration aplicada e preservação histórica conferida; notas acima que dizem não publicado são históricas. PR71 registra a publicação separadamente.
 - CI da PR72 em execução; publicação requer autorização explícita. Nenhuma conta/teste criado em produção.
+
+### Evidência adicional da origem, 21/09
+- Upstream Supabase Auth commit a1511d25154adb5b8f02220e84f3efd124aa4aaf, de 31/08/2026, acrescentou checkPasswordStrength em adminUserCreate: https://github.com/supabase/auth/commit/a1511d25154adb5b8f02220e84f3efd124aa4aaf . Presente em v2.197.0.
+- O primeiro teste real mostrou que Auth v2.196.0, incluído pela CLI, ainda aceita senha administrativa de quatro caracteres. Por isso o teste agora troca APENAS o container Auth descartável por v2.197.0 antes da regressão, com a mesma configuração e banco sintético. Não mascarar essa diferença com mock de senha.
+- A data de implantação dessa versão no projeto hospedado não foi consultada; distinguir alteração upstream comprovada de cronologia de implantação ainda não confirmada.
