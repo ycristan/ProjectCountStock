@@ -12,3 +12,11 @@ Este diretório é a fonte de verdade de contexto para trabalho contínuo no Cou
 - Atualize estes documentos junto com mudanças relevantes de produto, segurança ou arquitetura.
 - Não armazene credenciais, PINs, tokens ou dados pessoais.
 - O conteúdo histórico em `CLAUDE.md` e `.claude/memory/` é referência complementar; se houver conflito, estes documentos mais recentes prevalecem.
+
+
+## Contagem por equipes — contrato aprovado, implementação em andamento
+Antes de alterar contagem, identidade, permissões, reconciliação, assinaturas ou relatórios de equipes, ler:
+1. [Contrato completo](./TEAM_COUNT_FLOW.md).
+2. [Plano de nove entregas](./TEAM_COUNT_PLAN.md).
+3. [Matriz de verificação](./TEAM_COUNT_TEST_MATRIX.md).
+Estas regras prevalecem sobre descrições antigas. Aprovação do contrato não significa publicação. Não usar CLAUDE.md ou snapshots históricos para reintroduzir regras superadas.

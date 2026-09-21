@@ -1,3 +1,11 @@
+# Count Stock — leia primeiro
+
+Fonte atual: [AGENTS.md](./AGENTS.md) e [docs/README.md](./docs/README.md).
+Para equipes: [contrato aprovado](./docs/TEAM_COUNT_FLOW.md), [plano](./docs/TEAM_COUNT_PLAN.md), [testes planejados](./docs/TEAM_COUNT_TEST_MATRIX.md).
+Não salvar memória/segredos do projeto no Windows. Não publicar sem autorização explícita.
+
+> O texto abaixo é HISTÓRICO, não regra atual nem ordem de execução. Contagem tripla, independente contando normalmente, tolerância em gramas e TODOs antigos foram superados. Consulte estado atual antes de agir; não usar este arquivo para contradizer o contrato aprovado.
+
 # Count Stock — Contexto para Claude Code
 
 Este arquivo é lido automaticamente pelo Claude Code ao abrir o projeto.

@@ -1,6 +1,16 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-09-17
+Atualizado: 2026-09-21
+
+## Retomada prioritária — equipes, 2026-09-21
+Yuri aprovou o plano de nove entregas e sua implementação. Fonte: [contrato](./TEAM_COUNT_FLOW.md), [plano](./TEAM_COUNT_PLAN.md), [55 cenários planejados](./TEAM_COUNT_TEST_MATRIX.md).
+Esta entrega 1 é documental: nenhum código, migration, teste funcional ou produção alterado. Cenários não são testes executados. Próxima entrega: estrutura de dados/permissões e compatibilidade, sem publicar partes incompletas.
+Main consultada: 8eac774b0eaf5192477a20940bf237a28a397589 (PR70). Não tratar os relatos abaixo de setembro17 como estado atual de publicação. Banco/implantação não foram reverificados nesta entrega documental.
+PR72 segue correção parcial não autorizada para merge: evidência anterior não comprova o fluxo completo aprovado e bloqueio de busca independente precisa ser revisto. Aproveitar correções rastreáveis nas entregas; não contar como décima PR.
+Regra reforçada: sem clone, arquivos ou credenciais do projeto no Windows; documentação no GitHub. Não pedir que Yuri repita decisões deste contrato.
+
+## Histórico preservado — não usar como ordem de execução atual
+
 
 ## Fluxo integrado validado — 2026-09-17, commit 95a1ecb8cc8380edfb1a32674d48b6cddecf4503
 - Execução: https://github.com/ycristan/ProjectCountStock/actions/runs/35233358896 .

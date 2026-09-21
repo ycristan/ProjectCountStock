@@ -29,3 +29,8 @@
 - Realtime precisa autenticar o token antes de assinar eventos.
 - `proxy.ts` é parte essencial do controle de sessão e não deve ser removido numa limpeza de código.
 - Autorização não pode depender de `user_metadata`, pois esse dado é editável pelo usuário. Ver prioridade de segurança no estado atual.
+
+
+## Evolução aprovada, ainda não implementada — equipes
+Separar pessoa, vínculo/papel por equipe e autoria por registro. Identidade com mais de um vínculo permite independente compartilhado; revogar vínculo não desativa toda a conta. Contagem inicial, conciliação versionada e resultado oficial não são a mesma entidade. Estados individuais e da equipe são distintos do fechamento geral.
+Schema concreto e migração são entrega2; não tratar esta seção como tabelas já existentes. Contrato: [TEAM_COUNT_FLOW.md](./TEAM_COUNT_FLOW.md); evidência e sequência: [TEAM_COUNT_PLAN.md](./TEAM_COUNT_PLAN.md).
