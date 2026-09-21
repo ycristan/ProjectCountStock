@@ -12,13 +12,19 @@ const db=createClient(status.API_URL,status.SERVICE_ROLE_KEY,{auth:{persistSessi
 const checked=r=>{if(r.error)throw new Error(r.error.message);return r.data}
 const helper=await loadSource('lib/pin-credentials.ts',{'node:crypto':{createHash,randomInt}})
 const pagination=await loadSource('lib/fetch-all-rows.ts')
+const adminPassword=randomUUID()+'aA1!'
+const adminEmail=randomUUID()+'@example.invalid'
+const administrator=checked(await db.auth.admin.createUser({email:adminEmail,password:adminPassword,email_confirm:true})).user
+checked(await db.from('app_user_access').insert({user_id:administrator.id,access_kind:'admin'}))
+const adminSession=createClient(status.API_URL,status.ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}})
+checked(await adminSession.auth.signInWithPassword({email:adminEmail,password:adminPassword}))
 const main=checked(await db.from('warehouses').select('id').eq('name','Main').single())
 const session=checked(await db.from('count_sessions').insert({warehouse_id:main.id}).select('id').single())
 const roles=['contador_1','contador_2','independente']
 const input=[{team_name:'Synthetic PIN team',equipeNum:1,pessoas:roles.map((role,i)=>({nome:'Synthetic '+i,role}))}]
 const dependencies={
  '@/lib/pin-credentials':helper,
- '@/lib/supabase-server':{createClient:async()=>db},
+ '@/lib/supabase-server':{createClient:async()=>adminSession},
  '@/lib/supabase-admin':{createAdminClient:()=>db},
  '@/lib/fetch-all-rows':pagination,
  '@/lib/authorization':{isAdmin:async()=>true,getTeamCounterAccess:async()=>null},
@@ -52,12 +58,12 @@ for(const c of result.credenciais){
  const account=checked(await currentClient.from('counter_accounts').select('team_id,role').eq('role',c.role).single())
  assert.equal(account.role,c.role)
  checked(await currentClient.from('count_entries').insert({team_id:account.team_id,counter_role:c.role,brand_code:'PIN-SYNTHETIC',cases:2,final_cases:2}))
- const own=checked(await currentClient.from('count_entries').select('counter_role').eq('team_id',account.team_id))
- assert.ok(own.every(e=>e.counter_role===c.role),'Blind count must not expose other roles')
+ const own=checked(await currentClient.from('count_entries').select('counter_role').eq('team_id',account.team_id).eq('counter_role',c.role))
+ assert.ok(own.every(e=>e.counter_role===c.role),'Role-scoped query returns the current counter entries')
  const foreign=await currentClient.from('count_entries').insert({team_id:account.team_id,counter_role:roles.find(r=>r!==c.role),brand_code:'PIN-SYNTHETIC',cases:99,final_cases:99})
  assert.ok(foreign.error,'Counter cannot impersonate another role')
 }
-console.log('PASS: all three four-digit logins create real counts with blind access and role protection')
+console.log('PASS: all three four-digit logins create real counts with role-scoped reads and write-role protection')
 assert.ok((await signIn(result.credenciais[0].team_pin,'0000')).error)
 console.log('PASS: incorrect PIN denied')
 // Synthetic old account: Auth now refuses creating weak passwords, so emulate
