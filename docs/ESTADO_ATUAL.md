@@ -130,3 +130,13 @@ Ainda NÃO implementado/liberado:
 - Revisão React: gerador carregado sob demanda, botão type=button, estado de preparação, erro acessível e nenhuma mudança nas fronteiras de autorização.
 - Não executado teste visual autenticado nem abertura manual no Excel. Geração/releitura automática e compilação não provam interação real do navegador.
 - Nenhum merge, mudança de produção ou aplicação de migration. PR #70 continua rascunho. Próximos passos já autorizados de implementação: novo upload/duplicatas/confirmação e isolamento WHS antes da liberação. Este template não conclui o módulo Inventory nem libera Service.
+
+
+## Incidente de criação de equipes — PR72, 2026-09-21 (não publicado)
+- A produção rejeitou a senha interna com a mensagem de mínimo de seis caracteres. actions/sessao.ts enviava o PIN individual bruto para auth.admin.createUser; actions/auth.ts usava o mesmo PIN no login.
+- Comparação com commit 19b1bf5fa495397614887a3ee8e90e565ca34e68 (junho) confirma o comportamento antigo. Comparação da criação entre main 6638fec7b5d54647270961191fd76200ea71969c e 8eac774b0eaf5192477a20940bf237a28a397589 confirma que PR70 não alterou esse trecho. Histórico de configuração Auth não está exposto no conector; não atribuir data/autor sem evidência.
+- PR72 mantém os dois PINs de quatro dígitos e compatibilidade com logins antigos. Testes novos usam Auth e Postgres descartáveis no GitHub, ações reais com contexto Next substituído e administrador autenticado; não são cliques no navegador.
+- Leitura agregada encontrou uma equipe sem counter_accounts. Registro preservado; investigar antes de qualquer exclusão.
+- Risco preexistente fora desta correção: counter_read_team permite leitura de contagens da própria equipe via API. Filtro de papel na aplicação não equivale a isolamento cego no banco. Não mudar essa política silenciosamente neste hotfix.
+- PR70 já foi publicada em 18/09, com migration aplicada e preservação histórica conferida; notas acima que dizem não publicado são históricas. PR71 registra a publicação separadamente.
+- CI da PR72 em execução; publicação requer autorização explícita. Nenhuma conta/teste criado em produção.

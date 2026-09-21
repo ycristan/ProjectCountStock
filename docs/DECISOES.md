@@ -89,3 +89,11 @@
 - Não criar clones, arquivos do projeto, tokens ou variáveis de ambiente do projeto no computador de Yuri. Não orientar configuração de SENTRY_AUTH_TOKEN no Windows.
 - Testes descartáveis nos runners do GitHub continuam permitidos, sem segredos de produção. Credenciais sintéticas são geradas no runner e não são registradas no repositório.
 - Falta de acesso de leitura ao Sentry não autoriza solicitar armazenamento local nem declarar a captura do aplicativo inoperante.
+
+
+## PINs de equipes — compatibilidade Auth (PR72, 2026-09-21)
+- PIN de equipe e PIN individual continuam com quatro dígitos; não exigir senha do contador.
+- Novas contas de equipe usam uma codificação determinística do par de PINs apenas como credencial interna do Auth. Isso NÃO acrescenta entropia, NÃO substitui proteção contra tentativas e NÃO deve aparecer no cliente ou nos logs.
+- Login tenta a codificação e somente em invalid_credentials tenta a senha PIN legada. Login administrativo email/senha permanece igual; não redefinir credenciais existentes.
+- Criação valida equipe completa e sessão aberta. Compensação de falha remove apenas contas/equipes criadas na mesma chamada; se incompleta, informa necessidade de investigação. Não é transação distribuída nem garantia contra resultado remoto ambíguo.
+- Nenhuma migration ou redução de política de senha hospedada é necessária. Nenhuma limpeza automática de registros preexistentes.
