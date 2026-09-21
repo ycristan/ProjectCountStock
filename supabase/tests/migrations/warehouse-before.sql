@@ -1,10 +1,13 @@
+-- Reproduce the legacy production schema before snapshotting old fields.
+-- The idempotent reconciliation migration must preserve this existing PIN.
+ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS team_pin character(4);
 -- Synthetic data for the disposable CI database, before warehouse columns exist.
 insert into public.inventory_items(brand_code,brand_name,bpu,pallet_size,weight_avg,category,category1)
 values ('migration-probe-a','Historical product',20,80,330,'Drinks','Cans');
 insert into public.item_bin_locations(brand_code,bin_location) values('migration-probe-a','40B');
 insert into public.count_sessions(id,status) values('00000000-0000-0000-0000-000000000901','fechada');
-insert into public.teams(id,session_id,team_name,status)
-values('00000000-0000-0000-0000-000000000902','00000000-0000-0000-0000-000000000901','Historical team','reconciliada');
+insert into public.teams(id,session_id,team_name,status,team_pin)
+values('00000000-0000-0000-0000-000000000902','00000000-0000-0000-0000-000000000901','Historical team','reconciliada','0192');
 insert into public.count_entries(team_id,counter_role,brand_code,cases,final_cases)
 values('00000000-0000-0000-0000-000000000902','contador_1','migration-probe-a',20,20);
 insert into public.combined_results(session_id,brand_code,total_cases,status)
