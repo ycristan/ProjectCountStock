@@ -145,3 +145,5 @@ Ainda NÃO implementado/liberado:
 - Upstream Supabase Auth commit a1511d25154adb5b8f02220e84f3efd124aa4aaf, de 31/08/2026, acrescentou checkPasswordStrength em adminUserCreate: https://github.com/supabase/auth/commit/a1511d25154adb5b8f02220e84f3efd124aa4aaf . Presente em v2.197.0.
 - O primeiro teste real mostrou que Auth v2.196.0, incluído pela CLI, ainda aceita senha administrativa de quatro caracteres. Por isso o teste agora troca APENAS o container Auth descartável por v2.197.0 antes da regressão, com a mesma configuração e banco sintético. Não mascarar essa diferença com mock de senha.
 - A data de implantação dessa versão no projeto hospedado não foi consultada; distinguir alteração upstream comprovada de cronologia de implantação ainda não confirmada.
+
+- Regressão de senha reproduzida de verdade com Auth v2.197.0 no run 35578901405. O teste parou depois em teams.team_pin ausente no replay. Inspeção somente de schema confirmou character(4), nullable, sem default na produção; migration 20260921084500_reconcile_legacy_team_pin.sql registra essa estrutura sem modificar valores existentes. Não aplicada no banco hospedado. Aguardar nova execução integrada.

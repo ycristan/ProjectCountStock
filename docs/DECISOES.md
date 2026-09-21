@@ -96,4 +96,4 @@
 - Novas contas de equipe usam uma codificação determinística do par de PINs apenas como credencial interna do Auth. Isso NÃO acrescenta entropia, NÃO substitui proteção contra tentativas e NÃO deve aparecer no cliente ou nos logs.
 - Login tenta a codificação e somente em invalid_credentials tenta a senha PIN legada. Login administrativo email/senha permanece igual; não redefinir credenciais existentes.
 - Criação valida equipe completa e sessão aberta. Compensação de falha remove apenas contas/equipes criadas na mesma chamada; se incompleta, informa necessidade de investigação. Não é transação distribuída nem garantia contra resultado remoto ambíguo.
-- Nenhuma migration ou redução de política de senha hospedada é necessária. Nenhuma limpeza automática de registros preexistentes.
+- A correção no banco hospedado não exige redução de política de senha. Migration idempotente registra teams.team_pin character(4), estrutura histórica já existente na produção; ela é necessária para replay fiel em bancos novos, não para adicionar uma coluna nova na produção. Nenhuma limpeza automática de registros preexistentes.
