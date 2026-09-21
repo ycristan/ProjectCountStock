@@ -32,13 +32,15 @@ export async function proxy(request: NextRequest) {
 
   if (!user) return supabaseResponse
 
-  const [{ data: adminValue }, { data: soloValue }] = await Promise.all([
+  const [{ data: adminValue }, { data: soloValue }, { data: counterRole }] = await Promise.all([
     supabase.rpc('is_admin'),
     supabase.rpc('is_solo_counter'),
+    supabase.rpc('my_counter_role'),
   ])
   const isAdmin = adminValue === true
   const isSoloCounter = soloValue === true
-  const home = isAdmin ? '/admin' : isSoloCounter ? '/solo' : '/busca'
+  const isIndependent = counterRole === 'independente'
+  const home = isAdmin ? '/admin' : isSoloCounter ? '/solo' : isIndependent ? '/monitor' : '/busca'
 
   if (pathname === '/' || pathname === '/login') {
     return NextResponse.redirect(new URL(home, request.url))
@@ -46,11 +48,11 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith('/admin') && !isAdmin) {
     return NextResponse.redirect(new URL(home, request.url))
   }
-  if (pathname.startsWith('/busca') && (isAdmin || isSoloCounter)) {
+  if ((pathname.startsWith('/busca') || pathname.startsWith('/finalizar')) && (isAdmin || isSoloCounter || isIndependent)) {
     return NextResponse.redirect(new URL(home, request.url))
   }
   if (pathname.startsWith('/solo') && !isAdmin && !isSoloCounter) {
-    return NextResponse.redirect(new URL('/busca', request.url))
+    return NextResponse.redirect(new URL(home, request.url))
   }
 
   return supabaseResponse

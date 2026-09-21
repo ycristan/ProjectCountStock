@@ -1,9 +1,11 @@
 // Real Auth/Postgres, synthetic credentials, disposable GitHub runner only.
 // Next request plumbing is replaced; creation/login functions are repository code.
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { randomUUID, createHash, randomInt } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { setTimeout as delay } from 'node:timers/promises'
 import { loadSource } from '../inventory/source-fixture.mjs'
 assert.equal(process.env.GITHUB_ACTIONS, 'true')
 await import('./auth-policy-environment.mjs')
@@ -53,28 +55,110 @@ async function signIn(team,user){
  catch(e){if(e.message!=='REDIRECT')throw e;return {ok:true}}
 }
 checked(await db.from('inventory_items').insert({brand_code:'PIN-SYNTHETIC',brand_name:'Synthetic',category:'Test',category1:'Test',bpu:12,pallet_size:0,warehouse_id:main.id}))
+const authorization=await loadSource('lib/authorization.ts',{
+ '@/lib/supabase-server':{createClient:async()=>currentClient},
+ '@/lib/supabase-admin':{createAdminClient:()=>db}
+})
+const countActions=await loadSource('actions/contagem.ts',{
+ '@/lib/supabase-server':{createClient:async()=>currentClient},
+ '@/lib/authorization':authorization,'@/lib/fetch-all-rows':pagination
+})
+const finalActions=await loadSource('actions/finalizacao.ts',{
+ '@/lib/supabase-admin':{createAdminClient:()=>db},'@/lib/authorization':authorization
+})
 for(const c of result.credenciais){
  assert.match(c.team_pin,/^\d{4}$/);assert.match(c.user_pin,/^\d{4}$/)
  assert.equal((await signIn(c.team_pin,c.user_pin)).ok,true)
  const account=checked(await currentClient.from('counter_accounts').select('team_id,role').eq('role',c.role).single())
  assert.equal(account.role,c.role)
- checked(await currentClient.from('count_entries').insert({team_id:account.team_id,counter_role:c.role,brand_code:'PIN-SYNTHETIC',cases:2,final_cases:2}))
+ const payload={brand_code:'PIN-SYNTHETIC',pallets:0,cases:2,units:0}
+ if(c.role==='independente'){
+   assert.ok((await countActions.lancarContagem(payload)).error)
+   assert.ok((await finalActions.finalizarContagem()).error)
+   const denied=await currentClient.from('count_entries').insert({team_id:account.team_id,counter_role:c.role,brand_code:'PIN-SYNTHETIC',cases:2,final_cases:2})
+   assert.ok(denied.error,'Independent cannot insert initial counts through the API')
+   const monitored=checked(await currentClient.from('count_entries').select('counter_role').eq('team_id',account.team_id))
+   assert.deepEqual(new Set(monitored.map(e=>e.counter_role)),new Set(['contador_1','contador_2']))
+   const before=checked(await db.from('count_entries').select('id,final_cases').eq('team_id',account.team_id))
+   checked(await currentClient.from('count_entries').update({final_cases:99}).eq('team_id',account.team_id))
+   checked(await currentClient.from('count_entries').delete().eq('team_id',account.team_id))
+   assert.deepEqual(checked(await db.from('count_entries').select('id,final_cases').eq('team_id',account.team_id)),before)
+ }else{
+   assert.equal((await countActions.lancarContagem(payload)).final_cases,2)
+   assert.equal((await finalActions.finalizarContagem()).success,true)
+ }
  const own=checked(await currentClient.from('count_entries').select('counter_role').eq('team_id',account.team_id).eq('counter_role',c.role))
  assert.ok(own.every(e=>e.counter_role===c.role),'Role-scoped query returns the current counter entries')
  const foreign=await currentClient.from('count_entries').insert({team_id:account.team_id,counter_role:roles.find(r=>r!==c.role),brand_code:'PIN-SYNTHETIC',cases:99,final_cases:99})
  assert.ok(foreign.error,'Counter cannot impersonate another role')
 }
+// Exercise the actual built Next routes with real Auth cookies, not mocked pages.
+// inventory-export.mjs built this same checkout against this disposable database.
+const app=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-H','127.0.0.1','-p','3101'],{
+ env:{...process.env,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,VERCEL_ENV:'preview',NEXT_TELEMETRY_DISABLED:'1'},stdio:'ignore'
+})
+try{
+ const base='http://127.0.0.1:3101'
+ let ready=false
+ for(let i=0;i<60;i++){try{if((await fetch(base+'/login')).ok){ready=true;break}}catch{} await delay(1000)}
+ assert.ok(ready,'Built Next application starts')
+ for(const c of result.credenciais){
+   const jar=new Map()
+   const client=createServerClient(status.API_URL,status.ANON_KEY,{cookies:{
+     getAll:()=>[...jar].map(([name,value])=>({name,value})),
+     setAll:values=>values.forEach(v=>jar.set(v.name,v.value))
+   }})
+   checked(await client.auth.signInWithPassword({email:c.team_pin+c.user_pin+'@count.local',password:helper.pinPassword(c.team_pin,c.user_pin)}))
+   const headers={cookie:[...jar].map(([k,v])=>k+'='+v).join('; ')}
+   const independent=c.role==='independente'
+   const home=await fetch(base+'/',{headers,redirect:'manual'})
+   assert.equal(home.status,307)
+   assert.ok(home.headers.get('location').endsWith(independent?'/monitor':'/busca'))
+   const page=await fetch(base+(independent?'/monitor':'/busca'),{headers,redirect:'manual'})
+   assert.equal(page.status,200)
+   const html=await page.text()
+   assert.equal(html.includes('href="/finalizar"'),!independent)
+   if(independent){
+     assert.match(html,/Live Count Monitor/)
+     for(const path of ['/busca','/finalizar']){
+       const blocked=await fetch(base+path,{headers,redirect:'manual'})
+       assert.equal(blocked.status,307)
+       assert.ok(blocked.headers.get('location').endsWith('/monitor'))
+     }
+     assert.equal((await fetch(base+'/reconciliacao',{headers,redirect:'manual'})).status,200)
+     const user=checked(await client.auth.getUser()).user
+     checked(await db.auth.admin.updateUserById(user.id,{user_metadata:{counter_role:'contador_1'}}))
+     const spoofed=await fetch(base+'/busca',{headers,redirect:'manual'})
+     assert.ok(spoofed.headers.get('location').endsWith('/monitor'),'Editable metadata cannot change protected role')
+   }
+ }
+ console.log('PASS: real HTTP routes send independent to monitor, hide Finalise, preserve reconciliation, ignore metadata spoofing')
+}finally{app.kill('SIGTERM')}
 const createdTeam=checked(await db.from('teams').select('id').eq('session_id',session.id).single())
 checked(await db.rpc('finalize_team_count',{p_team_id:createdTeam.id}))
 const reconciliation=checked(await db.from('reconciliation_items').select('status,contador_1_cases,contador_2_cases').eq('team_id',createdTeam.id).single())
 assert.equal(reconciliation.status,'combinado')
 assert.equal(reconciliation.contador_1_cases,2);assert.equal(reconciliation.contador_2_cases,2)
+// Preserve the existing independent reconciliation responsibility.
+const reconActions=await loadSource('actions/reconciliacao.ts',{
+ '@/lib/supabase-admin':{createAdminClient:()=>db},'@/lib/authorization':authorization
+})
+const reconRow=checked(await db.from('reconciliation_items').select('id').eq('team_id',createdTeam.id).single())
+checked(await db.from('reconciliation_items').update({status:'discrepancia'}).eq('id',reconRow.id))
+const independent=result.credenciais.find(c=>c.role==='independente')
+assert.equal((await signIn(independent.team_pin,independent.user_pin)).ok,true)
+assert.equal((await reconActions.listarDiscrepancias()).length,1)
+assert.equal((await reconActions.resolverItemReconciliacao(reconRow.id,2,0)).error,undefined)
+assert.equal((await reconActions.confirmarReconciliacao()).error,undefined)
+assert.equal((await signIn(result.credenciais[0].team_pin,result.credenciais[0].user_pin)).ok,true)
+assert.ok((await reconActions.resolverItemReconciliacao(reconRow.id,99,0)).error)
+console.log('PASS: independent still resolves and confirms reconciliation; regular counters cannot')
 checked(await db.rpc('combine_session_results',{p_session_id:session.id}))
 const total=checked(await db.from('combined_results').select('total_cases,total_units').eq('session_id',session.id).eq('brand_code','PIN-SYNTHETIC').single())
 assert.equal(total.total_cases,2);assert.equal(total.total_units,0)
 assert.equal(checked(await db.from('count_sessions').select('status').eq('id',session.id).single()).status,'fechada')
 console.log('PASS: new team counts reconcile and produce expected final result')
-console.log('PASS: all three four-digit logins create real counts with role-scoped reads and write-role protection')
+console.log('PASS: C1/C2 count and finalise; independent monitors both and cannot insert, update, delete or finalise initial counts')
 assert.ok((await signIn(result.credenciais[0].team_pin,'0000')).error)
 console.log('PASS: incorrect PIN denied')
 // Synthetic old account: Auth now refuses creating weak passwords, so emulate

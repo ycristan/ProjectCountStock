@@ -147,3 +147,12 @@ Ainda NÃO implementado/liberado:
 - A data de implantação dessa versão no projeto hospedado não foi consultada; distinguir alteração upstream comprovada de cronologia de implantação ainda não confirmada.
 
 - Regressão de senha reproduzida de verdade com Auth v2.197.0 no run 35578901405. O teste parou depois em teams.team_pin ausente no replay. Inspeção somente de schema confirmou character(4), nullable, sem default na produção; migration 20260921084500_reconcile_legacy_team_pin.sql registra essa estrutura sem modificar valores existentes. Não aplicada no banco hospedado. Aguardar nova execução integrada.
+
+
+## Regressão do perfil independente — PR72, 2026-09-21 (não publicado)
+- Origem identificada na PR63: criação deixou de gravar papel/equipe em user_metadata e passou a usar counter_accounts protegido, mas busca, layout e reconciliação continuaram lendo os campos antigos. Contas novas caíam na tela de lançamento e viam Finalise indevidamente.
+- Correção usa identidade protegida nessas telas e no proxy. Independente vai a /monitor, não lança nem finaliza contagem inicial; confirmação/monitoramento e reconciliação existentes são preservados. Nome de exibição continua em metadata, nunca a autorização.
+- Guardas nas Server Actions e políticas restritivas de INSERT/UPDATE/DELETE em count_entries protegem contra chamada direta. SELECT de monitoramento permanece; contagens históricas não são removidas.
+- Migration da PR72 ainda não publicada agora inclui essas políticas além do registro histórico de team_pin. Portanto há alteração de banco pendente; não tratar este pacote como somente código nem aplicar sem autorização de publicação.
+- Teste anterior que permitia lançamento aos três perfis tinha expectativa de negócio incorreta. Substituído por controles positivos C1/C2 e negativos do independente, mantendo reconciliação positiva. Adicionado HTTP real da aplicação compilada para roteamento, cabeçalho e metadata adulterada. Execução atual pendente; não afirmar aprovação antes do CI.
+- Nenhuma produção alterada. Não publicar PR72 até validação e autorização expressa do usuário.

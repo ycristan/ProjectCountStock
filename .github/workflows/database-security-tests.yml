@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/**'
       - 'actions/**'
+      - 'proxy.ts'
       - 'tests/http/**'
       - 'app/**'
       - 'lib/**'

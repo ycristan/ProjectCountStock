@@ -12,6 +12,7 @@ export type FinalizacaoResult = {
 export async function finalizarContagem(): Promise<FinalizacaoResult> {
   const access = await getTeamCounterAccess()
   if (!access) return { error: 'Not authenticated.' }
+  if (access.counterRole === 'independente') return { error: 'Independent must confirm the team from the monitor.' }
 
   const admin = createAdminClient()
   const { data: account, error: fetchError } = await admin
@@ -34,7 +35,7 @@ export async function finalizarContagem(): Promise<FinalizacaoResult> {
 
 export async function getFinalizacaoStatus(): Promise<{ finalized_at: string | null }> {
   const access = await getTeamCounterAccess()
-  if (!access) return { finalized_at: null }
+  if (!access || access.counterRole === 'independente') return { finalized_at: null }
 
   const admin = createAdminClient()
   const { data } = await admin
