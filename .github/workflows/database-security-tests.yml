@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'supabase/**'
+      - 'actions/**'
       - 'tests/http/**'
       - 'app/**'
       - 'lib/**'
@@ -78,6 +79,9 @@ jobs:
           supabase status --help
           npm ci --ignore-scripts
           node tests/http/inventory-export.mjs
+
+      - name: Four-digit team PINs and real Auth regression
+        run: node --experimental-vm-modules tests/http/team-pins.mjs
 
       - name: Stop disposable Supabase
         if: always()
