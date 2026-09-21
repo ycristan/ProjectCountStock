@@ -6,6 +6,7 @@ import { randomUUID, createHash, randomInt } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { loadSource } from '../inventory/source-fixture.mjs'
 assert.equal(process.env.GITHUB_ACTIONS, 'true')
+await import('./auth-policy-environment.mjs')
 const status = JSON.parse(execFileSync('supabase',['status','-o','json'],{encoding:'utf8'}))
 assert.equal(new URL(status.API_URL).origin,'http://127.0.0.1:54321')
 const db=createClient(status.API_URL,status.SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}})
