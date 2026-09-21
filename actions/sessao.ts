@@ -1,5 +1,6 @@
 'use server'
 
+import { generatePin, pinPassword } from '@/lib/pin-credentials'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
@@ -110,15 +111,6 @@ export type Credencial = {
   user_pin: string
 }
 
-function genPin(exclude: Set<string>): string {
-  let pin: string
-  do {
-    pin = String(Math.floor(1000 + Math.random() * 9000))
-  } while (exclude.has(pin))
-  exclude.add(pin)
-  return pin
-}
-
 export async function criarEquipes(
   sessaoId: string,
   equipes: EquipeInput[]
@@ -126,11 +118,43 @@ export async function criarEquipes(
   if (!(await isAdmin())) return { error: 'Unauthorized' }
   const supabase = await createClient()
   const admin = createAdminClient()
+  if (!Array.isArray(equipes) || equipes.length === 0 || equipes.some(e =>
+    !e || typeof e.team_name !== 'string' || !e.team_name.trim() ||
+    !Array.isArray(e.pessoas) || e.pessoas.length !== 3 ||
+    new Set(e.pessoas.map(p => p?.role)).size !== 3 ||
+    e.pessoas.some(p => !p || typeof p.nome !== 'string' || !p.nome.trim() ||
+      !['contador_1', 'contador_2', 'independente'].includes(p.role))
+  )) return { error: 'Enter the team name and all three counter names.' }
+  const { data: session, error: sessionError } = await supabase.from('count_sessions')
+    .select('status').eq('id', sessaoId).single()
+  if (sessionError || !session || session.status !== 'aberta') return { error: 'Session is not open for team creation.' }
   const credenciais: Credencial[] = []
-  const usedTeamPins = new Set<string>()
+  const existingTeams = await fetchAllRows<{ team_pin: string }>((from, to) =>
+    admin.from('teams').select('team_pin').order('id').range(from, to))
+  const usedTeamPins = new Set<string>(existingTeams.map(t => t.team_pin))
+  const createdTeamIds: string[] = []
+  const createdUserIds: string[] = []
+  // Auth and Postgres are separate services: compensate only this invocation.
+  // Never remove pre-existing teams/accounts, including older failed attempts.
+  async function fail(message: string) {
+    let cleanupFailed = false
+    for (const id of createdUserIds.slice().reverse()) {
+      try { const { error } = await admin.auth.admin.deleteUser(id); if (error) cleanupFailed = true }
+      catch { cleanupFailed = true }
+    }
+    // Preserve rows for investigation when Auth cleanup is incomplete.
+    if (!cleanupFailed) for (const id of createdTeamIds.slice().reverse()) {
+      try { const { error } = await admin.from('teams').delete().eq('id', id); if (error) cleanupFailed = true }
+      catch { cleanupFailed = true }
+    }
+    if (cleanupFailed) console.error('team_creation_cleanup_failed')
+    return { error: cleanupFailed ? message + ' Cleanup incomplete; contact an administrator before retrying.' : message }
+  }
+
+  try {
 
   for (const equipe of equipes) {
-    const teamPin = genPin(usedTeamPins)
+    const teamPin = generatePin(usedTeamPins)
 
     const { data: teamData, error: teamError } = await supabase
       .from('teams')
@@ -139,26 +163,28 @@ export async function criarEquipes(
       .single()
 
     if (teamError || !teamData) {
-      return { error: `Error creating team "${equipe.team_name}".` }
+      return await fail('Error creating team.')
     }
 
+    createdTeamIds.push(teamData.id)
     const usedUserPins = new Set<string>()
 
     for (const pessoa of equipe.pessoas) {
-      const userPin = genPin(usedUserPins)
+      const userPin = generatePin(usedUserPins)
       const email = `${teamPin}${userPin}@count.local`
 
       const { data: userData, error: userError } = await admin.auth.admin.createUser({
         email,
-        password: userPin,
+        password: pinPassword(teamPin, userPin),
         user_metadata: { full_name: pessoa.nome },
         email_confirm: true,
       })
 
       if (userError || !userData.user) {
-        return { error: `Error creating user: ${userError?.message}` }
+        return await fail('Error creating counter login. No logins were issued.')
       }
 
+      createdUserIds.push(userData.user.id)
       const { error: accountError } = await supabase.from('counter_accounts').insert({
         auth_user_id: userData.user.id,
         team_id: teamData.id,
@@ -168,15 +194,14 @@ export async function criarEquipes(
       })
 
       if (accountError) {
-        return { error: `Error saving account: ${accountError.message}` }
+        return await fail('Error saving counter account.')
       }
 
       const { error: accessError } = await admin
         .from('app_user_access')
         .insert({ user_id: userData.user.id, access_kind: 'team_counter' })
       if (accessError) {
-        await admin.auth.admin.deleteUser(userData.user.id)
-        return { error: `Error saving account access: ${accessError.message}` }
+        return await fail('Error saving counter access.')
       }
 
       credenciais.push({ team: equipe.team_name, team_pin: teamPin, role: pessoa.role, name: pessoa.nome, user_pin: userPin })
@@ -184,6 +209,9 @@ export async function criarEquipes(
   }
 
   return { credenciais }
+  } catch {
+    return await fail('Error creating teams. Please retry after checking the session.')
+  }
 }
 
 // ─── Team management ────────────────────────────────────────────────────────

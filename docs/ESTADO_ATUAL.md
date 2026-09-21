@@ -130,3 +130,29 @@ Ainda NÃO implementado/liberado:
 - Revisão React: gerador carregado sob demanda, botão type=button, estado de preparação, erro acessível e nenhuma mudança nas fronteiras de autorização.
 - Não executado teste visual autenticado nem abertura manual no Excel. Geração/releitura automática e compilação não provam interação real do navegador.
 - Nenhum merge, mudança de produção ou aplicação de migration. PR #70 continua rascunho. Próximos passos já autorizados de implementação: novo upload/duplicatas/confirmação e isolamento WHS antes da liberação. Este template não conclui o módulo Inventory nem libera Service.
+
+
+## Incidente de criação de equipes — PR72, 2026-09-21 (não publicado)
+- A produção rejeitou a senha interna com a mensagem de mínimo de seis caracteres. actions/sessao.ts enviava o PIN individual bruto para auth.admin.createUser; actions/auth.ts usava o mesmo PIN no login.
+- Comparação com commit 19b1bf5fa495397614887a3ee8e90e565ca34e68 (junho) confirma o comportamento antigo. Comparação da criação entre main 6638fec7b5d54647270961191fd76200ea71969c e 8eac774b0eaf5192477a20940bf237a28a397589 confirma que PR70 não alterou esse trecho. Histórico de configuração Auth não está exposto no conector; não atribuir data/autor sem evidência.
+- PR72 mantém os dois PINs de quatro dígitos e compatibilidade com logins antigos. Testes novos usam Auth e Postgres descartáveis no GitHub, ações reais com contexto Next substituído e administrador autenticado; não são cliques no navegador.
+- Leitura agregada encontrou uma equipe sem counter_accounts. Registro preservado; investigar antes de qualquer exclusão.
+- Risco preexistente fora desta correção: counter_read_team permite leitura de contagens da própria equipe via API. Filtro de papel na aplicação não equivale a isolamento cego no banco. Não mudar essa política silenciosamente neste hotfix.
+- PR70 já foi publicada em 18/09, com migration aplicada e preservação histórica conferida; notas acima que dizem não publicado são históricas. PR71 registra a publicação separadamente.
+- CI da PR72 em execução; publicação requer autorização explícita. Nenhuma conta/teste criado em produção.
+
+### Evidência adicional da origem, 21/09
+- Upstream Supabase Auth commit a1511d25154adb5b8f02220e84f3efd124aa4aaf, de 31/08/2026, acrescentou checkPasswordStrength em adminUserCreate: https://github.com/supabase/auth/commit/a1511d25154adb5b8f02220e84f3efd124aa4aaf . Presente em v2.197.0.
+- O primeiro teste real mostrou que Auth v2.196.0, incluído pela CLI, ainda aceita senha administrativa de quatro caracteres. Por isso o teste agora troca APENAS o container Auth descartável por v2.197.0 antes da regressão, com a mesma configuração e banco sintético. Não mascarar essa diferença com mock de senha.
+- A data de implantação dessa versão no projeto hospedado não foi consultada; distinguir alteração upstream comprovada de cronologia de implantação ainda não confirmada.
+
+- Regressão de senha reproduzida de verdade com Auth v2.197.0 no run 35578901405. O teste parou depois em teams.team_pin ausente no replay. Inspeção somente de schema confirmou character(4), nullable, sem default na produção; migration 20260921084500_reconcile_legacy_team_pin.sql registra essa estrutura sem modificar valores existentes. Não aplicada no banco hospedado. Aguardar nova execução integrada.
+
+
+## Regressão do perfil independente — PR72, 2026-09-21 (não publicado)
+- Origem identificada na PR63: criação deixou de gravar papel/equipe em user_metadata e passou a usar counter_accounts protegido, mas busca, layout e reconciliação continuaram lendo os campos antigos. Contas novas caíam na tela de lançamento e viam Finalise indevidamente.
+- Correção usa identidade protegida nessas telas e no proxy. Independente vai a /monitor, não lança nem finaliza contagem inicial; confirmação/monitoramento e reconciliação existentes são preservados. Nome de exibição continua em metadata, nunca a autorização.
+- Guardas nas Server Actions e políticas restritivas de INSERT/UPDATE/DELETE em count_entries protegem contra chamada direta. SELECT de monitoramento permanece; contagens históricas não são removidas.
+- Migration da PR72 ainda não publicada agora inclui essas políticas além do registro histórico de team_pin. Portanto há alteração de banco pendente; não tratar este pacote como somente código nem aplicar sem autorização de publicação.
+- Teste anterior que permitia lançamento aos três perfis tinha expectativa de negócio incorreta. Substituído por controles positivos C1/C2 e negativos do independente, mantendo reconciliação positiva. Adicionado HTTP real da aplicação compilada para roteamento, cabeçalho e metadata adulterada. Execução atual pendente; não afirmar aprovação antes do CI.
+- Nenhuma produção alterada. Não publicar PR72 até validação e autorização expressa do usuário.

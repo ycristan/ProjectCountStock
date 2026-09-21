@@ -89,3 +89,20 @@
 - Não criar clones, arquivos do projeto, tokens ou variáveis de ambiente do projeto no computador de Yuri. Não orientar configuração de SENTRY_AUTH_TOKEN no Windows.
 - Testes descartáveis nos runners do GitHub continuam permitidos, sem segredos de produção. Credenciais sintéticas são geradas no runner e não são registradas no repositório.
 - Falta de acesso de leitura ao Sentry não autoriza solicitar armazenamento local nem declarar a captura do aplicativo inoperante.
+
+
+## PINs de equipes — compatibilidade Auth (PR72, 2026-09-21)
+- PIN de equipe e PIN individual continuam com quatro dígitos; não exigir senha do contador.
+- Novas contas de equipe usam uma codificação determinística do par de PINs apenas como credencial interna do Auth. Isso NÃO acrescenta entropia, NÃO substitui proteção contra tentativas e NÃO deve aparecer no cliente ou nos logs.
+- Login tenta a codificação e somente em invalid_credentials tenta a senha PIN legada. Login administrativo email/senha permanece igual; não redefinir credenciais existentes.
+- Criação valida equipe completa e sessão aberta. Compensação de falha remove apenas contas/equipes criadas na mesma chamada; se incompleta, informa necessidade de investigação. Não é transação distribuída nem garantia contra resultado remoto ambíguo.
+- A correção no banco hospedado não exige redução de política de senha. Migration idempotente registra teams.team_pin character(4), estrutura histórica já existente na produção; ela é necessária para replay fiel em bancos novos, não para adicionar uma coluna nova na produção. Nenhuma limpeza automática de registros preexistentes.
+
+
+## Regressão do perfil independente — PR72, 2026-09-21 (não publicado)
+- Origem identificada na PR63: criação deixou de gravar papel/equipe em user_metadata e passou a usar counter_accounts protegido, mas busca, layout e reconciliação continuaram lendo os campos antigos. Contas novas caíam na tela de lançamento e viam Finalise indevidamente.
+- Correção usa identidade protegida nessas telas e no proxy. Independente vai a /monitor, não lança nem finaliza contagem inicial; confirmação/monitoramento e reconciliação existentes são preservados. Nome de exibição continua em metadata, nunca a autorização.
+- Guardas nas Server Actions e políticas restritivas de INSERT/UPDATE/DELETE em count_entries protegem contra chamada direta. SELECT de monitoramento permanece; contagens históricas não são removidas.
+- Migration da PR72 ainda não publicada agora inclui essas políticas além do registro histórico de team_pin. Portanto há alteração de banco pendente; não tratar este pacote como somente código nem aplicar sem autorização de publicação.
+- Teste anterior que permitia lançamento aos três perfis tinha expectativa de negócio incorreta. Substituído por controles positivos C1/C2 e negativos do independente, mantendo reconciliação positiva. Adicionado HTTP real da aplicação compilada para roteamento, cabeçalho e metadata adulterada. Execução atual pendente; não afirmar aprovação antes do CI.
+- Nenhuma produção alterada. Não publicar PR72 até validação e autorização expressa do usuário.

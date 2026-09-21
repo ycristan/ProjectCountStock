@@ -1,5 +1,6 @@
 'use server'
 
+import { pinPassword } from '@/lib/pin-credentials'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -38,8 +39,9 @@ export async function login(
   let signInPassword: string
 
   if (teamPin && userPin) {
+    if (!/^\d{4}$/.test(teamPin) || !/^\d{4}$/.test(userPin)) return { error: 'Invalid code or PIN.' }
     signInEmail = `${teamPin}${userPin}@count.local`
-    signInPassword = userPin
+    signInPassword = pinPassword(teamPin, userPin)
   } else if (email && password) {
     signInEmail = email
     signInPassword = password
@@ -48,11 +50,17 @@ export async function login(
   }
 
   const supabase = await makeSupabase()
-  const { error } = await supabase.auth.signInWithPassword({
+  let { error } = await supabase.auth.signInWithPassword({
     email: signInEmail,
     password: signInPassword,
   })
 
+  // Existing team/solo accounts keep their original PIN password. No resets,
+  // migration of live credentials or retry on rate limits/network failures.
+  if (error?.code === 'invalid_credentials' && teamPin && userPin) {
+    const legacy = await supabase.auth.signInWithPassword({ email: signInEmail, password: userPin })
+    error = legacy.error
+  }
   if (error) return { error: 'Invalid code or PIN.' }
   redirect('/')
 }

@@ -46,7 +46,7 @@ export type LancarContagemResult = {
 export async function carregarInventario(): Promise<ItemBusca[]> {
   const supabase = await createClient()
   const access = await getTeamCounterAccess()
-  if (!access) return []
+  if (!access || access.counterRole === 'independente') return []
 
   const { teamId, counterRole } = access
 
@@ -125,6 +125,7 @@ export async function lancarContagem(
   const supabase = await createClient()
   const access = await getTeamCounterAccess()
   if (!access) return { error: 'Not authenticated.' }
+  if (access.counterRole === 'independente') return { error: 'Independent monitors counters; cannot record an initial count.' }
 
   const { teamId, counterRole } = access
 
