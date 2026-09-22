@@ -22,10 +22,18 @@ Substituição pelo independente permanece indisponível até a operação dedic
 A proteção de contagem cega nova não corrige por si só as rotas legadas. Correções da PR72 serão incorporadas com rastreabilidade.
 Não implementar duas aplicações em paralelo: os registros antigos permanecem para histórico/compatibilidade, equipes novas só serão roteadas ao novo fluxo após integração completa e ativação aprovada.
 
-## Verificação
-46 verificações SQL e fixture de upgrade de todas as tabelas públicas existentes mais auth.users. 43 verificações da versão inicial passaram em 35720834094, mas a suíte inteira falhou por fixture de upgrade compartilhada; isolamento corrigido. Versão ampliada ainda aguarda execução completa. Duas disputas concorrentes adicionais também exigem evidência.
-Inclui cenários parciais T01/T03/T04/T05/T06/T07/T08/T31/T33/T37/T38/T44/T45/T53.
-Não equivale à execução completa dos 55 cenários nem a navegador/Realtime/PIN.
+## Verificação executada
+Código: 4c06317ca3a29d4476ac04d825eb3c488530f940.
+Execução aprovada: https://github.com/ycristan/ProjectCountStock/actions/runs/35722151547
+- 136 testes SQL (90 anteriores + 46 novos).
+- Upgrade com comparação de todas as tabelas públicas preexistentes e auth.users, incluindo PIN individual sintético gerado no runner.
+- Duas disputas concorrentes usando conexões PostgreSQL separadas: edição/edição e edição/congelamento.
+- Lint SQL sem erros.
+- Build e regressão HTTP de Auth/ZIP/erro com coletor SDK isolado. Não prova recebimento no Sentry hospedado.
+Cobertura parcial T01/T03/T04/T05/T06/T07/T08/T31/T33/T37/T38/T44/T45/T49/T50/T53.
+Não equivale à execução completa dos 55 cenários nem a navegador/Realtime/PIN do novo fluxo.
+O exemplo BPU 20/24 verifica capacidade de armazenamento/recálculo, NÃO a operação de aprovação dupla ainda pendente.
+Falhas anteriores de sintaxe e preparação/isolamento dos testes foram corrigidas sem relaxar permissões nem remover verificações.
 
 ## Referências técnicas
 RLS/grants e diferença entre autorização e autenticação conferidos na documentação oficial:

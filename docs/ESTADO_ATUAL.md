@@ -2,12 +2,18 @@
 
 Atualizado: 2026-09-22
 
-## Entrega 2 em implementação — 2026-09-22
+## Entrega 2 — primeiro bloco de banco validado, 2026-09-22
 PR #74, branch codex/team-flow-foundation, dependente da documental #73. Modelo e limites: [TEAM_COUNT_FOUNDATION.md](./TEAM_COUNT_FOUNDATION.md).
-Fundação aditiva de participação, posições, autoria, revisões, leitura cega e guardas de etapa. Sem API de escrita nova, sem mudança de rotas/PINs legados, sem produção.
-Migration gerada pelo CLI no runner (35720003065). Upgrade preservou todas as tabelas públicas e usuários Auth; 43 verificações novas passaram na execução 35720834094.
-Essa execução completa FALHOU: fixture de upgrade deixou sessão sintética aberta, afetando três testes antigos que corretamente bloquearam BPU/transferência. Corrigir isolamento com reset descartável antes da suíte; não mudar regras nem retirar testes.
-Nova execução deve incluir também duas disputas concorrentes e regressão HTTP. Entrega 2 não concluída; nenhuma autorização de merge/migration real.
+Código validado: 4c06317ca3a29d4476ac04d825eb3c488530f940. Evidência: https://github.com/ycristan/ProjectCountStock/actions/runs/35722151547 .
+- 136 testes SQL: 90 existentes + 46 novos, sem retirar testes.
+- Duas disputas concorrentes reais: edições simultâneas e edição aguardando congelamento.
+- Upgrade preserva tabelas públicas anteriores e usuários Auth, incluindo PIN individual sintético; nenhuma equipe antiga convertida.
+- Componentes Pallets/Cases/Units e parâmetros preservados; exemplo 20 cases x BPU 20/24 verificado como 400/480. Não significa aprovação dupla de BPU implementada.
+- Lint SQL e regressão de build/Auth/HTTP/ZIP/coletor de erro passaram. Coletor isolado não comprova recebimento no Sentry hospedado.
+Nenhuma rota/login/PIN legado alterado. Nenhuma migration real, merge ou escrita de teste em Preview/produção. Escritas nas novas tabelas permanecem indisponíveis à aplicação.
+Entrega 2 AINDA NÃO CONCLUÍDA: faltam comandos autorizados, auditoria das decisões, snapshots completos e integração de identidade, com validação própria. Não apresentar este bloco como novo fluxo utilizável nem como execução integral dos 55 cenários.
+Próximo passo: completar esses mecanismos na mesma PR, reaproveitando correções da PR72 com testes, sem solicitar novamente regras aprovadas.
+Falhas intermediárias corrigidas: delimitadores SQL, isolamento entre fixtures de upgrade/suítes e posição do teste de armazenamento BPU fora do perfil sem permissão. Proteções não foram relaxadas.
 
 ## Retomada prioritária — equipes, 2026-09-21
 Yuri aprovou o plano de nove entregas e sua implementação. Fonte: [contrato](./TEAM_COUNT_FLOW.md), [plano](./TEAM_COUNT_PLAN.md), [55 cenários planejados](./TEAM_COUNT_TEST_MATRIX.md).

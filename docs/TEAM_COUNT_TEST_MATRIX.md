@@ -75,3 +75,7 @@ Cada evidência futura deve conter ID, commit, execução, camada, resultado e l
 ## Verificação documental desta PR
 Conferir cobertura R01–R15, IDs únicos, nove entregas e links internos; revisão de leitura independente.
 Nenhuma execução dos roteiros acima é alegada nesta PR. Testes anteriores da PR72 são evidência parcial de outro escopo, não aprovação destes contratos.
+
+## Evidência parcial posterior — fundação, 2026-09-22
+A PR #74 executou verificações de banco relacionadas a parte desta matriz: 46 novas asserções SQL e duas disputas concorrentes, além das regressões existentes. Evidência/limites em [TEAM_COUNT_FOUNDATION.md](./TEAM_COUNT_FOUNDATION.md).
+Nenhum cenário ponta a ponta acima muda para concluído por inferência: comandos, telas, Auth/PIN do novo fluxo, Realtime e confirmação real ainda exigem suas verificações.

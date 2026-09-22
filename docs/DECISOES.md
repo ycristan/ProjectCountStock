@@ -103,3 +103,6 @@ PR72 não está autorizada para publicação. Aprovação do plano permite branc
 - Revogação/visibilidade consultam vínculo e etapa atuais, não apenas JWT. Novas tabelas são somente leitura para authenticated e service_role até existirem comandos transacionais autorizados.
 - Estados/guardas de banco são fundação, não prova de processo completo: conciliação, evidências de confirmação e autorização dos comandos ainda dependem das próximas partes.
 - Testes de upgrade e testes de regras têm bancos descartáveis reinicializados entre si para não compartilhar sessões sintéticas abertas. Nunca remover travas para acomodar fixtures.
+
+- Preservar componentes físicos e parâmetros da contagem, não apenas total convertido: total canônico gerado pela mesma aritmética de convert_count. Histórico mantém componentes e total; correção administrativa de BPU continua sem comando autorizado neste bloco.
+- Em 22/09 a base passou nos 136 testes SQL, duas disputas concorrentes, upgrade e regressão HTTP (execução 35722151547). Isso não conclui a entrega 2 nem libera produção.
