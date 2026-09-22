@@ -2,13 +2,13 @@
 
 Atualizado: 2026-09-22
 
-## Em validação — comandos de finalização normal, 2026-09-22
+## Validado — comandos de finalização normal, 2026-09-22
 Na mesma PR74: pedido individual e aceite/rejeição com identidade protegida, lock por equipe, revisão esperada, recibo idempotente e evento imutável com autor. API não aceita quantidades nem altera rotas/PINs legados.
-34 verificações SQL novas e teste HTTP com Auth/PostgREST reais preparados; execução ainda pendente. Não tratar como aprovados antes do resultado.
+Código f8326fcdc89a96539e8d4051c79d81221762b786: 170 asserções SQL aprovadas, incluindo 34 novas. Auth/PostgREST reais aprovaram permissões, requisições concorrentes, retry, rejeição/aceites e revogação com token antigo. Evidência: https://github.com/ycristan/ProjectCountStock/actions/runs/35731209411 . Upgrade, lint e regressões anteriores também passaram.
 Apenas fluxo normal: exceções de saída/substituição falham fechadas até suas operações dedicadas. Interface, comparação de itens, snapshots oficiais e integração completa ainda pendentes.
-Nenhum merge ou banco real alterado.
+Nenhum merge ou banco real alterado. Detalhes em TEAM_COUNT_FOUNDATION.md. Próximo trabalho: snapshots oficiais preservados e integração de identidade, mantendo comandos posteriores indisponíveis até suas garantias; entrega2 ainda incompleta.
 
-## Entrega 2 — primeiro bloco de banco validado, 2026-09-22
+## Histórico do primeiro bloco — Entrega 2 — primeiro bloco de banco validado, 2026-09-22
 PR #74, branch codex/team-flow-foundation, dependente da documental #73. Modelo e limites: [TEAM_COUNT_FOUNDATION.md](./TEAM_COUNT_FOUNDATION.md).
 Código validado: 4c06317ca3a29d4476ac04d825eb3c488530f940. Evidência: https://github.com/ycristan/ProjectCountStock/actions/runs/35722151547 .
 - 136 testes SQL: 90 existentes + 46 novos, sem retirar testes.

@@ -112,3 +112,5 @@ PR72 não está autorizada para publicação. Aprovação do plano permite branc
 - Pedido/decisão/avanço da etapa e evento persistem na mesma transação. UUID de comando mais payload original permite retry sem reaplicar; revisão esperada impede decisão sobre tela antiga.
 - Eventos de finalização sem quantidades, PINs ou motivo livre. Contador lê apenas eventos próprios; independente da equipe/admin leem conforme vínculo protegido. Eventos não podem ser reescritos/excluídos.
 - Comandos deste bloco cobrem somente finalização normal; não simulam admin excepcional antes de implementar posse/substituição. Último aceite abre etapa de reconciliação, não aceita produtos nem submete equipe automaticamente.
+
+- Evidência dos comandos: commit f8326fcdc89a96539e8d4051c79d81221762b786, run35731209411: 170 SQL e Auth/PostgREST reais aprovados, incluindo concorrência/retry/revogação. Sem publicação ou interface nova ativada.

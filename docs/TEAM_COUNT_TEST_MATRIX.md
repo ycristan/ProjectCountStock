@@ -79,3 +79,7 @@ Nenhuma execução dos roteiros acima é alegada nesta PR. Testes anteriores da 
 ## Evidência parcial posterior — fundação, 2026-09-22
 A PR #74 executou verificações de banco relacionadas a parte desta matriz: 46 novas asserções SQL e duas disputas concorrentes, além das regressões existentes. Evidência/limites em [TEAM_COUNT_FOUNDATION.md](./TEAM_COUNT_FOUNDATION.md).
 Nenhum cenário ponta a ponta acima muda para concluído por inferência: comandos, telas, Auth/PIN do novo fluxo, Realtime e confirmação real ainda exigem suas verificações.
+
+## Evidência parcial dos comandos individuais — 2026-09-22
+T06/T07/T08/T09/T45/T50 agora têm evidência parcial adicional de RPC autorizado + Auth/PostgREST real no runner, não apenas alterações privilegiadas de fixture. Commit f8326fcdc89a96539e8d4051c79d81221762b786; execução 35731209411, aprovada.
+34 novas asserções SQL, concorrência HTTP e revogação com sessão anterior. A UI e a comparação de itens ainda não estão ligadas; não marcar cenários ponta a ponta como concluídos.
