@@ -14,7 +14,7 @@ PR dependente da #73. Não publicar ou aplicar isoladamente.
 - CLI gerou o nome da migration no runner: execução 35720003065, sem conexão ao banco real.
 
 ## Limites explícitos
-Este bloco NÃO conclui a entrega 2 inteira. Ainda faltam os demais comandos, auditoria das etapas posteriores, snapshot completo de resultados e integração com a identidade/rotas da aplicação.
+Este bloco NÃO conclui a entrega 2 inteira. Ainda faltam os demais comandos, auditoria das etapas posteriores, integração das versões preservadas com decisões/relatórios e integração com a identidade/rotas da aplicação.
 Não há botão novo, novo login, criação de equipe pela UI nem captura de assinatura habilitados.
 Quantidade canônica é derivada dos componentes, não fornecida livremente pelo cliente. Não há API de escrita de quantidades. Validação de métodos e conversão de peso continuam pendentes na integração.
 Guardas de fase não comprovam pendências de conciliação ou evidências de assinatura. Essas verificações devem existir antes de liberar comandos de conciliação, submissão ou assinatura.
@@ -61,3 +61,18 @@ Execução: https://github.com/ycristan/ProjectCountStock/actions/runs/357312094
 - Token já emitido perde acesso a comando/recibo após revogação do vínculo.
 - Upgrade preservado; lint SQL sem erros; dois testes concorrentes anteriores e regressões de build/Auth/HTTP/ZIP/coletor Sentry isolado aprovados.
 Não comprova interface/Realtime/PIN do novo fluxo, comparação/reconciliação, assinaturas nem conta Sentry hospedada. Não executado advisor remoto sobre esta migration, pois não foi aplicada em produção.
+
+## Versões preservadas — 2026-09-22
+Código: aad292839465853614831d64aeb084de8cd0f363.
+Execução aprovada: https://github.com/ycristan/ProjectCountStock/actions/runs/35735213309 .
+- 211 testes SQL (170 anteriores + 41 novos), sem retirar testes.
+- team_result_versions e team_result_items preservam revisão, warehouse/equipe/participantes, cadastro/BPU/locais/status, resultado e fontes originais por autor/posição/método/componentes.
+- Builder privado INVOKER sem EXECUTE para anon/authenticated/service_role. Recebe resultados JÁ validados dos futuros comandos; não é endpoint para enviar quantidades arbitrárias. Não implementa comparação/tolerância/conciliação por si só.
+- Constrói itens e sela versão atomicamente. Cobertura exata das marcas contadas pela equipe; falha deixa zero versão parcial. Não cria zeros globais de inventário.
+- Entrar em signing exige versão selada da revisão atual. Cancelar antes da confirmação limpa seleção sem apagar histórico; nova revisão cria outra versão. Versão selecionada não troca após congelamento.
+- Fontes e cadastro são copiados no banco, não aceitos como metadata do cliente. RLS de snapshots é apenas monitor/admin; nenhum bypass da contagem cega.
+- Testes comprovaram preservação diante de alteração de nome/status/categoria/local do produto e nomes de warehouse/equipe; BPU guardado e quantidade da versão não podem ser editados. NÃO foi executada uma correção de BPU no cadastro após fechamento geral, cujo comando ainda falta.
+- Versões/itens não têm exclusão ou edição; uma versão selada não recebe mais produtos. Versões antigas permanecem após recontagem sintética.
+- Fixtures de congelamento anteriores agora selecionam versão de fato, sem remover proteções. Elas continuam fixtures de banco, não assinatura/reconciliação pelo usuário.
+- Auth/PostgREST reais confirmam leitura autorizada/cegueira, proibição anônima e de escrita direta. Upgrade, concorrência, lint, build, ZIP e demais regressões passaram.
+Ainda faltam integração com identidade/rotas, decisões/rodadas de reconciliação e seus detalhes, aprovação/assinaturas e consumo das versões nos relatórios. Nenhuma dessas funcionalidades é marcada como publicada.

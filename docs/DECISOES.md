@@ -121,3 +121,5 @@ PR72 não está autorizada para publicação. Aprovação do plano permite branc
 - Fontes são preservadas por registro/posição/pessoa/revisão/componentes/método. Não somar participantes para obter resultado da equipe.
 - Builder interno sem elevação/permissões de aplicativo; os futuros comandos devem entregar resultado validado. Estes testes de armazenamento não equivalem a algoritmo de conciliação, assinatura ou aprovação implementados.
 - Snapshots não acrescentam zero global e não alteram solo; apenas marcas efetivamente contadas pela equipe entram. R13 continua etapa9.
+
+- Validação aprovada: aad292839465853614831d64aeb084de8cd0f363, execução35735213309, 211 SQL mais Auth/PostgREST e regressões. Mudanças de cadastro testadas não alteram versões anteriores; correção de BPU pós-fechamento geral e relatórios consumidores ainda não testados/implementados.

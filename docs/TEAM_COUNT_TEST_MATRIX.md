@@ -83,3 +83,8 @@ Nenhum cenário ponta a ponta acima muda para concluído por inferência: comand
 ## Evidência parcial dos comandos individuais — 2026-09-22
 T06/T07/T08/T09/T45/T50 agora têm evidência parcial adicional de RPC autorizado + Auth/PostgREST real no runner, não apenas alterações privilegiadas de fixture. Commit f8326fcdc89a96539e8d4051c79d81221762b786; execução 35731209411, aprovada.
 34 novas asserções SQL, concorrência HTTP e revogação com sessão anterior. A UI e a comparação de itens ainda não estão ligadas; não marcar cenários ponta a ponta como concluídos.
+
+## Evidência parcial de versões preservadas — 2026-09-22
+Commit aad292839465853614831d64aeb084de8cd0f363, execução35735213309: 41 novas asserções (211 SQL total), Auth/PostgREST e regressões aprovados.
+T04/T21/T37/T38/T44/T45/T49/T53 têm evidência adicional de armazenamento/RLS/seleção imutável e preservação de cadastro. Rodadas e assinaturas foram fixtures internas, NÃO ações reais pelo usuário; não marcar esses cenários completos.
+BPU preservado foi testado contra edição do snapshot, não através de correção aprovada do cadastro após fechamento geral. Report/export consumidor continua pendente.
