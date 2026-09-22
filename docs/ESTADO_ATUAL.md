@@ -2,6 +2,12 @@
 
 Atualizado: 2026-09-22
 
+## Em validação — versões preservadas de resultados, 2026-09-22
+Na PR74, estrutura interna de versões completas e itens imutáveis, com cadastro/participantes/contagens originais copiados pelo banco; seleção de versão selada antes de entrar em coleta. Primeira confirmação mantém seleção fixa.
+Construtor interno INVOKER sem permissão para clientes/admin/service_role. Recebe saída já resolvida dos futuros comandos, não valores livres do cliente. Não implementa decisão de igualdade/tolerância/conciliação nem aprovação/admin/assinatura.
+41 novas asserções SQL preparadas; fixtures de congelamento atualizadas para exigir versão real em vez de pular essa garantia. Teste HTTP ampliado para leitura protegida. Resultados ainda pendentes.
+Nenhuma produção, rota, PIN ou interface alterada. Entrega2 continua com integração de identidade pendente.
+
 ## Validado — comandos de finalização normal, 2026-09-22
 Na mesma PR74: pedido individual e aceite/rejeição com identidade protegida, lock por equipe, revisão esperada, recibo idempotente e evento imutável com autor. API não aceita quantidades nem altera rotas/PINs legados.
 Código f8326fcdc89a96539e8d4051c79d81221762b786: 170 asserções SQL aprovadas, incluindo 34 novas. Auth/PostgREST reais aprovaram permissões, requisições concorrentes, retry, rejeição/aceites e revogação com token antigo. Evidência: https://github.com/ycristan/ProjectCountStock/actions/runs/35731209411 . Upgrade, lint e regressões anteriores também passaram.

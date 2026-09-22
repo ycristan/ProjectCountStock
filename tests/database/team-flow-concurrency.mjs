@@ -67,7 +67,11 @@ update public.team_memberships set finish_state='requested' where team_id='${tea
 update public.team_memberships set finish_state='accepted' where team_id='${team}' and role='counter';
 update public.team_flows set phase='reconciling',revision=2 where team_id='${team}';
 update public.team_flows set phase='admin_review',revision=3 where team_id='${team}';
-update public.team_flows set phase='signing',revision=4 where team_id='${team}';
+update public.team_flows set result_version_id=private.build_team_result_snapshot(
+ '${team}',3,'${mi}',(select jsonb_agg(jsonb_build_object('brand_code',brand_code,
+ 'quantity_units',quantity_units,'resolution','reconciled','resolved_by','${mi}'))
+ from public.team_count_records where team_id='${team}')),
+ phase='signing',revision=4 where team_id='${team}';
 update public.team_flows set frozen_at=now(),revision=5 where team_id='${team}';
 commit;
 `)

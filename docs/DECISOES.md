@@ -114,3 +114,10 @@ PR72 não está autorizada para publicação. Aprovação do plano permite branc
 - Comandos deste bloco cobrem somente finalização normal; não simulam admin excepcional antes de implementar posse/substituição. Último aceite abre etapa de reconciliação, não aceita produtos nem submete equipe automaticamente.
 
 - Evidência dos comandos: commit f8326fcdc89a96539e8d4051c79d81221762b786, run35731209411: 170 SQL e Auth/PostgREST reais aprovados, incluindo concorrência/retry/revogação. Sem publicação ou interface nova ativada.
+
+## Versões de resultados — 2026-09-22
+- Snapshot relacional por equipe/revisão: versão com warehouse/equipe/participantes e itens com quantidade oficial, BPU/cadastro/locais e fontes originais. Campos de cadastro são copiados pelo banco, sem payload de identidade/metadata vindo do cliente.
+- Somente uma versão completa e selada da revisão atual pode ser escolhida para coleta. Cancelar antes da primeira confirmação libera seleção, preservando a versão antiga; nova revisão gera outra versão. Depois do congelamento não há troca.
+- Fontes são preservadas por registro/posição/pessoa/revisão/componentes/método. Não somar participantes para obter resultado da equipe.
+- Builder interno sem elevação/permissões de aplicativo; os futuros comandos devem entregar resultado validado. Estes testes de armazenamento não equivalem a algoritmo de conciliação, assinatura ou aprovação implementados.
+- Snapshots não acrescentam zero global e não alteram solo; apenas marcas efetivamente contadas pela equipe entram. R13 continua etapa9.

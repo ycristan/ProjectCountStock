@@ -94,10 +94,18 @@ update public.team_memberships set finish_state='requested' where team_id='10000
 update public.team_memberships set finish_state='accepted' where team_id='10000000-0000-0000-0000-000000000200' and role='counter';
 update public.team_flows set phase='reconciling',revision=2 where team_id='10000000-0000-0000-0000-000000000200';
 update public.team_flows set phase='admin_review',revision=3 where team_id='10000000-0000-0000-0000-000000000200';
-update public.team_flows set phase='signing',revision=4 where team_id='10000000-0000-0000-0000-000000000200';
-update public.team_flows set phase='admin_review',revision=5 where team_id='10000000-0000-0000-0000-000000000200';
+-- Synthetic resolved result fixture, not a reconciliation UI/authorization test.
+update public.team_flows set result_version_id=private.build_team_result_snapshot(
+ '10000000-0000-0000-0000-000000000200',3,'10000000-0000-0000-0000-000000000303',
+ '[{"brand_code":"foundation-a","quantity_units":480,"resolution":"reconciled","resolved_by":"10000000-0000-0000-0000-000000000303"}]'::jsonb),
+ phase='signing',revision=4 where team_id='10000000-0000-0000-0000-000000000200';
+update public.team_flows set phase='admin_review',result_version_id=null,revision=5 where team_id='10000000-0000-0000-0000-000000000200';
 select is((select phase from public.team_flows where team_id='10000000-0000-0000-0000-000000000200'),'admin_review', 'T37: cancel collection before freeze');
-update public.team_flows set phase='signing',revision=6 where team_id='10000000-0000-0000-0000-000000000200';
+-- Synthetic resolved result fixture, not a reconciliation UI/authorization test.
+update public.team_flows set result_version_id=private.build_team_result_snapshot(
+ '10000000-0000-0000-0000-000000000200',5,'10000000-0000-0000-0000-000000000303',
+ '[{"brand_code":"foundation-a","quantity_units":480,"resolution":"reconciled","resolved_by":"10000000-0000-0000-0000-000000000303"}]'::jsonb),
+ phase='signing',revision=6 where team_id='10000000-0000-0000-0000-000000000200';
 update public.team_flows set frozen_at=now(),revision=7 where team_id='10000000-0000-0000-0000-000000000200';
 select throws_ok($q$update public.team_flows set phase='admin_review',frozen_at=null,revision=8 where team_id='10000000-0000-0000-0000-000000000200'$q$,'P0001','First confirmation cannot be undone','T38: frozen results cannot reopen');
 select throws_ok($q$update public.team_count_records set units=99,revision=3 where id='10000000-0000-0000-0000-000000000601'$q$,'P0001','Team results are frozen','T44: privileged quantity edits blocked when frozen');

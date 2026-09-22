@@ -516,5 +516,206 @@ revoke all on function public.decide_team_finish(uuid,uuid,boolean,bigint,uuid) 
 grant execute on function public.request_team_finish(uuid,uuid,bigint,uuid) to authenticated;
 grant execute on function public.decide_team_finish(uuid,uuid,boolean,bigint,uuid) to authenticated;
 
+
+-- Immutable report snapshots. This is storage infrastructure, not permission
+-- to reconcile/approve/sign. No application role can call the internal builder.
+create table public.team_result_versions (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.team_flows(team_id) on delete restrict,
+  source_revision bigint not null check (source_revision >= 0),
+  created_by uuid not null,
+  session_id uuid not null references public.count_sessions(id) on delete restrict,
+  warehouse_id uuid not null references public.warehouses(id) on delete restrict,
+  warehouse_name text not null,
+  team_name text not null,
+  participants jsonb not null check (jsonb_typeof(participants)='array'),
+  created_at timestamptz not null default clock_timestamp(),
+  sealed_at timestamptz,
+  foreign key(team_id,created_by) references public.team_memberships(team_id,id) on delete restrict,
+  unique(team_id,id),
+  unique(team_id,source_revision)
+);
+create index team_result_creator_idx on public.team_result_versions(team_id,created_by);
+create index team_result_session_idx on public.team_result_versions(session_id);
+create index team_result_warehouse_idx on public.team_result_versions(warehouse_id);
+create table public.team_result_items (
+  version_id uuid not null,
+  team_id uuid not null,
+  brand_code text not null references public.inventory_items(brand_code) on delete restrict,
+  brand_name text not null,
+  category text,
+  category1 text,
+  bpu integer not null check (bpu >= 1),
+  pallet_size integer not null check (pallet_size >= 0),
+  weight_avg numeric not null check (weight_avg >= 0),
+  brand_active boolean not null,
+  bin_locations jsonb not null check (jsonb_typeof(bin_locations)='array'),
+  quantity_units bigint not null check (quantity_units >= 0),
+  final_cases bigint generated always as (quantity_units / bpu) stored,
+  final_units bigint generated always as (quantity_units % bpu) stored,
+  resolution text not null check (resolution in ('equal','weight_tolerance','reconciled')),
+  resolved_by uuid,
+  source_counts jsonb not null check (jsonb_typeof(source_counts)='array' and jsonb_array_length(source_counts)>0),
+  primary key(version_id,brand_code),
+  foreign key(team_id,version_id) references public.team_result_versions(team_id,id) on delete restrict,
+  foreign key(team_id,resolved_by) references public.team_memberships(team_id,id) on delete restrict,
+  check ((resolution='equal')=(resolved_by is null))
+);
+create index team_result_items_team_idx on public.team_result_items(team_id,version_id);
+create index team_result_items_brand_idx on public.team_result_items(brand_code);
+create index team_result_items_resolver_idx on public.team_result_items(team_id,resolved_by);
+alter table public.team_flows add column result_version_id uuid;
+alter table public.team_flows add constraint team_flow_result_version_fk
+  foreign key(team_id,result_version_id) references public.team_result_versions(team_id,id) on delete restrict;
+create index team_flow_result_version_idx on public.team_flows(team_id,result_version_id);
+alter table public.team_flows add constraint team_flow_signing_has_result
+  check ((phase in ('signing','closed'))=(result_version_id is not null));
+
+do $$
+declare tab text;
+begin
+  foreach tab in array array['team_result_versions','team_result_items'] loop
+    execute format('alter table public.%I enable row level security',tab);
+    execute format('revoke all on public.%I from public,anon,authenticated,service_role',tab);
+    execute format('grant select on public.%I to authenticated,service_role',tab);
+    execute format('create policy team_result_monitor_read on public.%I for select to authenticated using (private.team_flow_visible(team_id,true))',tab);
+  end loop;
+end;
+$$;
+
+create function private.guard_team_result_version()
+returns trigger language plpgsql security invoker set search_path = ''
+as $$
+declare f public.team_flows;
+begin
+  if tg_op='DELETE' then raise exception 'Result versions cannot be deleted'; end if;
+  if tg_op='UPDATE' and (old.sealed_at is not null or new.sealed_at is null
+    or (to_jsonb(new)-'sealed_at') is distinct from (to_jsonb(old)-'sealed_at')) then
+    raise exception 'Result version is immutable';
+  end if;
+  select * into strict f from public.team_flows where team_id=new.team_id for update;
+  if f.phase <> 'admin_review' or f.frozen_at is not null or new.source_revision <> f.revision then
+    raise exception 'Result snapshot requires current admin review';
+  end if;
+  if tg_op='INSERT' then
+    if new.sealed_at is not null then raise exception 'Result version must be assembled before sealing'; end if;
+    if not exists(select 1 from public.team_memberships where team_id=new.team_id and id=new.created_by
+      and role='independent' and departed_at is null and access_revoked_at is null) then
+      raise exception 'Result snapshot requires independent attribution';
+    end if;
+    select t.session_id,s.warehouse_id,w.name,t.team_name
+      into new.session_id,new.warehouse_id,new.warehouse_name,new.team_name
+      from public.teams t join public.count_sessions s on s.id=t.session_id
+      join public.warehouses w on w.id=s.warehouse_id
+      where t.id=new.team_id and s.status <> 'fechada';
+    if new.session_id is null then raise exception 'Session is closed'; end if;
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'membership_id',m.id,'user_id',m.user_id,'name',m.display_name,
+      'role',m.role,'order',m.display_order,'joined_at',m.joined_at,
+      'departed_at',m.departed_at) order by m.display_order),'[]'::jsonb)
+      into new.participants from public.team_memberships m where m.team_id=new.team_id;
+    new.created_at := clock_timestamp();
+  else
+    -- Exact coverage of the team's counted brands, never the full warehouse.
+    if exists (
+      select brand_code from public.team_count_records where team_id=new.team_id
+      except select brand_code from public.team_result_items where version_id=new.id
+    ) or exists (
+      select brand_code from public.team_result_items where version_id=new.id
+      except select brand_code from public.team_count_records where team_id=new.team_id
+    ) then raise exception 'Result snapshot must contain exactly the counted products'; end if;
+    new.sealed_at := clock_timestamp();
+  end if;
+  return new;
+end;
+$$;
+revoke all on function private.guard_team_result_version() from public,anon,authenticated,service_role;
+create trigger guard_team_result_version before insert or update or delete on public.team_result_versions
+for each row execute function private.guard_team_result_version();
+
+create function private.guard_team_result_item()
+returns trigger language plpgsql security invoker set search_path = ''
+as $$
+declare v public.team_result_versions; f public.team_flows; i public.inventory_items;
+begin
+  if tg_op <> 'INSERT' then raise exception 'Result items are immutable'; end if;
+  select * into strict f from public.team_flows where team_id=new.team_id for update;
+  select * into strict v from public.team_result_versions where team_id=new.team_id and id=new.version_id;
+  if v.sealed_at is not null then raise exception 'Sealed result cannot receive more products'; end if;
+  if f.phase <> 'admin_review' or f.frozen_at is not null or v.source_revision <> f.revision then
+    raise exception 'Result snapshot requires current admin review';
+  end if;
+  select * into strict i from public.inventory_items where brand_code=new.brand_code;
+  if i.warehouse_id <> v.warehouse_id then raise exception 'Result product belongs to another warehouse'; end if;
+  if not exists(select 1 from public.team_count_records where team_id=new.team_id and brand_code=new.brand_code) then
+    raise exception 'Result product was not counted by this team';
+  end if;
+  if new.resolved_by is not null and not exists(select 1 from public.team_memberships
+      where id=new.resolved_by and team_id=new.team_id and role='independent') then
+    raise exception 'Only independent can be attributed a reconciliation';
+  end if;
+  new.brand_name:=i.brand_name; new.category:=i.category; new.category1:=i.category1;
+  new.bpu:=i.bpu; new.pallet_size:=coalesce(i.pallet_size,0);
+  new.weight_avg:=coalesce(i.weight_avg,0); new.brand_active:=i.brand_active;
+  select coalesce(jsonb_agg(b.bin_location order by b.bin_location),'[]'::jsonb)
+    into new.bin_locations from public.item_bin_locations b where b.brand_code=new.brand_code;
+  select jsonb_agg(jsonb_build_object(
+    'record_id',r.id,'revision',r.revision,'assignment_id',r.assignment_id,'slot_id',r.slot_id,
+    'membership_id',m.id,'user_id',m.user_id,'name',m.display_name,
+    'pallets',r.pallets,'cases',r.cases,'units',r.units,'pallet_size',r.pallet_size_at_entry,
+    'bpu',r.bpu_at_entry,'quantity_units',r.quantity_units,'method',r.method,'recorded_at',r.recorded_at
+  ) order by r.slot_id) into new.source_counts
+  from public.team_count_records r
+  join public.team_slot_assignments a on a.team_id=r.team_id and a.id=r.assignment_id
+  join public.team_memberships m on m.team_id=a.team_id and m.id=a.membership_id
+  where r.team_id=new.team_id and r.brand_code=new.brand_code;
+  return new;
+end;
+$$;
+revoke all on function private.guard_team_result_item() from public,anon,authenticated,service_role;
+create trigger guard_team_result_item before insert or update or delete on public.team_result_items
+for each row execute function private.guard_team_result_item();
+
+-- Called only by future checked submission/reconciliation commands.
+-- Invoker, no elevated privileges, no grants to application roles.
+-- Input is trusted resolved output, NOT unvalidated client-provided quantities.
+create function private.build_team_result_snapshot(p_team uuid,p_revision bigint,p_independent uuid,p_results jsonb)
+returns uuid language plpgsql security invoker set search_path = ''
+as $$
+declare v_id uuid;
+begin
+  if p_results is null or jsonb_typeof(p_results) <> 'array' then raise exception 'Results must be an array'; end if;
+  insert into public.team_result_versions(team_id,source_revision,created_by)
+    values(p_team,p_revision,p_independent) returning id into v_id;
+  insert into public.team_result_items(version_id,team_id,brand_code,quantity_units,resolution,resolved_by)
+    select v_id,p_team,r.brand_code,r.quantity_units,r.resolution,r.resolved_by
+    from jsonb_to_recordset(p_results) as r(brand_code text,quantity_units bigint,resolution text,resolved_by uuid);
+  update public.team_result_versions set sealed_at=clock_timestamp() where id=v_id;
+  return v_id;
+end;
+$$;
+revoke all on function private.build_team_result_snapshot(uuid,bigint,uuid,jsonb) from public,anon,authenticated,service_role;
+
+create function private.guard_team_result_selection()
+returns trigger language plpgsql security invoker set search_path = ''
+as $$
+begin
+  if old.phase='admin_review' and new.phase='signing' then
+    if not exists(select 1 from public.team_result_versions v where v.id=new.result_version_id
+      and v.team_id=new.team_id and v.source_revision=old.revision and v.sealed_at is not null) then
+      raise exception 'Signing requires a sealed current result version';
+    end if;
+  elsif old.phase='signing' and new.phase='admin_review' and old.frozen_at is null then
+    if new.result_version_id is not null then raise exception 'Cancelled collection must release result selection'; end if;
+  elsif new.result_version_id is distinct from old.result_version_id then
+    raise exception 'Selected result version cannot change';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function private.guard_team_result_selection() from public,anon,authenticated,service_role;
+create trigger guard_team_result_selection before update on public.team_flows
+for each row execute function private.guard_team_result_selection();
+
 -- Application routing and deployment activation remain unchanged.
 commit;
