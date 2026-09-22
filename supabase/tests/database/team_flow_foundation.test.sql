@@ -40,15 +40,15 @@ select throws_ok($q$insert into public.team_memberships(team_id,user_id,display_
 select throws_ok($q$insert into public.team_slot_assignments(team_id,slot_id,membership_id) values('10000000-0000-0000-0000-000000000200','10000000-0000-0000-0000-000000000401','10000000-0000-0000-0000-000000000303')$q$,'P0001','Assignment requires an active counter','T05: independent cannot receive ordinary counting assignment');
 select throws_ok($q$insert into public.team_slot_assignments(team_id,slot_id,membership_id) values('10000000-0000-0000-0000-000000000201','10000000-0000-0000-0000-000000000401','10000000-0000-0000-0000-000000000313')$q$,'P0001','Assignment requires an active counter','Cannot cross team assignment boundaries');
 update public.team_flows set phase='counting',revision=1 where team_id='10000000-0000-0000-0000-000000000200';
-insert into public.team_count_records(id,team_id,assignment_id,slot_id,brand_code,quantity_units,method,bpu_at_entry) values
+insert into public.team_count_records(id,team_id,assignment_id,slot_id,brand_code,units,method,bpu_at_entry) values
 ('10000000-0000-0000-0000-000000000601','10000000-0000-0000-0000-000000000200','10000000-0000-0000-0000-000000000501','10000000-0000-0000-0000-000000000401','foundation-a',10,'manual',20),
 ('10000000-0000-0000-0000-000000000602','10000000-0000-0000-0000-000000000200','10000000-0000-0000-0000-000000000502','10000000-0000-0000-0000-000000000402','foundation-a',12,'weight',20);
-select throws_ok($q$insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,quantity_units,method,bpu_at_entry) values('10000000-0000-0000-0000-000000000200','10000000-0000-0000-0000-000000000501','10000000-0000-0000-0000-000000000401','foundation-other',1,'manual',10)$q$,'P0001','Product does not belong to team warehouse','T03: cross warehouse count denied');
-select throws_ok($q$insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,quantity_units,method,bpu_at_entry) values('10000000-0000-0000-0000-000000000200','10000000-0000-0000-0000-000000000501','10000000-0000-0000-0000-000000000402','foundation-b',0,'manual',1)$q$,'P0001','Counting position does not match author assignment','Count cannot claim another position');
-update public.team_count_records set quantity_units=11,revision=1 where id='10000000-0000-0000-0000-000000000601';
+select throws_ok($q$insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,units,method,bpu_at_entry) values('10000000-0000-0000-0000-000000000200','10000000-0000-0000-0000-000000000501','10000000-0000-0000-0000-000000000401','foundation-other',1,'manual',10)$q$,'P0001','Product does not belong to team warehouse','T03: cross warehouse count denied');
+select throws_ok($q$insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,units,method,bpu_at_entry) values('10000000-0000-0000-0000-000000000200','10000000-0000-0000-0000-000000000501','10000000-0000-0000-0000-000000000402','foundation-b',0,'manual',1)$q$,'P0001','Counting position does not match author assignment','Count cannot claim another position');
+update public.team_count_records set units=11,revision=1 where id='10000000-0000-0000-0000-000000000601';
 select is((select quantity_units from public.team_count_record_history where record_id='10000000-0000-0000-0000-000000000601'),10::bigint, 'Earlier quantity preserved');
 select throws_ok($q$update public.team_count_records set assignment_id='10000000-0000-0000-0000-000000000502',slot_id='10000000-0000-0000-0000-000000000402',revision=2 where id='10000000-0000-0000-0000-000000000601'$q$,'P0001','Count authorship cannot change','Original author cannot be reassigned');
-select throws_ok($q$update public.team_count_record_history set quantity_units=0 where record_id='10000000-0000-0000-0000-000000000601'$q$,'P0001','Count history is append-only','T44: prior revision cannot be overwritten');
+select throws_ok($q$update public.team_count_record_history set units=0 where record_id='10000000-0000-0000-0000-000000000601'$q$,'P0001','Count history is append-only','T44: prior revision cannot be overwritten');
 select throws_ok($q$delete from public.team_count_records where id='10000000-0000-0000-0000-000000000601'$q$,'P0001','Team flow records cannot be deleted','Counts cannot be erased');
 select throws_ok($q$insert into public.count_entries(team_id,counter_role,brand_code) values('10000000-0000-0000-0000-000000000200','contador_1','foundation-a')$q$,'P0001','Legacy writes cannot change a versioned team','Old count route cannot bypass new model');
 select throws_ok($q$update public.count_sessions set status='fechada' where id='10000000-0000-0000-0000-000000000100'$q$,'P0001','Use the versioned team session workflow','Old session closing cannot bypass new flow');
@@ -57,30 +57,36 @@ select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001'
 select is((select count(*) from public.team_count_records),1::bigint, 'T04: counter reads only own count');
 select is((select count(*) from public.team_flows),1::bigint, 'Participant sees only own team');
 select is((select count(*) from public.team_count_record_history),1::bigint, 'Own prior revision remains readable');
-select throws_ok($q$update public.team_count_records set quantity_units=99$q$,'42501',null,'Direct client writes forbidden');
+select throws_ok($q$update public.team_count_records set units=99$q$,'42501',null,'Direct client writes forbidden');
+-- Storage-level proof only: does NOT expose/approve a BPU-correction command.
+update public.team_count_records set cases=20,units=0,revision=3 where id='10000000-0000-0000-0000-000000000601';
+select is((select quantity_units from public.team_count_records where id='10000000-0000-0000-0000-000000000601'),400::bigint,'Original cases retained as 20 times BPU 20');
+update public.team_count_records set bpu_at_entry=24,revision=4 where id='10000000-0000-0000-0000-000000000601';
+select is((select quantity_units from public.team_count_records where id='10000000-0000-0000-0000-000000000601'),480::bigint,'Physical cases allow approved future recalculation without recount');
+select is((select cases from public.team_count_record_history where record_id='10000000-0000-0000-0000-000000000601' and revision=3),20,'Historical physical cases preserved');
 select throws_ok($q$update public.team_memberships set finish_state='accepted'$q$,'42501',null,'Cannot self approve through table');
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
 select is((select count(*) from public.team_count_record_history),0::bigint, 'T04: other counter history remains blind');
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000003',true);
 select is((select count(*) from public.team_flows),2::bigint, 'T31: independent can have two scoped memberships');
 select is((select count(*) from public.team_count_records),2::bigint, 'Independent monitors all team counts');
-select throws_ok($q$insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,quantity_units,method,bpu_at_entry) values('10000000-0000-0000-0000-000000000200','10000000-0000-0000-0000-000000000501','10000000-0000-0000-0000-000000000401','foundation-b',1,'manual',1)$q$,'42501',null,'Independent cannot write directly');
+select throws_ok($q$insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,units,method,bpu_at_entry) values('10000000-0000-0000-0000-000000000200','10000000-0000-0000-0000-000000000501','10000000-0000-0000-0000-000000000401','foundation-b',1,'manual',1)$q$,'42501',null,'Independent cannot write directly');
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000007',true);
 select is((select count(*) from public.team_flows),0::bigint, 'Editable metadata cannot grant access');
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000006',true);
 select is((select count(*) from public.team_count_records),2::bigint, 'Protected admin monitors records');
-select throws_ok($q$update public.team_count_records set quantity_units=1$q$,'42501',null,'Admin has no quantity write grant');
+select throws_ok($q$update public.team_count_records set units=1$q$,'42501',null,'Admin has no quantity write grant');
 reset role;
 set local role service_role;
-select throws_ok($q$update public.team_count_records set quantity_units=1$q$,'42501',null,'No service-role direct write bypass exposed by foundation');
+select throws_ok($q$update public.team_count_records set units=1$q$,'42501',null,'No service-role direct write bypass exposed by foundation');
 reset role;
 set local role anon;
 select throws_ok($q$select * from public.team_count_records$q$,'42501',null,'Anonymous cannot read counts');
 reset role;
 update public.team_memberships set finish_state='requested' where id='10000000-0000-0000-0000-000000000301';
-select throws_ok($q$update public.team_count_records set quantity_units=12,revision=2 where id='10000000-0000-0000-0000-000000000601'$q$,'P0001','Participant cannot count now','T06: request immediately blocks edits at DB');
+select throws_ok($q$update public.team_count_records set units=12,revision=2 where id='10000000-0000-0000-0000-000000000601'$q$,'P0001','Participant cannot count now','T06: request immediately blocks edits at DB');
 update public.team_memberships set finish_state='counting' where id='10000000-0000-0000-0000-000000000301';
-update public.team_count_records set quantity_units=12,revision=2 where id='10000000-0000-0000-0000-000000000601';
+update public.team_count_records set units=12,revision=2 where id='10000000-0000-0000-0000-000000000601';
 select is((select revision from public.team_count_records where id='10000000-0000-0000-0000-000000000601'),2::bigint, 'T07: rejected request allows edits again');
 select throws_ok($q$update public.team_memberships set finish_state='accepted' where id='10000000-0000-0000-0000-000000000302'$q$,'P0001','Invalid individual finish transition','Cannot accept without request');
 select throws_ok($q$update public.team_flows set phase='reconciling',revision=2 where team_id='10000000-0000-0000-0000-000000000200'$q$,'P0001','All required individual finishes must be accepted','T08: premature reconciliation blocked');
@@ -94,7 +100,7 @@ select is((select phase from public.team_flows where team_id='10000000-0000-0000
 update public.team_flows set phase='signing',revision=6 where team_id='10000000-0000-0000-0000-000000000200';
 update public.team_flows set frozen_at=now(),revision=7 where team_id='10000000-0000-0000-0000-000000000200';
 select throws_ok($q$update public.team_flows set phase='admin_review',frozen_at=null,revision=8 where team_id='10000000-0000-0000-0000-000000000200'$q$,'P0001','First confirmation cannot be undone','T38: frozen results cannot reopen');
-select throws_ok($q$update public.team_count_records set quantity_units=99,revision=3 where id='10000000-0000-0000-0000-000000000601'$q$,'P0001','Team results are frozen','T44: privileged quantity edits blocked when frozen');
+select throws_ok($q$update public.team_count_records set units=99,revision=3 where id='10000000-0000-0000-0000-000000000601'$q$,'P0001','Team results are frozen','T44: privileged quantity edits blocked when frozen');
 select throws_ok($q$update public.team_memberships set display_name='Changed' where id='10000000-0000-0000-0000-000000000301'$q$,'P0001','Team results are frozen','Signed attribution cannot change');
 update public.team_flows set phase='closed',closed_at=now(),revision=8 where team_id='10000000-0000-0000-0000-000000000200';
 set local role authenticated;

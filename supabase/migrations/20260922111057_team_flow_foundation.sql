@@ -68,7 +68,9 @@ create unique index team_member_active_assignment on public.team_slot_assignment
 where ended_at is null;
 
 -- Canonical units and method support N participants without contador_3 columns.
--- Quantity conversion remains an application concern until the count-write RPC lands.
+-- Preserve physical components for approved BPU corrections; canonical units use
+-- the same arithmetic as legacy convert_count. Weight already arrives converted
+-- into these components today; keep its method marker for comparison.
 -- This table is NOT yet a client-write API.
 create table public.team_count_records (
   id uuid primary key default gen_random_uuid(),
@@ -76,7 +78,13 @@ create table public.team_count_records (
   assignment_id uuid not null,
   slot_id uuid not null,
   brand_code text not null references public.inventory_items(brand_code) on delete restrict,
-  quantity_units bigint not null check (quantity_units >= 0),
+  pallets integer not null default 0 check (pallets >= 0),
+  cases integer not null default 0 check (cases >= 0),
+  units integer not null default 0 check (units >= 0),
+  pallet_size_at_entry integer not null default 0 check (pallet_size_at_entry >= 0),
+  quantity_units bigint generated always as
+    ((pallets::bigint * pallet_size_at_entry + cases) * bpu_at_entry + units) stored,
+  check (pallets = 0 or pallet_size_at_entry > 0),
   method text not null check (method in ('manual','weight')),
   bpu_at_entry integer not null check (bpu_at_entry >= 1),
   revision bigint not null default 0 check (revision >= 0),
@@ -93,6 +101,10 @@ create table public.team_count_record_history (
   record_id uuid not null references public.team_count_records(id) on delete restrict,
   revision bigint not null,
   quantity_units bigint not null,
+  pallets integer not null,
+  cases integer not null,
+  units integer not null,
+  pallet_size_at_entry integer not null,
   method text not null,
   bpu_at_entry integer not null,
   recorded_at timestamptz not null,
@@ -202,8 +214,8 @@ begin
         raise exception 'Count authorship cannot change';
       end if;
       if new.revision <> old.revision+1 then raise exception 'Count revision must advance by one'; end if;
-      insert into public.team_count_record_history(record_id,revision,quantity_units,method,bpu_at_entry,recorded_at)
-      values(old.id,old.revision,old.quantity_units,old.method,old.bpu_at_entry,old.recorded_at);
+      insert into public.team_count_record_history(record_id,revision,quantity_units,pallets,cases,units,pallet_size_at_entry,method,bpu_at_entry,recorded_at)
+      values(old.id,old.revision,old.quantity_units,old.pallets,old.cases,old.units,old.pallet_size_at_entry,old.method,old.bpu_at_entry,old.recorded_at);
     end if;
   elsif tg_table_name='team_memberships' and tg_op='UPDATE' then
     if (new.id,new.user_id,new.role,new.display_order,new.joined_at,new.display_name)
@@ -284,6 +296,10 @@ begin
     if (select count(*) from public.team_memberships where team_id=new.team_id and role='independent'
       and departed_at is null and access_revoked_at is null) <> 1
       or (select count(*) from public.team_count_slots where team_id=new.team_id) < 2
+      or exists (select 1 from public.team_memberships m
+        where m.team_id=new.team_id and m.role='counter' and m.departed_at is null and m.access_revoked_at is null
+        and not exists (select 1 from public.team_slot_assignments a
+          where a.team_id=m.team_id and a.membership_id=m.id and a.ended_at is null))
       or exists (select 1 from public.team_count_slots s where s.team_id=new.team_id and not exists (
         select 1 from public.team_slot_assignments a join public.team_memberships m on m.id=a.membership_id
         where a.team_id=s.team_id and a.slot_id=s.id and a.ended_at is null

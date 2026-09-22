@@ -43,11 +43,11 @@ insert into public.team_slot_assignments(id,team_id,slot_id,membership_id) value
 ('${a1}','${team}','${s1}','${m1}'),('${a2}','${team}','${s2}','${m2}');
 update public.team_flows set phase='counting',revision=1 where team_id='${team}';
 insert into public.inventory_items(brand_code,brand_name,bpu,pallet_size) values('${code}','Synthetic concurrency',20,0);
-insert into public.team_count_records(id,team_id,assignment_id,slot_id,brand_code,quantity_units,method,bpu_at_entry)
+insert into public.team_count_records(id,team_id,assignment_id,slot_id,brand_code,units,method,bpu_at_entry)
 values('${record}','${team}','${a1}','${s1}','${code}',10,'manual',20);
 `)
-const first=start(`update public.team_count_records set quantity_units=11,revision=1 where id='${record}';`,'foundation-revision-a')
-const second=start(`update public.team_count_records set quantity_units=12,revision=1 where id='${record}';`,'foundation-revision-b')
+const first=start(`update public.team_count_records set units=11,revision=1 where id='${record}';`,'foundation-revision-a')
+const second=start(`update public.team_count_records set units=12,revision=1 where id='${record}';`,'foundation-revision-b')
 const outcomes=await Promise.all([first.done,second.done])
 assert.equal(outcomes.filter(r=>r.code===0).length,1,'Exactly one writer can consume revision zero')
 assert.match(outcomes.find(r=>r.code!==0).err,/Count revision must advance by one/)
@@ -59,7 +59,7 @@ const freezer=start(`begin; select team_id from public.team_flows where team_id=
 let writer
 try {
   await until(()=>freezer.output().includes('FLOW_LOCKED'),'Flow lock was not acquired')
-  writer=start(`update public.team_count_records set quantity_units=99,revision=2 where id='${record}';`,'foundation-blocked-writer')
+  writer=start(`update public.team_count_records set units=99,revision=2 where id='${record}';`,'foundation-blocked-writer')
   await until(()=>sql("select exists(select 1 from pg_stat_activity where application_name='foundation-blocked-writer' and wait_event_type='Lock')")==='t',
     'Concurrent writer did not wait for team lock')
   freezer.child.stdin.end(`
