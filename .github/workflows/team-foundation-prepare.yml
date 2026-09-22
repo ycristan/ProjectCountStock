@@ -1,0 +1,21 @@
+name: Team foundation migration preparation
+on:
+  pull_request:
+    branches: [codex/team-flow-contracts]
+    paths: ['.github/workflows/team-foundation-prepare.yml']
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: '2.117.0'
+      - name: Generate migration filename with CLI (no database connection)
+        run: |
+          supabase --version
+          supabase migration new --help
+          supabase migration new team_flow_foundation
