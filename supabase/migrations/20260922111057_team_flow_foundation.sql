@@ -318,7 +318,7 @@ for each row execute function private.guard_team_record_history();
 -- Legacy writers must never populate a version-2 team or close its session.
 create function private.guard_legacy_team_flow_write()
 returns trigger language plpgsql security invoker set search_path = ''
-as $
+as $$
 declare target_id uuid;
 begin
   if tg_table_name='count_sessions' then
@@ -335,7 +335,7 @@ begin
   end if;
   if tg_op='DELETE' then return old; else return new; end if;
 end;
-$;
+$$;
 revoke all on function private.guard_legacy_team_flow_write() from public,anon,authenticated,service_role;
 create trigger guard_legacy_team_flow_write before insert or update or delete on public.counter_accounts
 for each row execute function private.guard_legacy_team_flow_write();

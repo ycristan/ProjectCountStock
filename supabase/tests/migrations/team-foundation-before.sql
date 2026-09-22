@@ -8,6 +8,9 @@ insert into public.counter_accounts(auth_user_id,team_id,role,username)
 values('20000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000003','contador_1','upgrade-synthetic');
 insert into public.count_entries(team_id,counter_role,brand_code,cases,final_cases)
 values('20000000-0000-0000-0000-000000000003','contador_1','migration-probe-a',2,2);
+-- Random synthetic PINs exist only in this discarded database and are not printed.
+update public.counter_accounts set user_pin = (1000+floor(random()*9000))::integer::text
+where team_id='20000000-0000-0000-0000-000000000003';
 create schema team_upgrade_probe;
 create table team_upgrade_probe.snapshots(schema_name text,table_name text,content jsonb);
 do $$
