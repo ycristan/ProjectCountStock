@@ -106,3 +106,9 @@ PR72 não está autorizada para publicação. Aprovação do plano permite branc
 
 - Preservar componentes físicos e parâmetros da contagem, não apenas total convertido: total canônico gerado pela mesma aritmética de convert_count. Histórico mantém componentes e total; correção administrativa de BPU continua sem comando autorizado neste bloco.
 - Em 22/09 a base passou nos 136 testes SQL, duas disputas concorrentes, upgrade e regressão HTTP (execução 35722151547). Isso não conclui a entrega 2 nem libera produção.
+
+## Comandos individuais — 2026-09-22
+- Autoria derivada de auth.uid() e vínculo protegido, nunca parâmetro livre ou metadata. Função interna elevada no schema private, wrappers públicos invoker; sem concessão de escrita nas tabelas.
+- Pedido/decisão/avanço da etapa e evento persistem na mesma transação. UUID de comando mais payload original permite retry sem reaplicar; revisão esperada impede decisão sobre tela antiga.
+- Eventos de finalização sem quantidades, PINs ou motivo livre. Contador lê apenas eventos próprios; independente da equipe/admin leem conforme vínculo protegido. Eventos não podem ser reescritos/excluídos.
+- Comandos deste bloco cobrem somente finalização normal; não simulam admin excepcional antes de implementar posse/substituição. Último aceite abre etapa de reconciliação, não aceita produtos nem submete equipe automaticamente.

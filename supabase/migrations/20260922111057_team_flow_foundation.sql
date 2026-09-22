@@ -362,5 +362,159 @@ for each row execute function private.guard_legacy_team_flow_write();
 create trigger guard_legacy_team_flow_write before update or delete on public.count_sessions
 for each row execute function private.guard_legacy_team_flow_write();
 
--- No mutation RPC, legacy routing replacement or deployment activation in this slice.
+
+-- Normal individual-finish commands. No creation/count/reconciliation/signature
+-- command is exposed yet. Departures/substitution require delivery 6 commands.
+create table public.team_finish_events (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.team_flows(team_id) on delete restrict,
+  command_id uuid not null,
+  actor_membership_id uuid not null,
+  subject_membership_id uuid not null,
+  action text not null check (action in ('request','accept','reject')),
+  expected_revision bigint not null check (expected_revision >= 0),
+  resulting_revision bigint not null check (resulting_revision = expected_revision + 1),
+  resulting_state text not null check (resulting_state in ('requested','accepted','counting')),
+  resulting_phase text not null check (resulting_phase in ('counting','reconciling')),
+  occurred_at timestamptz not null default clock_timestamp(),
+  foreign key (team_id,actor_membership_id) references public.team_memberships(team_id,id) on delete restrict,
+  foreign key (team_id,subject_membership_id) references public.team_memberships(team_id,id) on delete restrict,
+  unique(team_id,command_id),
+  unique(team_id,resulting_revision)
+);
+create index team_finish_actor_idx on public.team_finish_events(team_id,actor_membership_id);
+create index team_finish_subject_idx on public.team_finish_events(team_id,subject_membership_id);
+alter table public.team_finish_events enable row level security;
+revoke all on public.team_finish_events from public,anon,authenticated,service_role;
+grant select on public.team_finish_events to authenticated,service_role;
+create policy team_finish_event_read on public.team_finish_events for select to authenticated
+using (
+  private.team_flow_visible(team_id,true)
+  or (private.team_flow_visible(team_id,false) and exists (
+    select 1 from public.team_memberships m
+    where m.team_id=team_finish_events.team_id and m.id=subject_membership_id and m.user_id=auth.uid()
+  ))
+);
+create function private.guard_team_finish_event()
+returns trigger language plpgsql security invoker set search_path = ''
+as $$
+begin
+  raise exception 'Finish events are append-only';
+end;
+$$;
+revoke all on function private.guard_team_finish_event() from public,anon,authenticated,service_role;
+create trigger guard_team_finish_event before update or delete on public.team_finish_events
+for each row execute function private.guard_team_finish_event();
+
+-- Privilege elevation is limited to this checked operation; clients never get
+-- UPDATE on memberships/flows or INSERT on the immutable event ledger.
+create function private.team_finish_command(
+  p_team uuid, p_subject uuid, p_action text, p_expected_revision bigint, p_command uuid
+) returns jsonb language plpgsql security definer set search_path = ''
+as $$
+declare
+  f public.team_flows;
+  actor public.team_memberships;
+  subject public.team_memberships;
+  event public.team_finish_events;
+  next_state text;
+  next_phase text;
+begin
+  if auth.uid() is null or private.is_admin() then
+    raise exception using errcode='42501', message='Finish operation not authorized';
+  end if;
+  if p_team is null or p_subject is null or p_command is null
+    or p_expected_revision is null or p_expected_revision < 0
+    or p_action is null or p_action not in ('request','accept','reject') then
+    raise exception using errcode='22023', message='Invalid finish command';
+  end if;
+  -- Check membership before taking the lock; recheck after waiting for it.
+  if not private.team_flow_visible(p_team,false) then
+    raise exception using errcode='42501', message='Finish operation not authorized';
+  end if;
+  select * into f from public.team_flows where team_id=p_team for update;
+  select * into actor from public.team_memberships
+    where team_id=p_team and user_id=auth.uid()
+      and departed_at is null and access_revoked_at is null;
+  if actor.id is null or f.team_id is null or f.phase='closed'
+    or not private.team_flow_visible(p_team,false) then
+    raise exception using errcode='42501', message='Finish operation not authorized';
+  end if;
+  select * into subject from public.team_memberships
+    where team_id=p_team and id=p_subject and role='counter'
+      and departed_at is null and access_revoked_at is null;
+  if subject.id is null
+    or (p_action='request' and (actor.id <> subject.id or actor.role <> 'counter'))
+    or (p_action <> 'request' and (actor.role <> 'independent' or actor.id=subject.id)) then
+    raise exception using errcode='42501', message='Finish operation not authorized';
+  end if;
+  -- A replay returns the original receipt, not a second transition. Identity and
+  -- current access are checked first, even if this command succeeded previously.
+  select * into event from public.team_finish_events where team_id=p_team and command_id=p_command;
+  if event.id is not null then
+    if (event.actor_membership_id,event.subject_membership_id,event.action,event.expected_revision)
+      is distinct from (actor.id,p_subject,p_action,p_expected_revision) then
+      raise exception using errcode='22023', message='Command identifier already used';
+    end if;
+  else
+    if f.frozen_at is not null or f.phase <> 'counting' then
+      raise exception 'Individual finish is unavailable in this phase';
+    end if;
+    if f.revision <> p_expected_revision then
+      raise exception using errcode='40001', message='Team changed; refresh before deciding';
+    end if;
+    -- Fail closed until exceptional authority/assignment is implemented.
+    if exists(select 1 from public.team_memberships where team_id=p_team
+        and (departed_at is not null or access_revoked_at is not null))
+      or exists(select 1 from public.team_slot_assignments where team_id=p_team and ended_at is not null)
+      or not exists(select 1 from public.team_slot_assignments
+        where team_id=p_team and membership_id=subject.id and ended_at is null) then
+      raise exception 'Exceptional finish workflow is not available yet';
+    end if;
+    if (p_action='request' and subject.finish_state <> 'counting')
+      or (p_action <> 'request' and subject.finish_state <> 'requested') then
+      raise exception 'No matching individual finish transition';
+    end if;
+    next_state := case p_action when 'request' then 'requested' when 'accept' then 'accepted' else 'counting' end;
+    update public.team_memberships set finish_state=next_state where id=subject.id;
+    next_phase := 'counting';
+    if p_action='accept' and not exists (
+      select 1 from public.team_slot_assignments a
+      join public.team_memberships m on m.team_id=a.team_id and m.id=a.membership_id
+      where a.team_id=p_team and a.ended_at is null and m.finish_state <> 'accepted'
+    ) then next_phase := 'reconciling'; end if;
+    update public.team_flows set phase=next_phase,revision=revision+1 where team_id=p_team;
+    insert into public.team_finish_events(
+      team_id,command_id,actor_membership_id,subject_membership_id,action,
+      expected_revision,resulting_revision,resulting_state,resulting_phase
+    ) values(p_team,p_command,actor.id,subject.id,p_action,
+      p_expected_revision,p_expected_revision+1,next_state,next_phase)
+    returning * into event;
+  end if;
+  return jsonb_build_object('event_id',event.id,'team_id',event.team_id,
+    'membership_id',event.subject_membership_id,'revision',event.resulting_revision,
+    'finish_state',event.resulting_state,'phase',event.resulting_phase);
+end;
+$$;
+revoke all on function private.team_finish_command(uuid,uuid,text,bigint,uuid) from public,anon,authenticated,service_role;
+grant execute on function private.team_finish_command(uuid,uuid,text,bigint,uuid) to authenticated;
+
+create function public.request_team_finish(p_team uuid,p_membership uuid,p_expected_revision bigint,p_command uuid)
+returns jsonb language sql security invoker set search_path = ''
+as $$
+  select private.team_finish_command(p_team,p_membership,'request',p_expected_revision,p_command);
+$$;
+create function public.decide_team_finish(p_team uuid,p_membership uuid,p_accept boolean,p_expected_revision bigint,p_command uuid)
+returns jsonb language sql security invoker set search_path = ''
+as $$
+  select private.team_finish_command(p_team,p_membership,
+    case when p_accept then 'accept' when not p_accept then 'reject' else null end,
+    p_expected_revision,p_command);
+$$;
+revoke all on function public.request_team_finish(uuid,uuid,bigint,uuid) from public,anon,authenticated,service_role;
+revoke all on function public.decide_team_finish(uuid,uuid,boolean,bigint,uuid) from public,anon,authenticated,service_role;
+grant execute on function public.request_team_finish(uuid,uuid,bigint,uuid) to authenticated;
+grant execute on function public.decide_team_finish(uuid,uuid,boolean,bigint,uuid) to authenticated;
+
+-- Application routing and deployment activation remain unchanged.
 commit;

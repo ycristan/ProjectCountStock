@@ -2,6 +2,12 @@
 
 Atualizado: 2026-09-22
 
+## Em validação — comandos de finalização normal, 2026-09-22
+Na mesma PR74: pedido individual e aceite/rejeição com identidade protegida, lock por equipe, revisão esperada, recibo idempotente e evento imutável com autor. API não aceita quantidades nem altera rotas/PINs legados.
+34 verificações SQL novas e teste HTTP com Auth/PostgREST reais preparados; execução ainda pendente. Não tratar como aprovados antes do resultado.
+Apenas fluxo normal: exceções de saída/substituição falham fechadas até suas operações dedicadas. Interface, comparação de itens, snapshots oficiais e integração completa ainda pendentes.
+Nenhum merge ou banco real alterado.
+
 ## Entrega 2 — primeiro bloco de banco validado, 2026-09-22
 PR #74, branch codex/team-flow-foundation, dependente da documental #73. Modelo e limites: [TEAM_COUNT_FOUNDATION.md](./TEAM_COUNT_FOUNDATION.md).
 Código validado: 4c06317ca3a29d4476ac04d825eb3c488530f940. Evidência: https://github.com/ycristan/ProjectCountStock/actions/runs/35722151547 .

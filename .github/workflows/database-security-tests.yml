@@ -98,6 +98,7 @@ jobs:
           supabase status --help
           npm ci --ignore-scripts
           node tests/http/inventory-export.mjs
+          node tests/http/team-finish.mjs
 
       - name: Stop disposable Supabase
         if: always()
