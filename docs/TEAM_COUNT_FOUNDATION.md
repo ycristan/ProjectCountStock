@@ -76,3 +76,17 @@ Execução aprovada: https://github.com/ycristan/ProjectCountStock/actions/runs/
 - Fixtures de congelamento anteriores agora selecionam versão de fato, sem remover proteções. Elas continuam fixtures de banco, não assinatura/reconciliação pelo usuário.
 - Auth/PostgREST reais confirmam leitura autorizada/cegueira, proibição anônima e de escrita direta. Upgrade, concorrência, lint, build, ZIP e demais regressões passaram.
 Ainda faltam integração com identidade/rotas, decisões/rodadas de reconciliação e seus detalhes, aprovação/assinaturas e consumo das versões nos relatórios. Nenhuma dessas funcionalidades é marcada como publicada.
+
+## Contexto protegido do participante — 2026-09-22
+- Consulta `my_team_flow_contexts` deriva usuário de auth.uid(), sem parâmetro de identidade nem user_metadata. Retorna somente vínculos próprios ativos em equipes/sessões abertas, papel, warehouse, etapa e revisão textual.
+- Independente compartilhado recebe todos os seus contextos; filtro opcional por equipe verifica o mesmo escopo. Não escolher a primeira equipe automaticamente. Admin monitor não é participante por inferência.
+- Helper SSR usa cookies e chave pública, sem service_role/cache/fallback legado. Rota de leitura `GET /api/team-flow/context` retorna no-store; equipe sem vínculo é 404, parâmetros inválidos 400 e falha de consulta 503 correlacionada.
+- Falha de consulta não vira lista vazia de equipes. Telemetria contém operação e erro genérico, sem identidade, cookies, PINs ou erro bruto do banco.
+- Esta consulta NÃO autoriza comandos de escrita: cada transação continua revalidando vínculo, papel, etapa e revisão. Nenhuma tela/login legado foi redirecionado; novo PIN, seleção visual e ativação ainda são etapas posteriores.
+
+### Testes adicionados
+13 asserções SQL para identidade, falsificação de metadata, escopo, administrador, anon/service_role e encerramento seletivo.
+O teste HTTP inicia a aplicação compilada e usa Auth/cookies SSR reais: papel protegido, duas warehouses, contexto explícito, revogação com os mesmos cookies e falha de RPC com evento sanitizado recebido pelo coletor isolado.
+Encerramento e saída neste teste são fixtures privilegiadas; não são comprovação dos futuros comandos/interface de assinatura ou saída. Não testa login PIN, navegador/Realtime nem recebimento na conta Sentry hospedada.
+
+Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.

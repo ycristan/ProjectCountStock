@@ -2,6 +2,15 @@
 
 Atualizado: 2026-09-22
 
+## Validado — identidade por equipe integrada ao servidor, 2026-09-22
+PR74 inclui helper SSR e rota de leitura /api/team-flow/context. Identidade/papel/warehouse vêm dos vínculos protegidos; consulta não aceita identidade de outro usuário, não usa metadata editável e não escolhe equipe automaticamente.
+Independente com dois vínculos recebe ambos. Encerrar A preserva B; mesma sessão de login perde contexto encerrado ou de saída. Falha no banco retorna 503 correlacionado, não uma lista vazia que esconderia erro.
+
+Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.
+
+Nenhum merge, migration real ou mudança de PIN/tela legada. A base agora tem integração de identidade de leitura testada, não o fluxo novo de equipes utilizável. Faltam criação/PIN/roteamento visual, comparação/conciliação, exceções, assinatura e consolidado das próximas entregas.
+Próximo passo: integração rastreável da criação/login de equipes e PINs de quatro dígitos (incluindo correções da PR72), mantendo Independente como monitor, sem ativação de produção parcial.
+
 ## Validado — versões preservadas de resultados, 2026-09-22
 Na PR74, estrutura interna de versões completas e itens imutáveis, com cadastro/participantes/contagens originais copiados pelo banco; seleção de versão selada antes de entrar em coleta. Primeira confirmação mantém seleção fixa.
 Construtor interno INVOKER sem permissão para clientes/admin/service_role. Recebe saída já resolvida dos futuros comandos, não valores livres do cliente. Não implementa decisão de igualdade/tolerância/conciliação nem aprovação/admin/assinatura.

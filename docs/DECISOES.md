@@ -123,3 +123,12 @@ PR72 não está autorizada para publicação. Aprovação do plano permite branc
 - Snapshots não acrescentam zero global e não alteram solo; apenas marcas efetivamente contadas pela equipe entram. R13 continua etapa9.
 
 - Validação aprovada: aad292839465853614831d64aeb084de8cd0f363, execução35735213309, 211 SQL mais Auth/PostgREST e regressões. Mudanças de cadastro testadas não alteram versões anteriores; correção de BPU pós-fechamento geral e relatórios consumidores ainda não testados/implementados.
+
+## Contexto protegido do participante — 2026-09-22
+- Consulta `my_team_flow_contexts` deriva usuário de auth.uid(), sem parâmetro de identidade nem user_metadata. Retorna somente vínculos próprios ativos em equipes/sessões abertas, papel, warehouse, etapa e revisão textual.
+- Independente compartilhado recebe todos os seus contextos; filtro opcional por equipe verifica o mesmo escopo. Não escolher a primeira equipe automaticamente. Admin monitor não é participante por inferência.
+- Helper SSR usa cookies e chave pública, sem service_role/cache/fallback legado. Rota de leitura `GET /api/team-flow/context` retorna no-store; equipe sem vínculo é 404, parâmetros inválidos 400 e falha de consulta 503 correlacionada.
+- Falha de consulta não vira lista vazia de equipes. Telemetria contém operação e erro genérico, sem identidade, cookies, PINs ou erro bruto do banco.
+- Esta consulta NÃO autoriza comandos de escrita: cada transação continua revalidando vínculo, papel, etapa e revisão. Nenhuma tela/login legado foi redirecionado; novo PIN, seleção visual e ativação ainda são etapas posteriores.
+
+Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.

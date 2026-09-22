@@ -88,3 +88,8 @@ T06/T07/T08/T09/T45/T50 agora têm evidência parcial adicional de RPC autorizad
 Commit aad292839465853614831d64aeb084de8cd0f363, execução35735213309: 41 novas asserções (211 SQL total), Auth/PostgREST e regressões aprovados.
 T04/T21/T37/T38/T44/T45/T49/T53 têm evidência adicional de armazenamento/RLS/seleção imutável e preservação de cadastro. Rodadas e assinaturas foram fixtures internas, NÃO ações reais pelo usuário; não marcar esses cenários completos.
 BPU preservado foi testado contra edição do snapshot, não através de correção aprovada do cadastro após fechamento geral. Report/export consumidor continua pendente.
+
+## Evidência parcial de contexto/identidade — 2026-09-22
+
+Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.
+T03/T04/T31/T33/T45/T52 têm evidência parcial de consulta SSR real com cookies, duas warehouses/equipes, papel protegido e revogação seletiva. Sem UI/Realtime; encerramento/saída neste teste foram fixtures privilegiadas, não ações completas. Nenhum cenário ponta a ponta é marcado concluído.
