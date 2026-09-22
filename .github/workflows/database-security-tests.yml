@@ -2,7 +2,7 @@ name: Database security tests
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, codex/team-flow-contracts]
     paths:
       - 'supabase/**'
       - 'tests/http/**'
@@ -34,7 +34,7 @@ jobs:
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: '2.117.0'
 
       - name: Initialize disposable local Supabase project
         run: |
@@ -60,6 +60,21 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/warehouse-before.sql
           supabase migration up --local
           psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/warehouse-after.sql
+
+      - name: Verify team foundation upgrade (disposable database only)
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '54322'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: |
+          test "$GITHUB_ACTIONS" = "true"
+          supabase db reset --local --version 20260917073526 --no-seed
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/warehouse-before.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/team-foundation-before.sql
+          supabase migration up --local
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/team-foundation-after.sql
 
       - name: Run database authorization tests
         run: |
