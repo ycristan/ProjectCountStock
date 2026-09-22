@@ -1,6 +1,13 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-09-21
+Atualizado: 2026-09-22
+
+## Entrega 2 em implementação — 2026-09-22
+PR #74, branch codex/team-flow-foundation, dependente da documental #73. Modelo e limites: [TEAM_COUNT_FOUNDATION.md](./TEAM_COUNT_FOUNDATION.md).
+Fundação aditiva de participação, posições, autoria, revisões, leitura cega e guardas de etapa. Sem API de escrita nova, sem mudança de rotas/PINs legados, sem produção.
+Migration gerada pelo CLI no runner (35720003065). Upgrade preservou todas as tabelas públicas e usuários Auth; 43 verificações novas passaram na execução 35720834094.
+Essa execução completa FALHOU: fixture de upgrade deixou sessão sintética aberta, afetando três testes antigos que corretamente bloquearam BPU/transferência. Corrigir isolamento com reset descartável antes da suíte; não mudar regras nem retirar testes.
+Nova execução deve incluir também duas disputas concorrentes e regressão HTTP. Entrega 2 não concluída; nenhuma autorização de merge/migration real.
 
 ## Retomada prioritária — equipes, 2026-09-21
 Yuri aprovou o plano de nove entregas e sua implementação. Fonte: [contrato](./TEAM_COUNT_FLOW.md), [plano](./TEAM_COUNT_PLAN.md), [55 cenários planejados](./TEAM_COUNT_TEST_MATRIX.md).

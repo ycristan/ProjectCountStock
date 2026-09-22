@@ -96,3 +96,10 @@ O plano revisado de nove entregas e sua implementação foram aprovados. Regras 
 Este contrato substitui para o novo fluxo a contagem tripla, a tolerância em gramas, o admin iniciando conciliação normal, o encerramento conjunto e a rejeição de todos os registros de quem saiu. Preservar a precedência e as exceções completas, sem copiar resumos contraditórios.
 Resultados de equipe assinada são imutáveis inclusive frente a correções posteriores de BPU/cadastro; não aplicar recálculo de sessão aberta sobre equipe já congelada/encerrada. Nenhuma nova implementação do fluxo de aprovação dupla de BPU está incluída por inferência.
 PR72 não está autorizada para publicação. Aprovação do plano permite branches/testes remotos, não merge/migration de produção. Entrega1 só documentação; seguir plano sem pedir reconfirmação das regras.
+
+## Fundação de equipes — 2026-09-22
+- PR #74 depende da #73; opt-in técnico por team_flows, sem converter sessões existentes. A migração é aditiva e a aplicação ainda não roteia para ela.
+- Identidade Auth separada de membership; posição lógica separada da pessoa que contou, preservando autoria em substituições. Não criar contador_3/contador_4 como colunas.
+- Revogação/visibilidade consultam vínculo e etapa atuais, não apenas JWT. Novas tabelas são somente leitura para authenticated e service_role até existirem comandos transacionais autorizados.
+- Estados/guardas de banco são fundação, não prova de processo completo: conciliação, evidências de confirmação e autorização dos comandos ainda dependem das próximas partes.
+- Testes de upgrade e testes de regras têm bancos descartáveis reinicializados entre si para não compartilhar sessões sintéticas abertas. Nunca remover travas para acomodar fixtures.

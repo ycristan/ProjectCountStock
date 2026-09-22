@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/**'
       - 'tests/http/**'
+      - 'tests/database/**'
       - 'app/**'
       - 'lib/**'
       - 'components/**'
@@ -78,6 +79,7 @@ jobs:
 
       - name: Run database authorization tests
         run: |
+          supabase db reset --local --no-seed
           supabase test db --help
           supabase test db supabase/tests/database
 
@@ -87,6 +89,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+
+      - name: Concurrent team edits and freeze (disposable only)
+        run: node tests/database/team-flow-concurrency.mjs
 
       - name: HTTP export and real SDK transport integration (disposable only)
         run: |
