@@ -58,12 +58,6 @@ select is((select count(*) from public.team_count_records),1::bigint, 'T04: coun
 select is((select count(*) from public.team_flows),1::bigint, 'Participant sees only own team');
 select is((select count(*) from public.team_count_record_history),1::bigint, 'Own prior revision remains readable');
 select throws_ok($q$update public.team_count_records set units=99$q$,'42501',null,'Direct client writes forbidden');
--- Storage-level proof only: does NOT expose/approve a BPU-correction command.
-update public.team_count_records set cases=20,units=0,revision=3 where id='10000000-0000-0000-0000-000000000601';
-select is((select quantity_units from public.team_count_records where id='10000000-0000-0000-0000-000000000601'),400::bigint,'Original cases retained as 20 times BPU 20');
-update public.team_count_records set bpu_at_entry=24,revision=4 where id='10000000-0000-0000-0000-000000000601';
-select is((select quantity_units from public.team_count_records where id='10000000-0000-0000-0000-000000000601'),480::bigint,'Physical cases allow approved future recalculation without recount');
-select is((select cases from public.team_count_record_history where record_id='10000000-0000-0000-0000-000000000601' and revision=3),20,'Historical physical cases preserved');
 select throws_ok($q$update public.team_memberships set finish_state='accepted'$q$,'42501',null,'Cannot self approve through table');
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
 select is((select count(*) from public.team_count_record_history),0::bigint, 'T04: other counter history remains blind');
@@ -88,6 +82,12 @@ select throws_ok($q$update public.team_count_records set units=12,revision=2 whe
 update public.team_memberships set finish_state='counting' where id='10000000-0000-0000-0000-000000000301';
 update public.team_count_records set units=12,revision=2 where id='10000000-0000-0000-0000-000000000601';
 select is((select revision from public.team_count_records where id='10000000-0000-0000-0000-000000000601'),2::bigint, 'T07: rejected request allows edits again');
+-- Storage-level proof only: does NOT expose/approve a BPU-correction command.
+update public.team_count_records set cases=20,units=0,revision=3 where id='10000000-0000-0000-0000-000000000601';
+select is((select quantity_units from public.team_count_records where id='10000000-0000-0000-0000-000000000601'),400::bigint,'Original cases retained as 20 times BPU 20');
+update public.team_count_records set bpu_at_entry=24,revision=4 where id='10000000-0000-0000-0000-000000000601';
+select is((select quantity_units from public.team_count_records where id='10000000-0000-0000-0000-000000000601'),480::bigint,'Physical cases allow approved future recalculation without recount');
+select is((select cases from public.team_count_record_history where record_id='10000000-0000-0000-0000-000000000601' and revision=3),20,'Historical physical cases preserved');
 select throws_ok($q$update public.team_memberships set finish_state='accepted' where id='10000000-0000-0000-0000-000000000302'$q$,'P0001','Invalid individual finish transition','Cannot accept without request');
 select throws_ok($q$update public.team_flows set phase='reconciling',revision=2 where team_id='10000000-0000-0000-0000-000000000200'$q$,'P0001','All required individual finishes must be accepted','T08: premature reconciliation blocked');
 update public.team_memberships set finish_state='requested' where team_id='10000000-0000-0000-0000-000000000200' and role='counter';
