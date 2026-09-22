@@ -89,3 +89,10 @@
 - Não criar clones, arquivos do projeto, tokens ou variáveis de ambiente do projeto no computador de Yuri. Não orientar configuração de SENTRY_AUTH_TOKEN no Windows.
 - Testes descartáveis nos runners do GitHub continuam permitidos, sem segredos de produção. Credenciais sintéticas são geradas no runner e não são registradas no repositório.
 - Falta de acesso de leitura ao Sentry não autoriza solicitar armazenamento local nem declarar a captura do aplicativo inoperante.
+
+
+## Equipes — contrato aprovado em 2026-09-21
+O plano revisado de nove entregas e sua implementação foram aprovados. Regras normativas em [TEAM_COUNT_FLOW.md](./TEAM_COUNT_FLOW.md); [cenários](./TEAM_COUNT_TEST_MATRIX.md) estão planejados, não executados.
+Este contrato substitui para o novo fluxo a contagem tripla, a tolerância em gramas, o admin iniciando conciliação normal, o encerramento conjunto e a rejeição de todos os registros de quem saiu. Preservar a precedência e as exceções completas, sem copiar resumos contraditórios.
+Resultados de equipe assinada são imutáveis inclusive frente a correções posteriores de BPU/cadastro; não aplicar recálculo de sessão aberta sobre equipe já congelada/encerrada. Nenhuma nova implementação do fluxo de aprovação dupla de BPU está incluída por inferência.
+PR72 não está autorizada para publicação. Aprovação do plano permite branches/testes remotos, não merge/migration de produção. Entrega1 só documentação; seguir plano sem pedir reconfirmação das regras.

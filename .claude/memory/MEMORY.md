@@ -1,6 +1,8 @@
 # Memory Index
 
-A memória deste projeto é espelhada em **dois lugares**: este repo (`.claude/memory/`) e a máquina local do usuário (`~/.claude/projects/.../memory/`). **Atualizar os dois juntos, sempre** — nunca só um.
+Fonte atual: [docs/README.md](../../docs/README.md), [estado](../../docs/ESTADO_ATUAL.md) e [contrato de equipes](../../docs/TEAM_COUNT_FLOW.md). NÃO espelhar memória, código ou segredos no Windows. A antiga instrução de atualização local foi expressamente superada.
+
+Tudo abaixo é índice HISTÓRICO: não reexecutar planos/merges nem usar contagem tripla como regra. O contrato de equipes e as decisões atuais prevalecem.
 
 Este índice é a primeira coisa lida ao retomar o projeto. Se ele estiver desatualizado, uma sessão nova começa trabalhando com estado errado (já aconteceu: ficou preso em 2026-07-03 mandando mergear uma PR que já estava na main).
 
