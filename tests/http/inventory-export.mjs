@@ -8,6 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import * as XLSX from 'xlsx'
+import { verifyTeamContexts } from './team-context.mjs'
 
 assert.equal(process.env.GITHUB_ACTIONS, 'true', 'Disposable GitHub runner required')
 const status = JSON.parse(execFileSync('supabase', ['status', '-o', 'json'], {encoding:'utf8',stdio:['ignore','pipe','pipe']}))
@@ -46,6 +47,8 @@ try {
   }
   assert.ok(ready,'Next server must start')
   console.log('PASS: built application starts against disposable Supabase')
+
+  await verifyTeamContexts({base,db,status,sql,envelopes})
 
   const password=randomUUID()+'aA!9'
   const email='zip-'+randomUUID()+'@example.invalid'

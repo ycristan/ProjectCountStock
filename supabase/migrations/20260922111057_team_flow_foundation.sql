@@ -717,5 +717,38 @@ revoke all on function private.guard_team_result_selection() from public,anon,au
 create trigger guard_team_result_selection before update on public.team_flows
 for each row execute function private.guard_team_result_selection();
 
--- Application routing and deployment activation remain unchanged.
+
+-- Current identity contexts, not bearer-token metadata. No caller-supplied user ID.
+-- JSON array avoids silently truncating a person's memberships at the REST row cap.
+create function private.read_my_team_flow_contexts(p_team uuid default null)
+returns jsonb language sql stable security definer set search_path = ''
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'flowVersion',2,'membershipId',m.id,'teamId',m.team_id,'sessionId',s.id,
+    'warehouseId',w.id,'warehouseName',w.name,'teamName',t.team_name,
+    'displayName',m.display_name,'role',m.role,'displayOrder',m.display_order,
+    'finishState',m.finish_state,'phase',f.phase,'revision',f.revision::text
+  ) order by s.created_at,m.team_id),'[]'::jsonb)
+  from public.team_memberships m
+  join public.team_flows f on f.team_id=m.team_id
+  join public.teams t on t.id=m.team_id
+  join public.count_sessions s on s.id=t.session_id
+  join public.warehouses w on w.id=s.warehouse_id
+  where auth.uid() is not null and m.user_id=auth.uid()
+    and not private.is_admin()
+    and (p_team is null or m.team_id=p_team)
+    and m.departed_at is null and m.access_revoked_at is null
+    and f.phase <> 'closed' and s.status <> 'fechada';
+$$;
+revoke all on function private.read_my_team_flow_contexts(uuid) from public,anon,authenticated,service_role;
+grant execute on function private.read_my_team_flow_contexts(uuid) to authenticated;
+create function public.my_team_flow_contexts(p_team uuid default null)
+returns jsonb language sql stable security invoker set search_path = ''
+as $$
+  select private.read_my_team_flow_contexts(p_team);
+$$;
+revoke all on function public.my_team_flow_contexts(uuid) from public,anon,authenticated,service_role;
+grant execute on function public.my_team_flow_contexts(uuid) to authenticated;
+
+-- Legacy routing and deployment activation remain unchanged.
 commit;
