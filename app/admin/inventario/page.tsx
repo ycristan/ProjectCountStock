@@ -20,6 +20,11 @@ export default async function InventarioPage() {
           Upload .xlsx →
         </Link>
       </div>
+      {process.env.VERCEL_ENV === 'preview' && (
+        <Link href="/admin/inventario/recovery-preview" className="block border border-amber-300 bg-amber-50 rounded-xl p-4 mb-4">
+          Conferir recuperação de warehouses — somente leitura, ainda não aplicada →
+        </Link>
+      )}
       <InventoryDownload />
       <InventoryUpload />
       <InventarioClient items={items} />

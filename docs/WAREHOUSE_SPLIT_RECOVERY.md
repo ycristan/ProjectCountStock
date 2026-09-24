@@ -67,3 +67,11 @@ Código validado: 1a2aba6f902acb8e37ceb12d07b7f6ab3babed0d.
 
 ## Pendência de segurança separada
 npm ci emitiu 3 alertas de dependências (2 high e 1 critical), já presentes no lockfile utilizado. O build não identifica os pacotes no resumo; auditar detalhadamente em tarefa específica. Não houve npm audit fix --force nem atualização de dependências nesta correção.
+
+## Continuação: conferência acessível no Preview
+Pedido de Yuri: não apresentar testes isolados como correção entregue no aplicativo.
+- Nova rota protegida /admin/inventario/recovery-preview, apenas VERCEL_ENV=preview e administrador autenticado. Lê produtos reais dos dois IDs explicitamente selecionados, projeta o script em memória e mostra Antes/Depois. Sem criação de sessão, gravação de contagem ou alteração do inventário.
+- Reutiliza exatamente filterItems, SearchInput e ResultList da busca normal. Não é banco isolado nem comprova aplicação da recuperação: aviso permanente na tela. A busca normal segue estritamente limitada à WHS da sessão.
+- Seletores de NOVAS sessões solo/equipe passam a omitir warehouses sem nenhum produto, sem excluir a identidade histórica. Itens inativos contam para essa existência. Esta alteração substitui a pendência anterior sobre Main vazio ainda aparecer no seletor; só terá efeito no Main real após a recuperação dos dados.
+- Nenhuma mudança de schema, merge ou recuperação real nesta continuação. LINK Stock Control não foi utilizado como banco de testes.
+- Testes adicionais cobrem projeção sem mutação, busca compartilhada, autorização, cliques Antes/Depois sem POST e os dois seletores reais. Evidências de execução serão registradas após CI.
