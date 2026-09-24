@@ -21,6 +21,8 @@ sql([
 "('9888','Kinder synthetic active',24,0,30,'Test','Test',true,'TARGET_ID'),",
 "('repair-old-active','Omitted old active',24,0,30,'Test','Test',true,'SOURCE_ID'),",
 "('repair-other','Other warehouse',24,0,30,'Test','Test',true,'OTHER_ID');",
+"insert into public.inventory_items(brand_code,brand_name,bpu,pallet_size,weight_avg,category,category1,brand_active,warehouse_id)",
+"select '2'||lpad(n::text,5,'0'),'Legacy pagination filler',24,0,30,'Test','Test',false,'SOURCE_ID'::uuid from generate_series(1,1205) n;",
 "insert into public.item_bin_locations(brand_code,bin_location) values('1213','40B'),('9888','40B'),('repair-other','40B');",
 "insert into public.solo_sessions(id,title,warehouse_id,restrict_to_list) values ('OPEN_SOLO','Repair open guard','TARGET_ID',false),",
 "('00000000-0000-0000-0000-00000000a105','Repair closed history','SOURCE_ID',true);",

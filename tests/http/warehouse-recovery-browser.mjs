@@ -49,6 +49,7 @@ export async function verifyRecoveredWarehouse({db,base,headers,cookies}) {
     await page.getByText(/No items found/).waitFor()
     assert.equal(await page.getByRole('region').getByRole('button').count(),0)
     await page.goto(base+'/admin/sessao/00000000-0000-0000-0000-00000000a106/combinacao')
+    await page.getByRole('button',{name:'Merged',exact:true}).click()
     await page.getByText('Kinder synthetic 1213',{exact:true}).first().waitFor()
     assert.equal(errors.length,0,'browser must have no uncaught errors')
     await context.close()
