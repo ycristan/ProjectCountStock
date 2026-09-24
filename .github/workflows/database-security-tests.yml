@@ -36,11 +36,6 @@ jobs:
         with:
           version: latest
 
-      - name: Generate corrective migration filename (preparation only)
-        run: |
-          supabase migration new --help
-          supabase migration new prevent_accidental_warehouse_split
-
       - name: Initialize disposable local Supabase project
         run: |
           if [ ! -f supabase/config.toml ]; then
@@ -77,6 +72,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+
+      - name: Verify operational inventory recovery (disposable only)
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '54322'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: node tests/maintenance/warehouse-recovery.mjs
 
       - name: HTTP export and real SDK transport integration (disposable only)
         run: |

@@ -70,6 +70,12 @@ select is((select count(*) from public.item_bin_locations where brand_code='0063
 select is((select brand_active from public.inventory_items where brand_code='absent'),false,'Missing Main product becomes inactive');
 select results_eq($$select brand_code,brand_active from public.inventory_items where brand_code in ('s','t') order by brand_code$$,
  $$values ('s'::text,true),('t'::text,true)$$,'Other warehouses remain active and unchanged');
+select throws_ok($$select public.import_warehouse_inventory('Another label',
+ jsonb_build_array(pg_temp.import_item('006323',24,false,'[]')),true)$$,
+ 'P0001','New warehouse contains existing Brand Codes. Rename the existing warehouse or review an explicit transfer before importing.',
+ 'Inactive existing codes also prevent accidental split');
+select is((select count(*) from public.warehouses where name='Another label'),0::bigint,
+ 'Inactive-code rejection is atomic');
 select throws_ok($$select public.import_warehouse_inventory('Main',
  jsonb_build_array(pg_temp.import_item('same'),pg_temp.import_item(' same ')))$$,
  'P0001','Duplicate Brand Code; choose one row before importing','Database independently rejects duplicate codes');

@@ -130,3 +130,7 @@ Ainda NÃO implementado/liberado:
 - Revisão React: gerador carregado sob demanda, botão type=button, estado de preparação, erro acessível e nenhuma mudança nas fronteiras de autorização.
 - Não executado teste visual autenticado nem abertura manual no Excel. Geração/releitura automática e compilação não provam interação real do navegador.
 - Nenhum merge, mudança de produção ou aplicação de migration. PR #70 continua rascunho. Próximos passos já autorizados de implementação: novo upload/duplicatas/confirmação e isolamento WHS antes da liberação. Este template não conclui o módulo Inventory nem libera Service.
+
+
+## Correção em preparação — 2026-09-24
+PR #75: [incidente, proteção e recuperação](./WAREHOUSE_SPLIT_RECOVERY.md). Os inativos Kinder ficaram no Main criado pela migração, fora do BDS do upload. Recuperação ainda não aplicada. Quatro sessões de teste encerradas com autorização explícita de Yuri; nenhuma quantidade apagada/recalculada.
