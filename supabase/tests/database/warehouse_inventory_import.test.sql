@@ -51,6 +51,16 @@ select lives_ok($$select public.import_warehouse_inventory('Third',jsonb_build_a
 select lives_ok($$select public.import_warehouse_inventory('Main',
  jsonb_build_array(pg_temp.import_item('006323',24,true,'["old"]',80,330),pg_temp.import_item('absent')))$$,
  'Import creates Main products');
+-- Regression: a different WHS label must not silently split an existing inventory.
+select throws_ok($$select public.import_warehouse_inventory('BDS Main Warehouse',
+ jsonb_build_array(pg_temp.import_item('006323')),true)$$,
+ 'P0001','New warehouse contains existing Brand Codes. Rename the existing warehouse or review an explicit transfer before importing.',
+ 'New name plus existing code cannot strand absent/inactive products');
+select is((select count(*) from public.warehouses where name='BDS Main Warehouse'),0::bigint,
+ 'Rejected split creates no warehouse');
+select is((select w.name from public.inventory_items i join public.warehouses w on w.id=i.warehouse_id where brand_code='006323'),
+ 'Main','Rejected split preserves original warehouse membership');
+
 select lives_ok($$select public.import_warehouse_inventory(' MAIN ',
  jsonb_build_array(pg_temp.import_item('006323',24,false,'[]')))$$, 'Main normalization updates same warehouse');
 select is((select count(*) from public.warehouses),3::bigint,'Name case/space does not duplicate warehouse');

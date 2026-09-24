@@ -36,6 +36,11 @@ jobs:
         with:
           version: latest
 
+      - name: Generate corrective migration filename (preparation only)
+        run: |
+          supabase migration new --help
+          supabase migration new prevent_accidental_warehouse_split
+
       - name: Initialize disposable local Supabase project
         run: |
           if [ ! -f supabase/config.toml ]; then
