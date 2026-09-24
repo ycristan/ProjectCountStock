@@ -23,9 +23,13 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
   checked(await db.from('inventory_items').insert({brand_code:code,brand_name:'Browser proof product',
     category:'Test',category1:'Test',bpu:10,pallet_size:0,weight_avg:0,brand_active:true,warehouse_id:wh.id}))
   const errors=[]
+  const pages=[]
+  const secrets=[email,password,status.ANON_KEY,status.SERVICE_ROLE_KEY]
+  const safe=value=>secrets.filter(Boolean).reduce((s,secret)=>s.split(secret).join('[redacted]'),String(value)).slice(0,1200)
   async function pageForRole(){
     const context=await browser.newContext()
     const page=await context.newPage()
+    pages.push(page)
     page.setDefaultTimeout(20000)
     page.on('pageerror',()=>errors.push('pageerror'))
     return page
@@ -40,10 +44,15 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
     stage='admin browser login'
     const adminPage=await pageForRole()
     await adminPage.goto(base+'/login')
+    stage='admin mode button'
     await adminPage.getByRole('button',{name:'Log In as Admin',exact:true}).click()
+    stage='admin email field'
     await adminPage.locator('[name="email"]').fill(email)
+    stage='admin password field'
     await adminPage.locator('[name="password"]').fill(password)
+    stage='admin login submit'
     await adminPage.getByRole('button',{name:'Log In',exact:true}).click()
+    stage='admin redirect'
     await adminPage.waitForURL(base+'/admin')
 
     stage='create legacy team through real form'
@@ -53,6 +62,7 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
     await adminPage.getByRole('button',{name:'Create Teams and Generate Logins',exact:true}).click()
     await adminPage.getByRole('heading',{name:'Logins Generated',exact:true}).waitFor()
     const rows=await adminPage.locator('tbody tr').evaluateAll(rows=>rows.map(r=>[...r.querySelectorAll('td')].map(c=>c.textContent.trim())))
+    for(const row of rows)secrets.push(row[1],row[4])
     assert.equal(rows.length,3)
     for(const row of rows){assert.ok(/^\d{4}$/.test(row[1]));assert.ok(/^\d{4}$/.test(row[4]))}
     assert.equal(new Set(rows.map(r=>r[4])).size,3)
@@ -137,6 +147,7 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
     stage='wrong PIN'
     const wrong=await pageForRole()
     const unused=generatePin(new Set(rows.map(r=>r[4])))
+    secrets.push(unused)
     await pinLogin(wrong,rows[0][1],unused)
     await wrong.getByText('Invalid code or PIN.',{exact:true}).waitFor()
     assert.ok(wrong.url().endsWith('/login'))
@@ -146,6 +157,7 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
     // Never reset a real credential. All writes are in the disposable local database.
     const oldPin=generatePin(new Set())
     const oldTeam=generatePin(new Set(rows.map(r=>r[1])))
+    secrets.push(oldPin,oldTeam)
     const legacy=checked(await db.auth.admin.createUser({email:oldTeam+oldPin+'@count.local',password:randomUUID()+'aA!9',email_confirm:true})).user
     sql("update auth.users set encrypted_password=extensions.crypt('"+oldPin+"',extensions.gen_salt('bf')) where id='"+legacy.id+"'")
     // Authorized legacy participant identity; no UI-created team is rewritten.
@@ -158,7 +170,9 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
     await oldPage.getByRole('heading',{name:'Search Item',exact:true}).waitFor()
     console.log('PASS: wrong PIN is rejected; historical four-digit password still logs in through real UI')
     assert.equal(errors.length,0,'Browser must have no uncaught page errors')
-  } catch {
+  } catch (error) {
+    console.error('browser_boundary_failed', {stage, message:safe(error.message),
+      path:new URL(pages.at(-1)?.url() || base).pathname, pageErrors:errors.length})
     // Browser errors can contain fill values or response bodies. Publish only the failed boundary.
     throw new Error('Team PIN browser verification failed at: '+stage)
   } finally {
