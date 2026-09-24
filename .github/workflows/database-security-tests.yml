@@ -98,6 +98,8 @@ jobs:
         run: |
           supabase status --help
           npm ci --ignore-scripts
+          node --experimental-vm-modules --test --test-reporter=tap tests/inventory/*.test.mjs
+          node --experimental-vm-modules --test --test-reporter=tap tests/xlsx/*.test.mjs
           npm install --prefix /tmp/count-stock-browser --no-save --ignore-scripts playwright@1.58.2
           /tmp/count-stock-browser/node_modules/.bin/playwright install --with-deps chromium
           node tests/http/inventory-export.mjs

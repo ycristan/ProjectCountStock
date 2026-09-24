@@ -63,7 +63,18 @@ export async function login(
     error = legacy.error
   }
   if (error) return { error: 'Invalid code or PIN.' }
-  redirect('/')
+  // Resolve the destination after authentication instead of relying on a second
+  // proxy redirect of "/" during the Server Action's RSC navigation.
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Invalid code or PIN.' }
+  const [{ data: adminAccess }, { data: soloAccess }] = await Promise.all([
+    supabase.rpc('is_admin'), supabase.rpc('is_solo_counter'),
+  ])
+  if (adminAccess === true) redirect('/admin')
+  if (soloAccess === true) redirect('/solo')
+  const { data: account } = await supabase.from('counter_accounts').select('role')
+    .eq('auth_user_id', user.id).maybeSingle()
+  redirect(account?.role === 'independente' ? '/monitor' : '/busca')
 }
 
 export async function logout() {
