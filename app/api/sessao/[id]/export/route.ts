@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { loadHistoricalInventory, type ReportInventoryItem } from '@/lib/historical-inventory'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 
 // ponytail: mesma regra da tela (CombinacaoClient.getMerged) — valor oficial do item
@@ -41,9 +42,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     : null
   const storedMap = new Map(storedResults?.map(r => [r.brand_code, r]))
 
-  const [{ data: teams }, inventory] = await Promise.all([
+  const [{ data: teams }, currentInventory] = await Promise.all([
     supabase.from('teams').select('id, team_name').eq('session_id', sessionId).eq('status', 'reconciliada').order('team_name'),
-    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; category: string; category1: string }>(
+    session.status === 'fechada' ? Promise.resolve([] as ReportInventoryItem[]) : fetchAllRows<ReportInventoryItem>(
       (from, to) =>
         supabase.from('inventory_items').select('brand_code, brand_name, bpu, category, category1').eq('warehouse_id', session.warehouse_id).range(from, to)
     ),
@@ -70,6 +71,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         ),
     createAdminClient().auth.admin.listUsers({ perPage: 1000 }),
   ])
+
+  const inventory = session.status === 'fechada'
+    ? await loadHistoricalInventory(supabase, [...(storedResults ?? []), ...reconcItems].map(row => row.brand_code))
+    : currentInventory
 
   const invMap = Object.fromEntries(inventory.map((i) => [i.brand_code, i]))
 

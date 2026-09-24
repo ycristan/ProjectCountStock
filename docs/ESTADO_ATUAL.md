@@ -2,6 +2,15 @@
 
 Atualizado: 2026-09-24
 
+## Blocos curtos — atualização da base, 2026-09-24
+Bloco 1: integração da main fdf89deecddaeda4a0387968417b51a7d816ab51 na branch de equipes. Preservados o modo consultivo do Independente e as correções de busca/histórico/WHS; suítes de ambas as linhas reunidas. Validação desta integração pendente no CI; não confundir com testes anteriores.
+Nenhum teste manual necessário neste bloco. Não há publicação de equipes nem nova aplicação de migration real.
+Próximo bloco: confirmação do monitor só deve mostrar sucesso após gravação confirmada; testar erro e nova tentativa.
+
+## Estado publicado de inventário — prevalece sobre relatos históricos abaixo
+PR75 publicada em 24/09, merge fdf89deecddaeda4a0387968417b51a7d816ab51; recuperação operacional aplicada com autorização. BDS Main Warehouse: 2295 produtos (446 ativos/1849 inativos), Main vazio preservado para histórico. Sete Kinder na BDS, um ativo/seis inativos; 11 tabelas históricas/vínculos preservadas. Migration preventiva registrada remotamente como 20260924121123; arquivo 20260924105320_prevent_accidental_warehouse_split.sql. Não reaplicar pela diferença de timestamp. Evidências: https://github.com/ycristan/ProjectCountStock/pull/75 .
+
+
 ## Compatibilidade PIN + monitor comprovados no navegador — 2026-09-24
 Código 44ec912cab3d6a0d8b4a6705773f9961f077c021; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35978421959.
 - Reaproveitados com rastreabilidade da PR72: lib/pin-credentials.ts, compatibilidade de login, criação legada com compensação e migration 20260921084500_reconcile_legacy_team_pin.sql. Não importado o bloqueio total de busca do independente.
@@ -193,3 +202,7 @@ Ainda NÃO implementado/liberado:
 - Revisão React: gerador carregado sob demanda, botão type=button, estado de preparação, erro acessível e nenhuma mudança nas fronteiras de autorização.
 - Não executado teste visual autenticado nem abertura manual no Excel. Geração/releitura automática e compilação não provam interação real do navegador.
 - Nenhum merge, mudança de produção ou aplicação de migration. PR #70 continua rascunho. Próximos passos já autorizados de implementação: novo upload/duplicatas/confirmação e isolamento WHS antes da liberação. Este template não conclui o módulo Inventory nem libera Service.
+
+
+## Correção em preparação — 2026-09-24
+PR #75: [incidente, proteção e recuperação](./WAREHOUSE_SPLIT_RECOVERY.md). Os inativos Kinder ficaram no Main criado pela migração, fora do BDS do upload. Recuperação ainda não aplicada. Quatro sessões de teste encerradas com autorização explícita de Yuri; nenhuma quantidade apagada/recalculada.

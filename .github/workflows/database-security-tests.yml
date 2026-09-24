@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/**'
       - 'tests/http/**'
+      - 'tests/maintenance/**'
       - 'actions/**'
       - 'tests/database/**'
       - 'app/**'
@@ -90,6 +91,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+
+      - name: Verify operational inventory recovery (disposable only)
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '54322'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: node tests/maintenance/warehouse-recovery.mjs
 
       - name: Concurrent team edits and freeze (disposable only)
         run: node tests/database/team-flow-concurrency.mjs

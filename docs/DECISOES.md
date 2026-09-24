@@ -139,3 +139,15 @@ Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovad
 - Modo consultivo reutiliza busca sem formular lançamento; proteção efetiva também no servidor e RLS. Solo mantém default original.
 - Novo cadastro variável permanece pendente; teste de equipe legada de três pessoas não é T01 completo nem valida novo encerramento.
 - Evidência 44ec912cab3d6a0d8b4a6705773f9961f077c021, https://github.com/ycristan/ProjectCountStock/actions/runs/35978421959: 391 testes numéricos mais browser/Auth/Realtime reais aprovados. Preview READY permite somente avaliação manual sem escritas de teste. Nenhuma publicação em produção.
+
+
+## Incidente de identidade WHS — 2026-09-24
+Não confundir criação de WHS com renomeação: o novo nome não autoriza mover silenciosamente códigos existentes e deixar os ausentes atrás. PR #75 prepara proteção e recuperação controlada; ver WAREHOUSE_SPLIT_RECOVERY.md. Main foi criado pela migration, não por upload de Yuri. Preservar IDs de sessões históricas e testar a recuperação antes de pedir aplicação em produção.
+
+## Conferência da recuperação — 2026-09-24
+Sem banco separado disponível e sem custo adicional autorizado, oferecer conferência administrativa somente leitura explicitamente rotulada no Preview; não simular gravação bem-sucedida. Novo seletor de sessão omite cadastro sem produtos, mas considera inativos e preserva IDs históricos. Dados reais só serão recuperados na etapa operacional autorizada; Preview não é autorização de produção.
+
+## Entregas curtas e teste manual explícito — 2026-09-24
+Um bloco por execução, com implementação, testes e registro curto. Ordem operacional em TEAM_COUNT_TASKS.md; refina o plano aprovado, sem mudar regras.
+Ao encerrar todo bloco declarar TESTE MANUAL NECESSÁRIO ou Nenhum teste manual necessário neste bloco. Se necessário, fornecer link/ambiente, perfil, passos, resultado esperado e cuidados. Só pedir quando funcionalidade estiver disponível em ambiente seguro; não pedir gravações de teste no Preview que compartilha produção. Não transferir regressões técnicas rotineiras ao usuário.
+A recuperação de inventário da PR75 foi publicada/aplicada; os textos de preparação acima são históricos. Isso não autoriza publicar PR74.

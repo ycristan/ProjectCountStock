@@ -1,4 +1,6 @@
 // Runs only in a disposable GitHub Actions runner. Never accepts production URLs.
+import { verifyRecoveryPreview } from './recovery-preview-browser.mjs'
+import { verifyRecoveredWarehouse } from './warehouse-recovery-browser.mjs'
 import assert from 'node:assert/strict'
 import { execFileSync, spawn } from 'node:child_process'
 import { createServer } from 'node:http'
@@ -96,6 +98,10 @@ try {
   assert.equal(mainRows.find(r=>r['Brand Code']===mainCode).Status,false)
   assert.equal(mainRows.find(r=>r['Brand Code']===mainCode).WHS,'Main')
   console.log('PASS: authenticated HTTP download contains valid XLSX, separate warehouses, inactive item and leading zeros')
+
+  await verifyRecoveredWarehouse({db,base,headers,cookies:[...jar].map(([name,value])=>({name,value}))})
+
+  await verifyRecoveryPreview({db,base,headers,cookies:[...jar].map(([name,value])=>({name,value}))})
 
   // Reproduce the user's missing-column incident only in the disposable database.
   sql("alter table public.inventory_items rename column warehouse_id to warehouse_id_test_hidden; notify pgrst, 'reload schema'")
