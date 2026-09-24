@@ -26,7 +26,14 @@ export async function verifyRecoveryPreview({db,base,headers,cookies}) {
     await context.addCookies(cookies.map(({name,value})=>({name,value,url:base})))
     const page=await context.newPage()
     const writes=[],errors=[]
-    page.on('request',request=>{if(request.method()!=='GET'&&request.method()!=='HEAD')writes.push(request.method())})
+    page.on('request',request=>{
+      if(request.method()==='GET'||request.method()==='HEAD')return
+      const url=new URL(request.url())
+      // The app's real Sentry SDK posts to the isolated collector configured
+      // by inventory-export.mjs. That is telemetry, never an inventory write.
+      if(url.origin==='http://127.0.0.1:4318'&&url.pathname==='/api/1/envelope/')return
+      writes.push({method:request.method(),origin:url.origin,path:url.pathname})
+    })
     page.on('pageerror',()=>errors.push('error'))
     await page.goto(base+path)
     await page.getByText('PREVIEW SOMENTE LEITURA — NÃO APLICADA',{exact:true}).waitFor()
@@ -49,7 +56,7 @@ export async function verifyRecoveryPreview({db,base,headers,cookies}) {
     await search.fill('Previously active omitted')
     assert.equal(await active.getByRole('button').count(),0)
     assert.equal(await inactive.getByRole('button').count(),1)
-    assert.equal(writes.length,0,'read-only interactions must make no write requests')
+    assert.deepEqual(writes,[],'read-only interactions must make no non-telemetry write requests')
     assert.equal(errors.length,0)
     // The operational recovery fixture has an empty historical source. Both
     // real new-session screens must omit it, retaining inactive-only Main.
