@@ -1,5 +1,8 @@
 # Estado atual e prioridades
 
+## Prioridade de retomada — 2026-09-24
+PR #75 preparada e validada (código 1a2aba6f902acb8e37ceb12d07b7f6ab3babed0d): 134 contratos, 95 SQL, recuperação com >1.200 produtos, Chromium e relatórios HTTP/XLSX. [Plano/evidências](./WAREHOUSE_SPLIT_RECOVERY.md). Falta aprovação/publicação e recuperação real do inventário. Main foi criado pela migração; BDS pelo upload. Quatro sessões de teste encerradas por autorização explícita, sem apagar/recalcular contagens. Não confundir isso com aplicação da correção de inventário.
+
 Atualizado: 2026-09-17
 
 ## Fluxo integrado validado — 2026-09-17, commit 95a1ecb8cc8380edfb1a32674d48b6cddecf4503

@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/**'
       - 'tests/http/**'
+      - 'tests/maintenance/**'
       - 'app/**'
       - 'lib/**'
       - 'components/**'

@@ -39,10 +39,31 @@ Primeiro commit 1f129cdad4bafbdea2d8079d148d578d26617985 reproduziu a falha no b
 https://github.com/ycristan/ProjectCountStock/actions/runs/35989792888
 Teste criou indevidamente a nova WHS e transferiu o código; 4 expectativas falharam.
 Migration corretiva criada com Supabase CLI no runner: 20260924105320_prevent_accidental_warehouse_split.sql.
-Validação após correção: pendente; não declarar aprovação antes do CI.
+Validação final concluída; ver evidências abaixo.
 
 ## Limites
 Script não é backup externo; obter/verificar recuperação disponível antes da aplicação real.
 Não executar em Preview, pois ele compartilha o banco real.
 Nenhum clone, segredo ou arquivo de projeto foi criado no Windows.
 Referência técnica: https://supabase.com/docs/guides/database/functions .
+
+## Validação concluída — 2026-09-24
+Código validado: 1a2aba6f902acb8e37ceb12d07b7f6ab3babed0d.
+- 134 contratos aprovados: https://github.com/ycristan/ProjectCountStock/actions/runs/35991431172 .
+- 95 testes SQL, upgrade, lint, recuperação, build, Chromium e HTTP/XLSX aprovados: https://github.com/ycristan/ProjectCountStock/actions/runs/35991431157 .
+- Recuperação executada apenas no banco descartável, com mais de 1.200 produtos para atravessar o limite de página de 1.000. Busca real digitada: Kinder = 1 Active e 6 Inactive; código 1213 e BIN 40B; seleção de inativo abre formulário; outra WHS não aparece.
+- Relatórios fechados de equipes precisaram de correção complementar: metadados buscados por códigos históricos em lotes de 200, não pela warehouse atual. Quantidades continuam salvas, sem recálculo. Verificação de página e XLSX de equipe/solo passou.
+- A tentativa anterior falhou ao procurar célula na aba oculta; teste passou a abrir Merged, sem remover sua expectativa.
+- Nenhuma recuperação real/migration/merge nesta etapa. Somente as quatro sessões de teste foram encerradas com autorização explícita.
+- O commit posterior de registro altera documentação e cobertura de gatilhos do workflow, não o código funcional validado acima.
+
+## Sequência necessária antes de produção
+1. Aprovação explícita do merge e aplicação dos dados; confirmar backup recuperável.
+2. Atualizar leituras/checksums sob nova revisão; a origem é Main (ff60b6ce-edb1-4050-b1a5-b3d40f88d765), destino BDS Main Warehouse (fe6ca6fc-cd9b-4a2e-abb9-046196ab4cfd). Nunca buscar IDs apenas por nomes mutáveis ao executar.
+3. Aplicar migration preventiva versionada; publicar PR #75 e confirmar código com consultas históricas corrigidas em produção ANTES de mover produtos.
+4. Executar script em dry run e revisar resumo, depois aplicar com os mesmos IDs/checksums mediante autorização. Não desligar triggers e não reabrir sessões encerradas.
+5. Verificar 2.295 produtos (446 ativos / 1.849 inativos, se dados não mudaram), sete Kinder no destino e relatórios históricos. Main permanece vazio para preservar vínculos; o seletor atual ainda o lista.
+6. Recuperação não altera credenciais nem resolve o novo fluxo de equipes da PR #74.
+
+## Pendência de segurança separada
+npm ci emitiu 3 alertas de dependências (2 high e 1 critical), já presentes no lockfile utilizado. O build não identifica os pacotes no resumo; auditar detalhadamente em tarefa específica. Não houve npm audit fix --force nem atualização de dependências nesta correção.
