@@ -38,7 +38,13 @@ export async function proxy(request: NextRequest) {
   ])
   const isAdmin = adminValue === true
   const isSoloCounter = soloValue === true
-  const home = isAdmin ? '/admin' : isSoloCounter ? '/solo' : '/busca'
+  let counterHome = '/busca'
+  if (!isAdmin && !isSoloCounter && (pathname === '/' || pathname === '/login')) {
+    const { data: account } = await supabase.from('counter_accounts').select('role')
+      .eq('auth_user_id', user.id).maybeSingle()
+    if (account?.role === 'independente') counterHome = '/monitor'
+  }
+  const home = isAdmin ? '/admin' : isSoloCounter ? '/solo' : counterHome
 
   if (pathname === '/' || pathname === '/login') {
     return NextResponse.redirect(new URL(home, request.url))

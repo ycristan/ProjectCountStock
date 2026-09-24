@@ -8,6 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import * as XLSX from 'xlsx'
+import { verifyTeamPinBrowser } from './team-pin-browser.mjs'
 import { verifyTeamContexts } from './team-context.mjs'
 
 assert.equal(process.env.GITHUB_ACTIONS, 'true', 'Disposable GitHub runner required')
@@ -49,6 +50,7 @@ try {
   console.log('PASS: built application starts against disposable Supabase')
 
   await verifyTeamContexts({base,db,status,sql,envelopes})
+  await verifyTeamPinBrowser({base,db,status,sql})
 
   const password=randomUUID()+'aA!9'
   const email='zip-'+randomUUID()+'@example.invalid'

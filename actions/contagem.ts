@@ -125,6 +125,7 @@ export async function lancarContagem(
   const supabase = await createClient()
   const access = await getTeamCounterAccess()
   if (!access) return { error: 'Not authenticated.' }
+  if (access.counterRole === 'independente') return { error: 'Independent monitors counts; initial counting is not permitted.' }
 
   const { teamId, counterRole } = access
 

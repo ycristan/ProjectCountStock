@@ -1,5 +1,6 @@
 'use server'
 
+import { pinPassword } from '@/lib/pin-credentials'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -29,17 +30,19 @@ export async function login(
   _prevState: { error: string } | null,
   formData: FormData
 ): Promise<{ error: string } | null> {
-  const teamPin = (formData.get('team_pin') as string | null)?.trim()
-  const userPin = (formData.get('user_pin') as string | null)?.trim()
-  const email = (formData.get('email') as string | null)?.trim().toLowerCase()
-  const password = formData.get('password') as string | null
+  const field = (key: string) => { const value = formData.get(key); return typeof value === 'string' ? value : '' }
+  const teamPin = field('team_pin').trim()
+  const userPin = field('user_pin').trim()
+  const email = field('email').trim().toLowerCase()
+  const password = field('password')
 
   let signInEmail: string
   let signInPassword: string
 
-  if (teamPin && userPin) {
+  if (teamPin || userPin) {
+    if (!/^\d{4}$/.test(teamPin) || !/^\d{4}$/.test(userPin)) return { error: 'Invalid code or PIN.' }
     signInEmail = `${teamPin}${userPin}@count.local`
-    signInPassword = userPin
+    signInPassword = pinPassword(teamPin, userPin)
   } else if (email && password) {
     signInEmail = email
     signInPassword = password
@@ -48,11 +51,17 @@ export async function login(
   }
 
   const supabase = await makeSupabase()
-  const { error } = await supabase.auth.signInWithPassword({
+  let { error } = await supabase.auth.signInWithPassword({
     email: signInEmail,
     password: signInPassword,
   })
 
+  // Existing team/solo accounts keep their original PIN password. No resets,
+  // migration of live credentials or retry on rate limits/network failures.
+  if (error?.code === 'invalid_credentials' && teamPin && userPin) {
+    const legacy = await supabase.auth.signInWithPassword({ email: signInEmail, password: userPin })
+    error = legacy.error
+  }
   if (error) return { error: 'Invalid code or PIN.' }
   redirect('/')
 }

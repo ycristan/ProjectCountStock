@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/**'
       - 'tests/http/**'
+      - 'actions/**'
       - 'tests/database/**'
       - 'app/**'
       - 'lib/**'
@@ -97,6 +98,8 @@ jobs:
         run: |
           supabase status --help
           npm ci --ignore-scripts
+          npm install --prefix /tmp/count-stock-browser --no-save --ignore-scripts playwright@1.58.2
+          /tmp/count-stock-browser/node_modules/.bin/playwright install --with-deps chromium
           node tests/http/inventory-export.mjs
           node tests/http/team-finish.mjs
 
