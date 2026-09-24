@@ -82,6 +82,11 @@ jobs:
           PGDATABASE: postgres
         run: node tests/maintenance/warehouse-recovery.mjs
 
+      - name: Install isolated browser test runtime
+        run: |
+          npm install --prefix /tmp/count-stock-browser --no-package-lock --ignore-scripts playwright@1.58.2
+          node /tmp/count-stock-browser/node_modules/playwright/cli.js install --with-deps chromium
+
       - name: HTTP export and real SDK transport integration (disposable only)
         run: |
           supabase status --help

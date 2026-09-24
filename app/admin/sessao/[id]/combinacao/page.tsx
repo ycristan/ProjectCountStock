@@ -1,6 +1,7 @@
 import { isAdmin } from '@/lib/authorization'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { loadHistoricalInventory, type ReportInventoryItem } from '@/lib/historical-inventory'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 import { redirect } from 'next/navigation'
 import { CombinacaoClient } from './_components/CombinacaoClient'
@@ -71,7 +72,7 @@ export default async function CombinacaoPage({
     reconcItems,
     { data: { users } },
     { data: existing },
-    inventory,
+    currentInventory,
   ] = await Promise.all([
     admin
       .from('counter_accounts')
@@ -120,7 +121,7 @@ export default async function CombinacaoPage({
       .limit(1),
     // ponytail: fetch all inventory upfront so invMap is always populated,
     // even when admin opens the page before counters submit any entries
-    fetchAllRows<{ brand_code: string; brand_name: string; bpu: number; category: string; category1: string }>(
+    session.status === 'fechada' ? Promise.resolve([] as ReportInventoryItem[]) : fetchAllRows<ReportInventoryItem>(
       (from, to) =>
         supabase
           .from('inventory_items')
@@ -129,6 +130,10 @@ export default async function CombinacaoPage({
           .range(from, to)
     ),
   ])
+
+  const inventory = session.status === 'fechada'
+    ? await loadHistoricalInventory(supabase, [...storedResults, ...entries, ...reconcItems].map(row => row.brand_code))
+    : currentInventory
 
   const nameMap: Record<string, string> = {}
   const counters: Record<string, Record<string, string>> = {}
