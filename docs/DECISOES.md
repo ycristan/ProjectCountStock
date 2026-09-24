@@ -89,3 +89,10 @@
 - Não criar clones, arquivos do projeto, tokens ou variáveis de ambiente do projeto no computador de Yuri. Não orientar configuração de SENTRY_AUTH_TOKEN no Windows.
 - Testes descartáveis nos runners do GitHub continuam permitidos, sem segredos de produção. Credenciais sintéticas são geradas no runner e não são registradas no repositório.
 - Falta de acesso de leitura ao Sentry não autoriza solicitar armazenamento local nem declarar a captura do aplicativo inoperante.
+
+
+## Incidente de identidade WHS — 2026-09-24
+Não confundir criação de WHS com renomeação: o novo nome não autoriza mover silenciosamente códigos existentes e deixar os ausentes atrás. PR #75 prepara proteção e recuperação controlada; ver WAREHOUSE_SPLIT_RECOVERY.md. Main foi criado pela migration, não por upload de Yuri. Preservar IDs de sessões históricas e testar a recuperação antes de pedir aplicação em produção.
+
+## Conferência da recuperação — 2026-09-24
+Sem banco separado disponível e sem custo adicional autorizado, oferecer conferência administrativa somente leitura explicitamente rotulada no Preview; não simular gravação bem-sucedida. Novo seletor de sessão omite cadastro sem produtos, mas considera inativos e preserva IDs históricos. Dados reais só serão recuperados na etapa operacional autorizada; Preview não é autorização de produção.
