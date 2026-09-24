@@ -93,3 +93,8 @@ BPU preservado foi testado contra edição do snapshot, não através de correç
 
 Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.
 T03/T04/T31/T33/T45/T52 têm evidência parcial de consulta SSR real com cookies, duas warehouses/equipes, papel protegido e revogação seletiva. Sem UI/Realtime; encerramento/saída neste teste foram fixtures privilegiadas, não ações completas. Nenhum cenário ponta a ponta é marcado concluído.
+
+## Evidência de navegador da compatibilidade — 2026-09-24
+Código 44ec912cab3d6a0d8b4a6705773f9961f077c021, execução https://github.com/ycristan/ProjectCountStock/actions/runs/35978421959 aprovada.
+T02 agora tem percurso real de geração pela UI, entrada de três papéis, PIN errado e senha histórica curta, sem mudar credenciais reais. T05: consulta do Independente funciona, inicial negada na UI/Server Action/Data API. T51: dois contadores em contextos Chromium distintos gravam pela UI e monitor recebe via Realtime sem refresh. É fluxo LEGADO de três pessoas, não o novo cadastro variável nem reconexão completa.
+391 verificações (224 SQL/130 contratos/37 XLSX), upgrade, lint e regressões passaram. T01 e T55 continuam incompletos; nenhuma assinatura/conciliação/fechamento foi percorrida pela nova interface. Ver detalhes e limite de teste manual em TEAM_COUNT_FOUNDATION.md.

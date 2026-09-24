@@ -132,3 +132,10 @@ PR72 não está autorizada para publicação. Aprovação do plano permite branc
 - Esta consulta NÃO autoriza comandos de escrita: cada transação continua revalidando vínculo, papel, etapa e revisão. Nenhuma tela/login legado foi redirecionado; novo PIN, seleção visual e ativação ainda são etapas posteriores.
 
 Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.
+
+## Compatibilidade e verificação visual — 2026-09-24
+- Integrar as correções úteis de PINs da PR72 sem seu bloqueio consultivo do Independente. PINs pessoais/equipe continuam de quatro dígitos; senha derivada interna não aumenta segurança entrópica.
+- Login navega diretamente para destino de papel protegido; não depende de encadeamento por "/" numa resposta de Server Action.
+- Modo consultivo reutiliza busca sem formular lançamento; proteção efetiva também no servidor e RLS. Solo mantém default original.
+- Novo cadastro variável permanece pendente; teste de equipe legada de três pessoas não é T01 completo nem valida novo encerramento.
+- Evidência 44ec912cab3d6a0d8b4a6705773f9961f077c021, https://github.com/ycristan/ProjectCountStock/actions/runs/35978421959: 391 testes numéricos mais browser/Auth/Realtime reais aprovados. Preview READY permite somente avaliação manual sem escritas de teste. Nenhuma publicação em produção.

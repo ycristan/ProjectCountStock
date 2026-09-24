@@ -90,3 +90,22 @@ O teste HTTP inicia a aplicação compilada e usa Auth/cookies SSR reais: papel 
 Encerramento e saída neste teste são fixtures privilegiadas; não são comprovação dos futuros comandos/interface de assinatura ou saída. Não testa login PIN, navegador/Realtime nem recebimento na conta Sentry hospedada.
 
 Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.
+
+## Compatibilidade PIN + monitor comprovados no navegador — 2026-09-24
+Código 44ec912cab3d6a0d8b4a6705773f9961f077c021; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35978421959.
+- Reaproveitados com rastreabilidade da PR72: lib/pin-credentials.ts, compatibilidade de login, criação legada com compensação e migration 20260921084500_reconcile_legacy_team_pin.sql. Não importado o bloqueio total de busca do independente.
+- PIN de equipe e pessoal continuam quatro dígitos. Senha interna derivada atende política do Auth; isso NÃO aumenta entropia nem substitui rate limiting. Fallback antigo somente em invalid_credentials, sem redefinir contas existentes.
+- Login direciona explicitamente pelo papel protegido para admin/solo/busca/monitor. O teste de navegador detectou permanência em "/" no redirecionamento intermediário; corrigido antes de aprovar.
+- Layout/busca não usam counter_role/team_id de user_metadata. Independente pode consultar produto/BIN/BPU/Pallet/peso; não abre formulário inicial, não usa finalização de contador. Server Action e políticas restritivas impedem gravação inicial direta.
+- Replay inclui coluna team_pin já existente historicamente em produção. Fixture de upgrade emula essa coluna ANTES de tirar snapshot, mantendo comparação integral; reset fresco prova criação quando ausente. Nenhum valor histórico é reescrito.
+- 224 SQL + 130 contratos de aplicação + 37 XLSX = 391 verificações aprovadas, além de concorrência e integrações HTTP/navegador. Lint e preservação de histórico/Auth passaram.
+- Chromium real: admin entrou pelo formulário, criou equipe legada pela tela e recebeu três credenciais; contador1/2 entraram e salvaram pela UI; independente entrou no monitor e recebeu valores via Realtime sem refresh. Consulta sem controles de escrita, Server Action/Data API indevidas negadas, metadata forjada sem promoção, PIN errado rejeitado e PIN histórico curto aceito.
+- Fixtures privilegiadas criaram apenas admin/sessão/inventário e a conta histórica sintética; criação da equipe e lançamentos do percurso principal passaram pelos botões reais. Sem screenshots/cards/traces com PINs publicados. Diagnóstico do navegador sanitiza credenciais.
+- Inventário/solo preservados nos contratos existentes; propriedade readOnly é opcional e false por padrão. Revisão React: autorização no servidor, segredo fora de props/client, hooks mantidos incondicionais e componente de busca reutilizado.
+
+### Limites atuais e teste manual
+Este é o trecho de COMPATIBILIDADE do fluxo atual de três participantes, NÃO cadastro variável concluído nem implementação completa do novo fluxo. Não prova novas aprovações/conciliação/assinaturas/encerramento pelo navegador. Criação legada ainda não é a transação idempotente do futuro cadastro variável; compensação não equivale a atomicidade Auth+Postgres.
+Preview verificado pelo conector Vercel: READY, deployment dpl_8cxRG58vXKAH83WqAfHaPJfa6Xt8, mesmo commit: https://project-count-stock-ylmm-d9mrg2vlg-ycristans-projects.vercel.app.
+Somente avaliação manual de login/monitor/consulta com contas existentes. Preview compartilha produção: NÃO criar equipes, contar, finalizar ou alterar cadastro para teste ali. Criação/escritas foram verificadas exclusivamente no runner descartável.
+Sem merge, migration real, clone ou arquivos/segredos do projeto no Windows. Sentry hospedado não foi validado; coleta isolada permanece aprovada.
+Próximo bloco: criação transacional/recuperável de equipes variáveis integrada a memberships/slots e telas, sem prolongar dois fluxos completos; preservar compatibilidade e ativar somente com autorização conjunta.
