@@ -2,7 +2,7 @@
 Refinamento aprovado em 24/09/2026. Preservar TEAM_COUNT_FLOW.md e matriz T01–T55; não substituir regras.
 Cada bloco inclui implementação, testes proporcionais e registro com commit/execução/limites. Um bloco por execução; não publicar partes incompletas em produção.
 
-1. Atualizar base com inventário — integração preparada; CI pendente.
+1. Atualizar base com inventário — CONCLUÍDO, código 8674f212575e89454b8ad5dd841728be658063ce, execução 36014137956 aprovada (404 verificações + integrações).
 2. Confirmação confiável no monitor — tratar retorno de erro/exceção, sucesso somente após salvar, nova tentativa.
 3. Cadastro variável — 3/4/5 participantes, PINs de quatro dígitos, um Independente.
 4. Contagem e monitor no modelo novo — cegueira, WHS, autoria, Realtime e reconexão.
