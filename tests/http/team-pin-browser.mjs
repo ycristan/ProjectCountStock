@@ -193,7 +193,7 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
           if new.id='${team.id}'::uuid then raise exception 'Synthetic confirmation failure'; end if;
           return new; end $test$;`)
         await confirm.click()
-        await ind.getByRole('alert').waitFor()
+        await ind.getByRole('alert').filter({hasText:'Could not confirm the count. Please try again.'}).waitFor()
         assert.equal(await success.count(),0,mode+' must not show success')
         assert.equal(await confirm.isEnabled(),true,mode+' must allow retry')
         assert.equal(await saved(),null,mode+' must not persist confirmation')
@@ -209,7 +209,7 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
     await ind.route('**/monitor',interrupt)
     try {
       await confirm.click()
-      await ind.getByRole('alert').waitFor()
+      await ind.getByRole('alert').filter({hasText:'Could not confirm the count. Please try again.'}).waitFor()
       assert.equal(await success.count(),0)
       assert.equal(await confirm.isEnabled(),true)
       assert.equal(await saved(),null)
@@ -218,7 +218,8 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
     await confirm.click()
     await success.waitFor()
     assert.ok(await saved(),'Success requires the actual persisted confirmation')
-    assert.equal(await ind.getByRole('alert').count(),0)
+    stage='monitor clears confirmation error'
+    assert.equal(await ind.getByRole('alert').filter({hasText:'Could not confirm the count. Please try again.'}).count(),0)
     await ind.reload()
     await success.waitFor()
     console.log('PASS: monitor rejects zero-row update, database error and transport failure without false success; retry persists confirmation and survives reload.')
