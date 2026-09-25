@@ -894,7 +894,7 @@ begin
   if auth.uid() is null or not private.is_admin() then raise exception using errcode='42501',message='Not authorized'; end if;
   select * into j from private.team_setup_jobs where session_id=p_session;
   if not found then return null; end if;
-  -- All protected admins may resume; the receipt keeps the original initiating actor.
+  -- All protected admins may resume; this job keeps the original initiating actor.
   for t in select value from jsonb_array_elements(j.plan) loop
     members:='[]';
     for m in select value from jsonb_array_elements(t->'members') loop

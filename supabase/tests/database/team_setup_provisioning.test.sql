@@ -3,8 +3,8 @@ create extension if not exists pgtap with schema extensions;
 select no_plan();
 create temp table provision_case(session_id uuid default gen_random_uuid(), admin_id uuid default gen_random_uuid(), other_id uuid default gen_random_uuid(), draft jsonb, plan jsonb, job jsonb);
 insert into provision_case default values;
-insert into auth.users(id,email,raw_user_meta_data) select admin_id,admin_id||'@example.invalid','{}' from provision_case
-union all select other_id,other_id||'@example.invalid','{"role":"admin"}' from provision_case;
+insert into auth.users(id,email,raw_user_meta_data) select admin_id,admin_id||'@example.invalid','{}'::jsonb from provision_case
+union all select other_id,other_id||'@example.invalid','{"role":"admin"}'::jsonb from provision_case;
 insert into public.app_user_access(user_id,access_kind) select admin_id,'admin' from provision_case;
 insert into public.count_sessions(id) select session_id from provision_case;
 update provision_case set draft=jsonb_build_array(jsonb_build_object('name','Test team','members',jsonb_build_array(
@@ -38,6 +38,14 @@ select throws_ok($q$insert into public.teams(session_id,team_name,team_pin) sele
 insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data)
 select gen_random_uuid(),(c.plan->0->>'pin')||(m->>'pin')||'@count.local',now(),jsonb_build_object('team_setup_job',c.job->>'id')
 from provision_case c cross join lateral jsonb_array_elements(c.plan->0->'members') m;
+update auth.users set raw_app_meta_data='{}',raw_user_meta_data=jsonb_build_object('team_setup_job',c.job->>'id')
+from provision_case c where auth.users.email=(c.plan->0->>'pin')||(c.plan->0->'members'->0->>'pin')||'@count.local';
+select throws_ok($q$select public.complete_team_setup(session_id) from provision_case$q$,'P0001','Login provisioning is incomplete; retry the saved setup','Editable metadata cannot claim provisioning ownership');
+update auth.users set raw_app_meta_data=jsonb_build_object('team_setup_job',c.job->>'id'),email_confirmed_at=null
+from provision_case c where auth.users.email=(c.plan->0->>'pin')||(c.plan->0->'members'->0->>'pin')||'@count.local';
+select throws_ok($q$select public.complete_team_setup(session_id) from provision_case$q$,'P0001','Login provisioning is incomplete; retry the saved setup','Unconfirmed identity cannot be published');
+update auth.users set email_confirmed_at=now() from provision_case c
+where auth.users.email=(c.plan->0->>'pin')||(c.plan->0->'members'->0->>'pin')||'@count.local';
 select lives_ok($q$update provision_case set job=public.complete_team_setup(session_id)$q$,'Publish checked memberships transactionally');
 select ok((select (job->>'complete')::boolean from provision_case),'Completion stored');
 select is((select count(*) from public.teams t join provision_case c on c.session_id=t.session_id),1::bigint,'Only one team published');

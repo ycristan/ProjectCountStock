@@ -20,7 +20,10 @@ export async function readTeamSetup(sessionId: string) {
   if (process.env.TEAM_SETUP_ENABLED !== 'true' || !(await isAdmin())) return { error: 'Not authorized.' }
   const db = await createClient()
   const { data, error } = await db.rpc('read_team_setup', { p_session: sessionId })
-  if (error) return { error: 'Saved setup is unavailable. Please retry.' }
+  if (error) {
+    const eventId = await reportTeamContextError('team.setup')
+    return { error: 'Saved setup is unavailable. Please retry.' + (eventId ? ' Reference: ' + eventId : '') }
+  }
   const job = data as SetupJob | null
   // Never send pending credentials or internal Auth identifiers to the form.
   return { draft: job?.draft, credenciais: job?.complete ? cards(job) : undefined }
