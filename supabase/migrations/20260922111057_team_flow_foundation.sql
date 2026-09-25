@@ -954,8 +954,8 @@ begin
     then raise exception 'Invalid setup draft'; end if;
   -- Only validated fields survive; clients cannot inject user IDs or command IDs.
   select jsonb_agg(jsonb_build_object('commandId',gen_random_uuid(),'name',x->>'name','pin',x->>'pin',
-    'members',(select jsonb_agg(jsonb_build_object('name',m->>'name','role',m->>'role','pin',m->>'pin'))
-      from jsonb_array_elements(x->'members') m))) into p_plan from jsonb_array_elements(p_plan) x;
+    'members',(select jsonb_agg(jsonb_build_object('name',member_row.value->>'name','role',member_row.value->>'role','pin',member_row.value->>'pin'))
+      from jsonb_array_elements(x->'members') member_row))) into p_plan from jsonb_array_elements(p_plan) x;
   insert into private.team_setup_jobs(session_id,actor_id,draft,plan) values(p_session,auth.uid(),p_draft,p_plan);
   return private.read_team_setup(p_session);
 end;
@@ -970,7 +970,8 @@ declare j private.team_setup_jobs;
 begin
   perform pg_advisory_xact_lock(6969,3);
   select r.* into j from private.team_setup_jobs r
-    where exists(select 1 from jsonb_array_elements(r.plan) t where t->>'pin'=new.team_pin);
+    where r.session_id=new.session_id
+      or exists(select 1 from jsonb_array_elements(r.plan) t where t->>'pin'=new.team_pin);
   if found and (current_setting('count_stock.setup_job',true) is distinct from j.id::text
     or not private.is_admin() or new.session_id<>j.session_id) then
     raise exception 'Team PIN is reserved by another setup';

@@ -34,6 +34,7 @@ select is((select public.reserve_team_setup(session_id,draft,'[]')->>'id' from p
 select throws_ok($q$select public.reserve_team_setup(session_id,'[]',plan) from provision_case$q$,'P0001','Resume the saved team setup before changing its names','Changed draft cannot overwrite saved plan');
 select throws_ok($q$select public.complete_team_setup(session_id) from provision_case$q$,'P0001','Login provisioning is incomplete; retry the saved setup','No publish before Auth provisioning');
 select throws_ok($q$insert into public.teams(session_id,team_name,team_pin) select session_id,'Collision',plan->0->>'pin' from provision_case$q$,'P0001','Team PIN is reserved by another setup','Legacy insert cannot steal reserved PIN');
+select throws_ok($q$insert into public.teams(session_id,team_name,team_pin) select session_id,'Mixed legacy',lpad(((plan->0->>'pin')::integer+1)::text,4,'0') from provision_case$q$,'P0001','Team PIN is reserved by another setup','Legacy team cannot enter a session reserved for new setup');
 -- Owned confirmed Auth fixtures, not a claim of real provisioning (covered in Chromium).
 insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data)
 select gen_random_uuid(),(c.plan->0->>'pin')||(m->>'pin')||'@count.local',now(),jsonb_build_object('team_setup_job',c.job->>'id')

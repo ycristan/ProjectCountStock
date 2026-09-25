@@ -84,6 +84,13 @@ export async function createTeamSetup(sessionId: string, draft: TeamDraft[]): Pr
     job = result.data as SetupJob
     return { draft: job.draft, credenciais: cards(job) }
   } catch {
+    // A reservation response can be lost after committing. Recover its draft too.
+    if (!job) {
+      try {
+        const recovered = await db.rpc('read_team_setup', { p_session: sessionId })
+        if (!recovered.error) job = recovered.data as SetupJob | null
+      } catch { /* Reload can recover the persisted plan when connectivity returns. */ }
+    }
     const eventId = await reportTeamContextError('team.setup')
     return { draft: job?.draft, error: 'Setup was not completed. Retry to resume the same logins.' + (eventId ? ' Reference: ' + eventId : '') }
   }
