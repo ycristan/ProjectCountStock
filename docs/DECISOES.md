@@ -96,3 +96,81 @@ O plano revisado de nove entregas e sua implementação foram aprovados. Regras 
 Este contrato substitui para o novo fluxo a contagem tripla, a tolerância em gramas, o admin iniciando conciliação normal, o encerramento conjunto e a rejeição de todos os registros de quem saiu. Preservar a precedência e as exceções completas, sem copiar resumos contraditórios.
 Resultados de equipe assinada são imutáveis inclusive frente a correções posteriores de BPU/cadastro; não aplicar recálculo de sessão aberta sobre equipe já congelada/encerrada. Nenhuma nova implementação do fluxo de aprovação dupla de BPU está incluída por inferência.
 PR72 não está autorizada para publicação. Aprovação do plano permite branches/testes remotos, não merge/migration de produção. Entrega1 só documentação; seguir plano sem pedir reconfirmação das regras.
+
+## Fundação de equipes — 2026-09-22
+- PR #74 depende da #73; opt-in técnico por team_flows, sem converter sessões existentes. A migração é aditiva e a aplicação ainda não roteia para ela.
+- Identidade Auth separada de membership; posição lógica separada da pessoa que contou, preservando autoria em substituições. Não criar contador_3/contador_4 como colunas.
+- Revogação/visibilidade consultam vínculo e etapa atuais, não apenas JWT. Novas tabelas são somente leitura para authenticated e service_role até existirem comandos transacionais autorizados.
+- Estados/guardas de banco são fundação, não prova de processo completo: conciliação, evidências de confirmação e autorização dos comandos ainda dependem das próximas partes.
+- Testes de upgrade e testes de regras têm bancos descartáveis reinicializados entre si para não compartilhar sessões sintéticas abertas. Nunca remover travas para acomodar fixtures.
+
+- Preservar componentes físicos e parâmetros da contagem, não apenas total convertido: total canônico gerado pela mesma aritmética de convert_count. Histórico mantém componentes e total; correção administrativa de BPU continua sem comando autorizado neste bloco.
+- Em 22/09 a base passou nos 136 testes SQL, duas disputas concorrentes, upgrade e regressão HTTP (execução 35722151547). Isso não conclui a entrega 2 nem libera produção.
+
+## Comandos individuais — 2026-09-22
+- Autoria derivada de auth.uid() e vínculo protegido, nunca parâmetro livre ou metadata. Função interna elevada no schema private, wrappers públicos invoker; sem concessão de escrita nas tabelas.
+- Pedido/decisão/avanço da etapa e evento persistem na mesma transação. UUID de comando mais payload original permite retry sem reaplicar; revisão esperada impede decisão sobre tela antiga.
+- Eventos de finalização sem quantidades, PINs ou motivo livre. Contador lê apenas eventos próprios; independente da equipe/admin leem conforme vínculo protegido. Eventos não podem ser reescritos/excluídos.
+- Comandos deste bloco cobrem somente finalização normal; não simulam admin excepcional antes de implementar posse/substituição. Último aceite abre etapa de reconciliação, não aceita produtos nem submete equipe automaticamente.
+
+- Evidência dos comandos: commit f8326fcdc89a96539e8d4051c79d81221762b786, run35731209411: 170 SQL e Auth/PostgREST reais aprovados, incluindo concorrência/retry/revogação. Sem publicação ou interface nova ativada.
+
+## Versões de resultados — 2026-09-22
+- Snapshot relacional por equipe/revisão: versão com warehouse/equipe/participantes e itens com quantidade oficial, BPU/cadastro/locais e fontes originais. Campos de cadastro são copiados pelo banco, sem payload de identidade/metadata vindo do cliente.
+- Somente uma versão completa e selada da revisão atual pode ser escolhida para coleta. Cancelar antes da primeira confirmação libera seleção, preservando a versão antiga; nova revisão gera outra versão. Depois do congelamento não há troca.
+- Fontes são preservadas por registro/posição/pessoa/revisão/componentes/método. Não somar participantes para obter resultado da equipe.
+- Builder interno sem elevação/permissões de aplicativo; os futuros comandos devem entregar resultado validado. Estes testes de armazenamento não equivalem a algoritmo de conciliação, assinatura ou aprovação implementados.
+- Snapshots não acrescentam zero global e não alteram solo; apenas marcas efetivamente contadas pela equipe entram. R13 continua etapa9.
+
+- Validação aprovada: aad292839465853614831d64aeb084de8cd0f363, execução35735213309, 211 SQL mais Auth/PostgREST e regressões. Mudanças de cadastro testadas não alteram versões anteriores; correção de BPU pós-fechamento geral e relatórios consumidores ainda não testados/implementados.
+
+## Contexto protegido do participante — 2026-09-22
+- Consulta `my_team_flow_contexts` deriva usuário de auth.uid(), sem parâmetro de identidade nem user_metadata. Retorna somente vínculos próprios ativos em equipes/sessões abertas, papel, warehouse, etapa e revisão textual.
+- Independente compartilhado recebe todos os seus contextos; filtro opcional por equipe verifica o mesmo escopo. Não escolher a primeira equipe automaticamente. Admin monitor não é participante por inferência.
+- Helper SSR usa cookies e chave pública, sem service_role/cache/fallback legado. Rota de leitura `GET /api/team-flow/context` retorna no-store; equipe sem vínculo é 404, parâmetros inválidos 400 e falha de consulta 503 correlacionada.
+- Falha de consulta não vira lista vazia de equipes. Telemetria contém operação e erro genérico, sem identidade, cookies, PINs ou erro bruto do banco.
+- Esta consulta NÃO autoriza comandos de escrita: cada transação continua revalidando vínculo, papel, etapa e revisão. Nenhuma tela/login legado foi redirecionado; novo PIN, seleção visual e ativação ainda são etapas posteriores.
+
+Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.
+
+## Compatibilidade e verificação visual — 2026-09-24
+- Integrar as correções úteis de PINs da PR72 sem seu bloqueio consultivo do Independente. PINs pessoais/equipe continuam de quatro dígitos; senha derivada interna não aumenta segurança entrópica.
+- Login navega diretamente para destino de papel protegido; não depende de encadeamento por "/" numa resposta de Server Action.
+- Modo consultivo reutiliza busca sem formular lançamento; proteção efetiva também no servidor e RLS. Solo mantém default original.
+- Novo cadastro variável permanece pendente; teste de equipe legada de três pessoas não é T01 completo nem valida novo encerramento.
+- Evidência 44ec912cab3d6a0d8b4a6705773f9961f077c021, https://github.com/ycristan/ProjectCountStock/actions/runs/35978421959: 391 testes numéricos mais browser/Auth/Realtime reais aprovados. Preview READY permite somente avaliação manual sem escritas de teste. Nenhuma publicação em produção.
+
+
+## Incidente de identidade WHS — 2026-09-24
+Não confundir criação de WHS com renomeação: o novo nome não autoriza mover silenciosamente códigos existentes e deixar os ausentes atrás. PR #75 prepara proteção e recuperação controlada; ver WAREHOUSE_SPLIT_RECOVERY.md. Main foi criado pela migration, não por upload de Yuri. Preservar IDs de sessões históricas e testar a recuperação antes de pedir aplicação em produção.
+
+## Conferência da recuperação — 2026-09-24
+Sem banco separado disponível e sem custo adicional autorizado, oferecer conferência administrativa somente leitura explicitamente rotulada no Preview; não simular gravação bem-sucedida. Novo seletor de sessão omite cadastro sem produtos, mas considera inativos e preserva IDs históricos. Dados reais só serão recuperados na etapa operacional autorizada; Preview não é autorização de produção.
+
+## Entregas curtas e teste manual explícito — 2026-09-24
+Um bloco por execução, com implementação, testes e registro curto. Ordem operacional em TEAM_COUNT_TASKS.md; refina o plano aprovado, sem mudar regras.
+Ao encerrar todo bloco declarar TESTE MANUAL NECESSÁRIO ou Nenhum teste manual necessário neste bloco. Se necessário, fornecer link/ambiente, perfil, passos, resultado esperado e cuidados. Só pedir quando funcionalidade estiver disponível em ambiente seguro; não pedir gravações de teste no Preview que compartilha produção. Não transferir regressões técnicas rotineiras ao usuário.
+A recuperação de inventário da PR75 foi publicada/aplicada; os textos de preparação acima são históricos. Isso não autoriza publicar PR74.
+
+## Ponytail e bloco 2A — 2026-09-25
+Ponytail full é obrigatório antes/durante a escrita e Review ao concluir, sem remover proteções/testes. Regra reafirmada em AGENTS.md, não apenas no CLAUDE histórico.
+Lista delimitada Solo deve identificar Active/Inactive na escolha de brands, ativos primeiro, usando o padrão visual da contagem; ambos selecionáveis. Não alterar lista fechada iniciada. Implementação reservada ao bloco 2A.
+
+
+## Bloco 2A — seleção delimitada Solo
+Reutilizar ResultList da busca na seleção administrativa: Active antes de Inactive, mesmos rótulos/cores, ambos selecionáveis. Removido corte silencioso de oito resultados; área rolável mantém acesso a todos os correspondentes. Escopo WHS e exclusão dos já selecionados permanecem. Não altera lista iniciada, Auth, contagem ou banco de produção.
+
+
+## Cadastro variável — decomposição 3A/3B, 2026-09-25
+3A valida o armazenamento transacional privado de uma equipe inteira e retry; 3B integra provisionamento Auth recuperável, formulário e PIN/cartões. Não chamar 3A de cadastro funcional pronto. Builder só recebe identidades provisionadas confiáveis através da futura orquestração; não expor diretamente parâmetros de identidade ao cliente. Mantido em setup, sem concessões de acesso/contagem. Nenhum limite máximo de cinco foi introduzido no armazenamento; 3/4/5 são cenários de aceitação.
+A atomicidade demonstrada é só PostgreSQL, não Auth+Postgres. Falha/timeout na criação Auth precisa de recuperação/compensação restrita ao pedido antes de liberar o fluxo. PINs nunca entram em logs ou recibos claros. A migration de fundação segue não publicada; complemento versionado na mesma migration.
+
+## Bloco 3B — recuperação de provisionamento
+- Reserva técnica privada por sessão conserva nomes e PINs entre tentativas; somente admins protegidos podem ler/retomar. Qualquer admin pode retomar; registro conserva iniciador, recibos da publicação registram quem a concluiu.
+- Auth é provisionado fora da transação, com marcador protegido de propriedade da operação. O servidor nunca recebe IDs de Auth livres do formulário; banco resolve email + marcador protegido + confirmação. Marcador não determina papéis em execução.
+- Após falha não excluir contas: retomar as identidades pertencentes ao mesmo pedido. Antes de completar, nenhuma equipe/vínculo parcial é publicada e nenhum cartão é emitido. Plano operacional sensível não é log/recibo de auditoria; não incluir valores em telemetria.
+- Reserva de PIN serializada também com criação legada; builder permanece privado. Publicação do lote é transacional/idempotente e permanece em setup, sem habilitar contagem.
+- Ativação de desenvolvimento exige flag no servidor e seleção explícita do novo formulário. Habilitada somente no runner descartável; não configurar na produção/Preview compartilhado. Login novo mostra contexto protegido sem abrir contagem legada. Legado não é convertido.
+- Não há limite de cinco participantes: 3/4/5 são testes, botão permite adicionar contadores. Alterar cadastro reservado não é suportado durante recuperação; retry conserva payload original.
+
+Validação do bloco 3B: Código c28e2fa33c43cf3da1c187c704c84c678bd2fd59; execução https://github.com/ycristan/ProjectCountStock/actions/runs/36123374995. 31 novas asserções SQL, total 494 verificações (319 SQL + 138 contratos + 37 XLSX), além de upgrade, lint, concorrência, build e integrações Auth/HTTP/Chromium/Realtime. Falhas injetadas mantêm o mesmo plano/PINs e não publicam equipes parciais; duas janelas concorrentes criam uma única equipe. Ponytail Review removeu armazenamento redundante de IDs e configuração duplicada; sem dependências novas. Retentativa pressupõe sessão aberta e identidades preservadas: exclusões/alterações externas exigem diagnóstico, não recriação silenciosa. Novo fluxo continua sem ativação de contagem/publicação; próximo bloco 4. Nenhum teste manual necessário neste bloco.

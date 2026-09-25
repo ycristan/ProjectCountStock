@@ -1,6 +1,92 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-09-21
+Atualizado: 2026-09-25
+
+## Bloco 3B — cadastro variável e recuperação validados na branch
+Formulário opt-in cria equipes de 3/4/5 pessoas (sem máximo artificial de cinco), com N-1 contadores, um Independente e PINs de equipe/pessoais de quatro dígitos. Cartões existentes reutilizados. Plano operacional privado recupera Auth parcialmente provisionado; todos os vínculos do lote são publicados na mesma transação. Reserva protege PIN e sessão contra criação legada concorrente. Qualquer admin protegido pode retomar; metadados editáveis não autorizam papéis nem apropriação de identidades.
+Código c28e2fa33c43cf3da1c187c704c84c678bd2fd59; execução https://github.com/ycristan/ProjectCountStock/actions/runs/36123374995. 31 novas asserções SQL, total 494 verificações (319 SQL + 138 contratos + 37 XLSX), além de upgrade, lint, concorrência, build e integrações Auth/HTTP/Chromium/Realtime.
+Navegador real comprovou: falha no último usuário Auth sem equipe/cartão parcial; falha tardia no banco após 12 identidades com rollback de todas as equipes; reload recupera nomes; resposta perdida após commit recupera cartões; repetição e duas janelas simultâneas preservam uma equipe e os mesmos PINs; entrada real de contador/Independente em cada tamanho resolve equipe/WHS/papel sem cair na contagem legada. Regressões de contagem/monitor legado, Solo, busca Active/Inactive, recuperação WHS e exportações passaram.
+Limite: novo acesso termina em contexto de setup, sem contagem ativada. T01 tem cadastro/cartões comprovados, mas colunas/monitor variável ainda dependem do bloco 4; T55 não concluído. Flag `TEAM_SETUP_ENABLED` foi habilitada somente no runner, nunca Vercel/produção. Sem merge, migration real, clone ou segredo local. Falhas de fixture JSON e alias SQL encontradas nas execuções iniciais foram corrigidas sem retirar testes/proteções.
+Ponytail full aplicado; Review removeu cache redundante de IDs/array auxiliar e declaração duplicada de segurança (3 linhas no ajuste final), reaproveitando PIN/cartões/telemetria e transações nativas, sem dependências novas. Revisão final de complexidade: Lean already. Ship. Não é autorização de publicação.
+**Nenhum teste manual necessário neste bloco.** Não gravar testes na Preview compartilhada. Próximo bloco: 4, contagem/monitor no modelo novo.
+
+## Bloco 3A — gravação atômica de cadastro validada
+Parte interna do bloco 3, não cadastro variável utilizável. Builder privado INVOKER cria equipe/setup/memberships/slots/assignments/recibo na mesma transação. Uma pessoa independente sem posição inicial; N-1 contadores. Identidades devem existir sem acessos/vínculos prévios e ter email compatível com PIN da equipe. Não cria Auth, não emite PIN/cartão, não libera acesso, não ativa contagem e não modifica telas/legado.
+Comando repetido retorna a mesma equipe; payload/ator diferente rejeitado. Lock de sessão e identidades ordenadas protegem concorrência. Recibo privado guarda hash, autor e IDs, não PINs/nomes em claro. Sem EXECUTE para anon/authenticated/service_role; futuro wrapper precisa validar provisionamento confiável. Não expor o builder diretamente.
+Complemento da migration de fundação ainda não publicada; nenhum banco real alterado. Código ab9b93bc1f15c654957996159c20a39168de87e5; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/36115545145 . 59 novos testes SQL, total 463 verificações (288 SQL + 138 contratos + 37 XLSX), além de upgrade, lint, concorrência e HTTP/Chromium/Realtime. Retry simultâneo retornou uma única equipe de cinco pessoas e quatro posições. Falha inicial de geração dos delimitadores/âncoras SQL corrigida antes desta execução; nenhum teste/proteção removido. Não declarar T01/T02 completos: Auth, UI e recuperação entre serviços ficam no bloco 3B.
+Ponytail full aplicado: tabelas existentes reaproveitadas, transação nativa, nenhum framework/dependência. Review: Lean already. Ship. (complexidade apenas). Nenhum teste manual necessário neste bloco.
+
+## Bloco 2A — seleção Solo validada
+Seleção da lista Solo reutiliza ResultList: Active/Inactive, cores e ambos selecionáveis. Corte de oito removido, resultados roláveis; WHS e regras de lista preservadas. Teste Chromium acrescentado para >8 itens, grupos/cores/ordem, seleção por clique/teclado, ausência de duplicatas, remoção/reinclusão e resumo. Código cbfbba839053345ba8313af1cd0686284f497bf0; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/36113867343 . 404 verificações (229 SQL + 138 contratos + 37 XLSX), preservação/concorrência e integrações HTTP/Chromium passaram. Novo teste de seleção aprovado no navegador real; não cria sessão nem valida uma nova regra de gravação.
+Ponytail full: reaproveitamento sem nova dependência/abstração; Review: Lean already. Ship. (complexidade apenas, sem autorização de publicação). Produção não alterada. Nenhum teste manual necessário neste bloco; não testar escrita no Preview compartilhado. Próximo bloco: 3, cadastro variável de equipes.
+
+## Bloco 2 — confirmação do monitor validada
+UI trata erro retornado/exceção e permite retry; sucesso exige resposta explícita após UPDATE retornar linha com confirmação persistida. Não muda conciliação/finalização nova. Teste Chromium acrescentado para zero linhas, rejeição do banco, falha de transporte e retry/reload; Código 69c65e2541c282900555d6150aba239d0c26311d; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/36108456295 . 404 verificações (229 SQL/138 contratos/37 XLSX), upgrade/concorrência e Chromium/Auth/Realtime/HTTP aprovados. Navegador comprovou zero linhas, erro de banco, falha de transporte, retry persistido e reload. Primeira execução falhou por seletor genérico de alertas; especificado o alerta de confirmação sem remover cenários ou proteções.
+Ponytail full aplicado antes da escrita: manter handler/Server Action existentes, sem dependência ou helper novo. Revisão retroativa do bloco 1 (diff de integração): busca reutilizada, modo consultivo preservado, instalação de navegador não duplicada; nenhum corte adicional seguro identificado. Revisão do bloco 2: Lean already. Ship. (apenas complexidade; não autorização de publicação). Linhas removíveis identificadas: 0.
+Nenhum teste manual necessário neste bloco. Não testar escrita no Preview compartilhado; banco real e main não alterados. Próximo bloco: 2A, rótulos Active/Inactive na lista delimitada Solo.
+
+
+## Blocos curtos — atualização da base, 2026-09-24
+Bloco 1: integração da main fdf89deecddaeda4a0387968417b51a7d816ab51 na branch de equipes. Preservados o modo consultivo do Independente e as correções de busca/histórico/WHS; suítes de ambas as linhas reunidas. Validação aprovada no código 8674f212575e89454b8ad5dd841728be658063ce: https://github.com/ycristan/ProjectCountStock/actions/runs/36014137956 . 229 SQL + 138 contratos + 37 XLSX = 404 verificações, além de upgrade, concorrência, Auth/HTTP, Chromium/Realtime, busca de sete Kinder e exportações históricas. Nenhum teste removido/ignorado. Isto valida integração/compatibilidade, não o novo fluxo completo de equipes.
+Nenhum teste manual necessário neste bloco. Não há publicação de equipes nem nova aplicação de migration real.
+Próximo bloco: confirmação do monitor só deve mostrar sucesso após gravação confirmada; testar erro e nova tentativa.
+
+## Estado publicado de inventário — prevalece sobre relatos históricos abaixo
+PR75 publicada em 24/09, merge fdf89deecddaeda4a0387968417b51a7d816ab51; recuperação operacional aplicada com autorização. BDS Main Warehouse: 2295 produtos (446 ativos/1849 inativos), Main vazio preservado para histórico. Sete Kinder na BDS, um ativo/seis inativos; 11 tabelas históricas/vínculos preservadas. Migration preventiva registrada remotamente como 20260924121123; arquivo 20260924105320_prevent_accidental_warehouse_split.sql. Não reaplicar pela diferença de timestamp. Evidências: https://github.com/ycristan/ProjectCountStock/pull/75 .
+
+
+## Compatibilidade PIN + monitor comprovados no navegador — 2026-09-24
+Código 44ec912cab3d6a0d8b4a6705773f9961f077c021; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35978421959.
+- Reaproveitados com rastreabilidade da PR72: lib/pin-credentials.ts, compatibilidade de login, criação legada com compensação e migration 20260921084500_reconcile_legacy_team_pin.sql. Não importado o bloqueio total de busca do independente.
+- PIN de equipe e pessoal continuam quatro dígitos. Senha interna derivada atende política do Auth; isso NÃO aumenta entropia nem substitui rate limiting. Fallback antigo somente em invalid_credentials, sem redefinir contas existentes.
+- Login direciona explicitamente pelo papel protegido para admin/solo/busca/monitor. O teste de navegador detectou permanência em "/" no redirecionamento intermediário; corrigido antes de aprovar.
+- Layout/busca não usam counter_role/team_id de user_metadata. Independente pode consultar produto/BIN/BPU/Pallet/peso; não abre formulário inicial, não usa finalização de contador. Server Action e políticas restritivas impedem gravação inicial direta.
+- Replay inclui coluna team_pin já existente historicamente em produção. Fixture de upgrade emula essa coluna ANTES de tirar snapshot, mantendo comparação integral; reset fresco prova criação quando ausente. Nenhum valor histórico é reescrito.
+- 224 SQL + 130 contratos de aplicação + 37 XLSX = 391 verificações aprovadas, além de concorrência e integrações HTTP/navegador. Lint e preservação de histórico/Auth passaram.
+- Chromium real: admin entrou pelo formulário, criou equipe legada pela tela e recebeu três credenciais; contador1/2 entraram e salvaram pela UI; independente entrou no monitor e recebeu valores via Realtime sem refresh. Consulta sem controles de escrita, Server Action/Data API indevidas negadas, metadata forjada sem promoção, PIN errado rejeitado e PIN histórico curto aceito.
+- Fixtures privilegiadas criaram apenas admin/sessão/inventário e a conta histórica sintética; criação da equipe e lançamentos do percurso principal passaram pelos botões reais. Sem screenshots/cards/traces com PINs publicados. Diagnóstico do navegador sanitiza credenciais.
+- Inventário/solo preservados nos contratos existentes; propriedade readOnly é opcional e false por padrão. Revisão React: autorização no servidor, segredo fora de props/client, hooks mantidos incondicionais e componente de busca reutilizado.
+
+### Limites atuais e teste manual
+Este é o trecho de COMPATIBILIDADE do fluxo atual de três participantes, NÃO cadastro variável concluído nem implementação completa do novo fluxo. Não prova novas aprovações/conciliação/assinaturas/encerramento pelo navegador. Criação legada ainda não é a transação idempotente do futuro cadastro variável; compensação não equivale a atomicidade Auth+Postgres.
+Preview verificado pelo conector Vercel: READY, deployment dpl_8cxRG58vXKAH83WqAfHaPJfa6Xt8, mesmo commit: https://project-count-stock-ylmm-d9mrg2vlg-ycristans-projects.vercel.app.
+Somente avaliação manual de login/monitor/consulta com contas existentes. Preview compartilha produção: NÃO criar equipes, contar, finalizar ou alterar cadastro para teste ali. Criação/escritas foram verificadas exclusivamente no runner descartável.
+Sem merge, migration real, clone ou arquivos/segredos do projeto no Windows. Sentry hospedado não foi validado; coleta isolada permanece aprovada.
+Próximo bloco: criação transacional/recuperável de equipes variáveis integrada a memberships/slots e telas, sem prolongar dois fluxos completos; preservar compatibilidade e ativar somente com autorização conjunta.
+
+## Histórico validado — identidade por equipe integrada ao servidor, 2026-09-22
+PR74 inclui helper SSR e rota de leitura /api/team-flow/context. Identidade/papel/warehouse vêm dos vínculos protegidos; consulta não aceita identidade de outro usuário, não usa metadata editável e não escolhe equipe automaticamente.
+Independente com dois vínculos recebe ambos. Encerrar A preserva B; mesma sessão de login perde contexto encerrado ou de saída. Falha no banco retorna 503 correlacionado, não uma lista vazia que esconderia erro.
+
+Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.
+
+Nenhum merge, migration real ou mudança de PIN/tela legada. A base agora tem integração de identidade de leitura testada, não o fluxo novo de equipes utilizável. Faltam criação/PIN/roteamento visual, comparação/conciliação, exceções, assinatura e consolidado das próximas entregas.
+Próximo passo: integração rastreável da criação/login de equipes e PINs de quatro dígitos (incluindo correções da PR72), mantendo Independente como monitor, sem ativação de produção parcial.
+
+## Validado — versões preservadas de resultados, 2026-09-22
+Na PR74, estrutura interna de versões completas e itens imutáveis, com cadastro/participantes/contagens originais copiados pelo banco; seleção de versão selada antes de entrar em coleta. Primeira confirmação mantém seleção fixa.
+Construtor interno INVOKER sem permissão para clientes/admin/service_role. Recebe saída já resolvida dos futuros comandos, não valores livres do cliente. Não implementa decisão de igualdade/tolerância/conciliação nem aprovação/admin/assinatura.
+Código aad292839465853614831d64aeb084de8cd0f363; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35735213309 . 211 asserções SQL (170 anteriores + 41 novas), upgrade, lint, concorrência, Auth/PostgREST, build/ZIP/coletor isolado passaram. Fixtures de congelamento exigem versão real. Teste HTTP confirmou cegueira e permissões de snapshots.
+Nenhuma produção, rota, PIN ou interface alterada. Entrega2 continua com integração de identidade pendente. Próximo passo técnico: resolver vínculo/papel por equipe na aplicação, sem reintroduzir user_metadata nem trocar PINs/rotas legadas antes da ativação coordenada. Detalhes/limites em TEAM_COUNT_FOUNDATION.md.
+
+## Validado — comandos de finalização normal, 2026-09-22
+Na mesma PR74: pedido individual e aceite/rejeição com identidade protegida, lock por equipe, revisão esperada, recibo idempotente e evento imutável com autor. API não aceita quantidades nem altera rotas/PINs legados.
+Código f8326fcdc89a96539e8d4051c79d81221762b786: 170 asserções SQL aprovadas, incluindo 34 novas. Auth/PostgREST reais aprovaram permissões, requisições concorrentes, retry, rejeição/aceites e revogação com token antigo. Evidência: https://github.com/ycristan/ProjectCountStock/actions/runs/35731209411 . Upgrade, lint e regressões anteriores também passaram.
+Apenas fluxo normal: exceções de saída/substituição falham fechadas até suas operações dedicadas. Interface, comparação de itens, snapshots oficiais e integração completa ainda pendentes.
+Nenhum merge ou banco real alterado. Detalhes em TEAM_COUNT_FOUNDATION.md. Próximo trabalho: snapshots oficiais preservados e integração de identidade, mantendo comandos posteriores indisponíveis até suas garantias; entrega2 ainda incompleta.
+
+## Histórico do primeiro bloco — Entrega 2 — primeiro bloco de banco validado, 2026-09-22
+PR #74, branch codex/team-flow-foundation, dependente da documental #73. Modelo e limites: [TEAM_COUNT_FOUNDATION.md](./TEAM_COUNT_FOUNDATION.md).
+Código validado: 4c06317ca3a29d4476ac04d825eb3c488530f940. Evidência: https://github.com/ycristan/ProjectCountStock/actions/runs/35722151547 .
+- 136 testes SQL: 90 existentes + 46 novos, sem retirar testes.
+- Duas disputas concorrentes reais: edições simultâneas e edição aguardando congelamento.
+- Upgrade preserva tabelas públicas anteriores e usuários Auth, incluindo PIN individual sintético; nenhuma equipe antiga convertida.
+- Componentes Pallets/Cases/Units e parâmetros preservados; exemplo 20 cases x BPU 20/24 verificado como 400/480. Não significa aprovação dupla de BPU implementada.
+- Lint SQL e regressão de build/Auth/HTTP/ZIP/coletor de erro passaram. Coletor isolado não comprova recebimento no Sentry hospedado.
+Nenhuma rota/login/PIN legado alterado. Nenhuma migration real, merge ou escrita de teste em Preview/produção. Escritas nas novas tabelas permanecem indisponíveis à aplicação.
+Entrega 2 AINDA NÃO CONCLUÍDA: faltam comandos autorizados, auditoria das decisões, snapshots completos e integração de identidade, com validação própria. Não apresentar este bloco como novo fluxo utilizável nem como execução integral dos 55 cenários.
+Próximo passo: completar esses mecanismos na mesma PR, reaproveitando correções da PR72 com testes, sem solicitar novamente regras aprovadas.
+Falhas intermediárias corrigidas: delimitadores SQL, isolamento entre fixtures de upgrade/suítes e posição do teste de armazenamento BPU fora do perfil sem permissão. Proteções não foram relaxadas.
 
 ## Retomada prioritária — equipes, 2026-09-21
 Yuri aprovou o plano de nove entregas e sua implementação. Fonte: [contrato](./TEAM_COUNT_FLOW.md), [plano](./TEAM_COUNT_PLAN.md), [55 cenários planejados](./TEAM_COUNT_TEST_MATRIX.md).
@@ -140,3 +226,7 @@ Ainda NÃO implementado/liberado:
 - Revisão React: gerador carregado sob demanda, botão type=button, estado de preparação, erro acessível e nenhuma mudança nas fronteiras de autorização.
 - Não executado teste visual autenticado nem abertura manual no Excel. Geração/releitura automática e compilação não provam interação real do navegador.
 - Nenhum merge, mudança de produção ou aplicação de migration. PR #70 continua rascunho. Próximos passos já autorizados de implementação: novo upload/duplicatas/confirmação e isolamento WHS antes da liberação. Este template não conclui o módulo Inventory nem libera Service.
+
+
+## Correção em preparação — 2026-09-24
+PR #75: [incidente, proteção e recuperação](./WAREHOUSE_SPLIT_RECOVERY.md). Os inativos Kinder ficaram no Main criado pela migração, fora do BDS do upload. Recuperação ainda não aplicada. Quatro sessões de teste encerradas com autorização explícita de Yuri; nenhuma quantidade apagada/recalculada.

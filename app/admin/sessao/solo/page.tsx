@@ -18,7 +18,7 @@ export default async function SessaoSoloPage() {
           .range(from, to)
     ),
     statusContadorSoloFixo(),
-    listWarehouses(),
+    listWarehouses(true),
   ])
 
   const inventory: ItemBusca[] = inventoryRaw.map((i) => ({

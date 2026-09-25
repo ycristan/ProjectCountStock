@@ -33,3 +33,6 @@ Leia `docs/README.md` antes de propor ou alterar qualquer coisa. Os documentos e
 
 ## Contrato de equipes
 Antes de alterar fluxo de equipes, ler integralmente docs/TEAM_COUNT_FLOW.md, docs/TEAM_COUNT_PLAN.md e a matriz docs/TEAM_COUNT_TEST_MATRIX.md. Usar IDs de regras/cenários na PR; distinguir planejado, implementado, executado e publicado. Não remover proteções para fazer teste passar.
+
+## Ponytail obrigatório
+Consultar e aplicar Ponytail full antes e durante toda escrita de código: YAGNI, biblioteca padrão, recurso nativo, solução mínima. Executar Ponytail Review no diff ao concluir; registrar resultado e escopo. Esta revisão trata complexidade, não substitui testes de correção, autorização ou regras de negócio.

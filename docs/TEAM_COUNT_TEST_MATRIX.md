@@ -75,3 +75,36 @@ Cada evidência futura deve conter ID, commit, execução, camada, resultado e l
 ## Verificação documental desta PR
 Conferir cobertura R01–R15, IDs únicos, nove entregas e links internos; revisão de leitura independente.
 Nenhuma execução dos roteiros acima é alegada nesta PR. Testes anteriores da PR72 são evidência parcial de outro escopo, não aprovação destes contratos.
+
+## Evidência parcial posterior — fundação, 2026-09-22
+A PR #74 executou verificações de banco relacionadas a parte desta matriz: 46 novas asserções SQL e duas disputas concorrentes, além das regressões existentes. Evidência/limites em [TEAM_COUNT_FOUNDATION.md](./TEAM_COUNT_FOUNDATION.md).
+Nenhum cenário ponta a ponta acima muda para concluído por inferência: comandos, telas, Auth/PIN do novo fluxo, Realtime e confirmação real ainda exigem suas verificações.
+
+## Evidência parcial dos comandos individuais — 2026-09-22
+T06/T07/T08/T09/T45/T50 agora têm evidência parcial adicional de RPC autorizado + Auth/PostgREST real no runner, não apenas alterações privilegiadas de fixture. Commit f8326fcdc89a96539e8d4051c79d81221762b786; execução 35731209411, aprovada.
+34 novas asserções SQL, concorrência HTTP e revogação com sessão anterior. A UI e a comparação de itens ainda não estão ligadas; não marcar cenários ponta a ponta como concluídos.
+
+## Evidência parcial de versões preservadas — 2026-09-22
+Commit aad292839465853614831d64aeb084de8cd0f363, execução35735213309: 41 novas asserções (211 SQL total), Auth/PostgREST e regressões aprovados.
+T04/T21/T37/T38/T44/T45/T49/T53 têm evidência adicional de armazenamento/RLS/seleção imutável e preservação de cadastro. Rodadas e assinaturas foram fixtures internas, NÃO ações reais pelo usuário; não marcar esses cenários completos.
+BPU preservado foi testado contra edição do snapshot, não através de correção aprovada do cadastro após fechamento geral. Report/export consumidor continua pendente.
+
+## Evidência parcial de contexto/identidade — 2026-09-22
+
+Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.
+T03/T04/T31/T33/T45/T52 têm evidência parcial de consulta SSR real com cookies, duas warehouses/equipes, papel protegido e revogação seletiva. Sem UI/Realtime; encerramento/saída neste teste foram fixtures privilegiadas, não ações completas. Nenhum cenário ponta a ponta é marcado concluído.
+
+## Evidência de navegador da compatibilidade — 2026-09-24
+Código 44ec912cab3d6a0d8b4a6705773f9961f077c021, execução https://github.com/ycristan/ProjectCountStock/actions/runs/35978421959 aprovada.
+T02 agora tem percurso real de geração pela UI, entrada de três papéis, PIN errado e senha histórica curta, sem mudar credenciais reais. T05: consulta do Independente funciona, inicial negada na UI/Server Action/Data API. T51: dois contadores em contextos Chromium distintos gravam pela UI e monitor recebe via Realtime sem refresh. É fluxo LEGADO de três pessoas, não o novo cadastro variável nem reconexão completa.
+391 verificações (224 SQL/130 contratos/37 XLSX), upgrade, lint e regressões passaram. T01 e T55 continuam incompletos; nenhuma assinatura/conciliação/fechamento foi percorrida pela nova interface. Ver detalhes e limite de teste manual em TEAM_COUNT_FOUNDATION.md.
+
+
+## Evidência parcial T01/T50/T53 — bloco 3A, 2026-09-25
+Código ab9b93bc1f15c654957996159c20a39168de87e5; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/36115545145 . 59 novos testes SQL, total 463 verificações (288 SQL + 138 contratos + 37 XLSX), além de upgrade, lint, concorrência e HTTP/Chromium/Realtime. Retry simultâneo retornou uma única equipe de cinco pessoas e quatro posições. Falha inicial de geração dos delimitadores/âncoras SQL corrigida antes desta execução; nenhum teste/proteção removido.
+Camada exclusivamente interna de setup: transação, rollback tardio, ordem/papéis, retry e concorrência. Não é T01 completo: nomes/formulário/cartões/PINs e provisionamento Auth ainda não integrados; T02/T55 não ganham conclusão por estes testes. Nenhum teste manual necessário neste bloco.
+
+## Evidência de cadastro UI/Auth — bloco 3B, 2026-09-25
+Código c28e2fa33c43cf3da1c187c704c84c678bd2fd59; execução https://github.com/ycristan/ProjectCountStock/actions/runs/36123374995. 31 novas asserções SQL, total 494 verificações (319 SQL + 138 contratos + 37 XLSX), além de upgrade, lint, concorrência, build e integrações Auth/HTTP/Chromium/Realtime.
+T01: formulário real cria 3/4/5 participantes, um Independente, N-1 posições e cartões dinâmicos; colunas/monitor de contagem variável ainda pendentes. T02: login real de contadores/Independente em cada tamanho resolve papel/WHS em contexto de setup; PINs legados/errados continuam cobertos pela regressão. T50: Auth parcial, rollback tardio, resposta perdida, reload, replay e duas janelas concorrentes sem duplicar equipe/credenciais. T52: erro genérico chegou ao coletor isolado do SDK; sem afirmar recebimento no Sentry hospedado. T53/T54: preservação, legado, Solo, WHS e exportações passaram novamente.
+SQL também negou metadados editáveis como propriedade do provisionamento, conta não confirmada, chamada de não-admin/service/anon e inserção legada em sessão reservada. Nenhuma mutação de produção, nenhum avanço de T55. Novo cadastro permanece em setup com flag somente no runner. Nenhum teste manual necessário neste bloco.

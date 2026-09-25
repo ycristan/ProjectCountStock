@@ -1,3 +1,6 @@
+-- Emulate the already-existing production column before the upgrade snapshot.
+-- Fresh resets separately verify replay adds this column when absent.
+ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS team_pin character(4);
 -- Synthetic data for the disposable CI database, before warehouse columns exist.
 insert into public.inventory_items(brand_code,brand_name,bpu,pallet_size,weight_avg,category,category1)
 values ('migration-probe-a','Historical product',20,80,330,'Drinks','Cans');
