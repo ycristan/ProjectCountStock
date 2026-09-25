@@ -74,6 +74,7 @@ export async function login(
   if (soloAccess === true) redirect('/solo')
   const { data: account } = await supabase.from('counter_accounts').select('role')
     .eq('auth_user_id', user.id).maybeSingle()
+  if (!account && process.env.TEAM_SETUP_ENABLED === 'true') redirect('/team')
   redirect(account?.role === 'independente' ? '/monitor' : '/busca')
 }
 

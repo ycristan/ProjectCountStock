@@ -7,7 +7,7 @@ Cada bloco inclui implementação, testes proporcionais e registro com commit/ex
 2A. Lista delimitada Solo — seleção mostra Active/Inactive como a busca de contagem, ambos selecionáveis; padrão existente reutilizado. CONCLUÍDO na branch, código cbfbba839053345ba8313af1cd0686284f497bf0, execução 36113867343 aprovada; >8 resultados, WHS, seleção/remoção/reinclusão e resumo comprovados no Chromium. Sem publicação.
 3. Cadastro variável — 3/4/5 participantes, PINs de quatro dígitos, um Independente. EM ANDAMENTO.
    - 3A: builder transacional privado, vínculos/posições e retry. CONCLUÍDO na branch, código ab9b93bc1f15c654957996159c20a39168de87e5, execução 36115545145 aprovada (463 verificações + integrações); sem UI/Auth ativados.
-   - 3B: provisionamento Auth recuperável, integração do formulário, PIN/cartões e teste real. PENDENTE.
+   - 3B: provisionamento Auth recuperável, integração do formulário, PIN/cartões e teste real. IMPLEMENTADO, CI PENDENTE; somente setup opt-in isolado, sem ativação da contagem.
 4. Contagem e monitor no modelo novo — cegueira, WHS, autoria, Realtime e reconexão.
 5. Finalização individual nas telas — pedido, bloqueio, aceite/rejeição.
 6. Comparação — igualdade, ausência/zero, métodos e tolerância de peso.

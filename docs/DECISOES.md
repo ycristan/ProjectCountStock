@@ -164,3 +164,11 @@ Reutilizar ResultList da busca na seleção administrativa: Active antes de Inac
 ## Cadastro variável — decomposição 3A/3B, 2026-09-25
 3A valida o armazenamento transacional privado de uma equipe inteira e retry; 3B integra provisionamento Auth recuperável, formulário e PIN/cartões. Não chamar 3A de cadastro funcional pronto. Builder só recebe identidades provisionadas confiáveis através da futura orquestração; não expor diretamente parâmetros de identidade ao cliente. Mantido em setup, sem concessões de acesso/contagem. Nenhum limite máximo de cinco foi introduzido no armazenamento; 3/4/5 são cenários de aceitação.
 A atomicidade demonstrada é só PostgreSQL, não Auth+Postgres. Falha/timeout na criação Auth precisa de recuperação/compensação restrita ao pedido antes de liberar o fluxo. PINs nunca entram em logs ou recibos claros. A migration de fundação segue não publicada; complemento versionado na mesma migration.
+
+## Bloco 3B — recuperação de provisionamento
+- Reserva técnica privada por sessão conserva nomes e PINs entre tentativas; somente admins protegidos podem ler/retomar. Qualquer admin pode retomar; registro conserva iniciador, recibos da publicação registram quem a concluiu.
+- Auth é provisionado fora da transação, com marcador protegido de propriedade da operação. O servidor nunca recebe IDs de Auth livres do formulário; banco resolve email + marcador protegido + confirmação. Marcador não determina papéis em execução.
+- Após falha não excluir contas: retomar as identidades pertencentes ao mesmo pedido. Antes de completar, nenhuma equipe/vínculo parcial é publicada e nenhum cartão é emitido. Plano operacional sensível não é log/recibo de auditoria; não incluir valores em telemetria.
+- Reserva de PIN serializada também com criação legada; builder permanece privado. Publicação do lote é transacional/idempotente e permanece em setup, sem habilitar contagem.
+- Ativação de desenvolvimento exige flag no servidor e seleção explícita do novo formulário. Habilitada somente no runner descartável; não configurar na produção/Preview compartilhado. Login novo mostra contexto protegido sem abrir contagem legada. Legado não é convertido.
+- Não há limite de cinco participantes: 3/4/5 são testes, botão permite adicionar contadores. Alterar cadastro reservado não é suportado durante recuperação; retry conserva payload original.

@@ -1,3 +1,4 @@
+import { verifyTeamSetupBrowser } from './team-setup-browser.mjs'
 import { verifySoloListBrowser } from './solo-list-browser.mjs'
 // Runs only in a disposable GitHub Actions runner. Never accepts production URLs.
 import { verifyRecoveryPreview } from './recovery-preview-browser.mjs'
@@ -33,7 +34,7 @@ const collector=createServer(async(req,res)=>{
 await new Promise(resolve=>collector.listen(4318,'127.0.0.1',resolve))
 const env={...process.env,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,NEXT_PUBLIC_SENTRY_DSN:'http://'+'a'.repeat(32)+'@127.0.0.1:4318/1',
-  VERCEL_ENV:'preview',NEXT_TELEMETRY_DISABLED:'1'}
+  VERCEL_ENV:'preview',NEXT_TELEMETRY_DISABLED:'1',TEAM_SETUP_ENABLED:'true'}
 delete env.SENTRY_AUTH_TOKEN
 let app,renamed=false
 try {
@@ -66,6 +67,7 @@ try {
   checked(await login.auth.signInWithPassword({email,password}))
   const cookie=[...jar].map(([name,value])=>name+'='+value).join('; ')
   const headers={cookie}
+  await verifyTeamSetupBrowser({base,db,status,sql,login,envelopes,cookies:[...jar].map(([name,value])=>({name,value}))})
   const anon=await fetch(base+'/api/admin/inventario',{redirect:'manual'})
   assert.equal(anon.status,307)
   assert.ok(anon.headers.get('location').endsWith('/login'))

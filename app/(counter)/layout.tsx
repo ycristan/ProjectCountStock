@@ -1,5 +1,6 @@
 import { getTeamCounterAccess } from '@/lib/authorization'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { logout } from '@/actions/auth'
@@ -11,6 +12,7 @@ export default async function CounterLayout({ children }: { children: React.Reac
   } = await supabase.auth.getUser()
   const name = user?.user_metadata?.full_name ?? 'Counter'
   const access = await getTeamCounterAccess()
+  if (!access && process.env.TEAM_SETUP_ENABLED === 'true') redirect('/team')
   const role = access?.counterRole
   const teamId = access?.teamId
 

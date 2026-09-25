@@ -814,6 +814,7 @@ begin
     raise exception using errcode='22023', message='Team requires distinct people and one independent';
   end if;
 
+  perform pg_advisory_xact_lock(6969,3);
   -- Serialize with other setup requests and session closure, not all warehouses.
   select * into v_session from public.count_sessions where id=p_session for update;
   if v_session.id is null or v_session.status <> 'aberta' then
@@ -869,5 +870,159 @@ end;
 $$;
 revoke all on function private.build_team_setup(uuid,uuid,text,text,jsonb) from public,anon,authenticated,service_role;
 
--- Legacy routing and deployment activation remain unchanged.
+
+-- Block 3B: recoverable provisioning. Sensitive operational plan, NOT an audit log.
+create table private.team_setup_jobs (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null unique references public.count_sessions(id) on delete restrict,
+  actor_id uuid not null references auth.users(id) on delete restrict,
+  draft jsonb not null,
+  plan jsonb not null,
+  team_ids uuid[],
+  created_at timestamptz not null default clock_timestamp(),
+  completed_at timestamptz
+);
+alter table private.team_setup_jobs enable row level security;
+revoke all on private.team_setup_jobs from public,anon,authenticated,service_role;
+create index team_setup_jobs_actor_idx on private.team_setup_jobs(actor_id);
+
+create function private.read_team_setup(p_session uuid)
+returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare j private.team_setup_jobs; t jsonb; m jsonb; members jsonb; plan jsonb:='[]'; u uuid;
+begin
+  if auth.uid() is null or not private.is_admin() then raise exception using errcode='42501',message='Not authorized'; end if;
+  select * into j from private.team_setup_jobs where session_id=p_session;
+  if not found then return null; end if;
+  -- All protected admins may resume; the receipt keeps the original initiating actor.
+  for t in select value from jsonb_array_elements(j.plan) loop
+    members:='[]';
+    for m in select value from jsonb_array_elements(t->'members') loop
+      select id into u from auth.users where email=(t->>'pin')||(m->>'pin')||'@count.local'
+        and raw_app_meta_data->>'team_setup_job'=j.id::text and deleted_at is null
+        and email_confirmed_at is not null;
+      members:=members||jsonb_build_array(m||jsonb_build_object('userId',u));
+    end loop;
+    plan:=plan||jsonb_build_array(t||jsonb_build_object('members',members));
+  end loop;
+  return jsonb_build_object('id',j.id,'draft',j.draft,'plan',plan,'complete',j.completed_at is not null);
+end;
+$$;
+revoke all on function private.read_team_setup(uuid) from public,anon,authenticated,service_role;
+
+create function private.reserve_team_setup(p_session uuid,p_draft jsonb,p_plan jsonb)
+returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare j private.team_setup_jobs; s public.count_sessions; t jsonb; m jsonb; expected jsonb:='[]'; members jsonb;
+begin
+  if auth.uid() is null or not private.is_admin() then raise exception using errcode='42501',message='Not authorized'; end if;
+  -- Same order in reserve, finalize, internal builder and legacy INSERT guard.
+  perform pg_advisory_xact_lock(6969,3);
+  select * into s from public.count_sessions where id=p_session for update;
+  if s.id is null or s.status<>'aberta' then raise exception 'Session is not open'; end if;
+  select * into j from private.team_setup_jobs where session_id=p_session;
+  if found then
+    if j.draft is distinct from p_draft then raise exception 'Resume the saved team setup before changing its names'; end if;
+    return private.read_team_setup(p_session);
+  end if;
+  if exists(select 1 from public.teams where session_id=p_session) then raise exception 'Session already has teams'; end if;
+  if p_plan is null or jsonb_typeof(p_plan)<>'array' then raise exception 'Invalid setup plan'; end if;
+  if jsonb_array_length(p_plan)=0 then raise exception 'At least one team is required'; end if;
+  for t in select value from jsonb_array_elements(p_plan) loop
+    if jsonb_typeof(t->'name') is distinct from 'string' or btrim(t->>'name')=''
+      or coalesce(t->>'pin','') !~ '^[0-9]{4}$'
+      or jsonb_typeof(t->'members') is distinct from 'array' then raise exception 'Invalid team'; end if;
+    if jsonb_array_length(t->'members')<3 then raise exception 'At least three members are required'; end if;
+    members:='[]';
+    for m in select value from jsonb_array_elements(t->'members') loop
+      if jsonb_typeof(m->'name') is distinct from 'string' or btrim(m->>'name')=''
+        or coalesce(m->>'pin','') !~ '^[0-9]{4}$'
+        or coalesce(m->>'role','') not in ('counter','independent') then raise exception 'Invalid member'; end if;
+      members:=members||jsonb_build_array(jsonb_build_object('name',m->>'name','role',m->>'role'));
+    end loop;
+    if (select count(*) from jsonb_array_elements(t->'members') x where x->>'role'='independent')<>1
+      or (select count(distinct x->>'pin') from jsonb_array_elements(t->'members') x)<>jsonb_array_length(t->'members')
+      then raise exception 'Distinct PINs and one independent required'; end if;
+    expected:=expected||jsonb_build_array(jsonb_build_object('name',t->>'name','members',members));
+    if exists(select 1 from public.teams where team_pin=t->>'pin')
+      or exists(select 1 from private.team_setup_jobs r cross join lateral jsonb_array_elements(r.plan) x where x->>'pin'=t->>'pin')
+      or exists(select 1 from auth.users where email like (t->>'pin')||'%@count.local')
+      then raise exception using errcode='23505',message='Team PIN unavailable'; end if;
+  end loop;
+  if expected is distinct from p_draft or
+    (select count(distinct x->>'pin') from jsonb_array_elements(p_plan) x)<>jsonb_array_length(p_plan)
+    then raise exception 'Invalid setup draft'; end if;
+  -- Only validated fields survive; clients cannot inject user IDs or command IDs.
+  select jsonb_agg(jsonb_build_object('commandId',gen_random_uuid(),'name',x->>'name','pin',x->>'pin',
+    'members',(select jsonb_agg(jsonb_build_object('name',m->>'name','role',m->>'role','pin',m->>'pin'))
+      from jsonb_array_elements(x->'members') m))) into p_plan from jsonb_array_elements(p_plan) x;
+  insert into private.team_setup_jobs(session_id,actor_id,draft,plan) values(p_session,auth.uid(),p_draft,p_plan);
+  return private.read_team_setup(p_session);
+end;
+$$;
+revoke all on function private.reserve_team_setup(uuid,jsonb,jsonb) from public,anon,authenticated,service_role;
+
+-- Serializes new reservations with legacy team creation, without changing legacy PINs.
+create function private.guard_reserved_team_pin()
+returns trigger language plpgsql security invoker set search_path=''
+as $$
+declare j private.team_setup_jobs;
+begin
+  perform pg_advisory_xact_lock(6969,3);
+  select r.* into j from private.team_setup_jobs r
+    where exists(select 1 from jsonb_array_elements(r.plan) t where t->>'pin'=new.team_pin);
+  if found and (current_setting('count_stock.setup_job',true) is distinct from j.id::text
+    or not private.is_admin() or new.session_id<>j.session_id) then
+    raise exception 'Team PIN is reserved by another setup';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function private.guard_reserved_team_pin() from public,anon,authenticated,service_role;
+-- SECURITY DEFINER is needed only for the private reservation lookup by legacy INSERT.
+alter function private.guard_reserved_team_pin() security definer;
+create trigger guard_reserved_team_pin before insert or update of team_pin on public.teams
+for each row execute function private.guard_reserved_team_pin();
+
+create function private.complete_team_setup(p_session uuid)
+returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare j private.team_setup_jobs; s public.count_sessions; t jsonb; m jsonb; members jsonb; u uuid; ids uuid[]:='{}';
+begin
+  if auth.uid() is null or not private.is_admin() then raise exception using errcode='42501',message='Not authorized'; end if;
+  perform pg_advisory_xact_lock(6969,3);
+  select * into s from public.count_sessions where id=p_session for update;
+  if s.id is null or s.status<>'aberta' then raise exception 'Session is not open'; end if;
+  select * into strict j from private.team_setup_jobs where session_id=p_session for update;
+  if j.completed_at is not null then return private.read_team_setup(p_session); end if;
+  perform set_config('count_stock.setup_job',j.id::text,true);
+  for t in select value from jsonb_array_elements(j.plan) loop
+    members:='[]';
+    for m in select value from jsonb_array_elements(t->'members') loop
+      select id into u from auth.users where email=(t->>'pin')||(m->>'pin')||'@count.local'
+        and raw_app_meta_data->>'team_setup_job'=j.id::text and deleted_at is null and email_confirmed_at is not null;
+      if u is null then raise exception 'Login provisioning is incomplete; retry the saved setup'; end if;
+      members:=members||jsonb_build_array(jsonb_build_object('user_id',u,'name',m->>'name','role',m->>'role'));
+    end loop;
+    ids:=array_append(ids,private.build_team_setup(p_session,(t->>'commandId')::uuid,t->>'name',t->>'pin',members));
+  end loop;
+  update private.team_setup_jobs set team_ids=ids,completed_at=clock_timestamp() where id=j.id;
+  perform set_config('count_stock.setup_job','',true);
+  return private.read_team_setup(p_session);
+end;
+$$;
+revoke all on function private.complete_team_setup(uuid) from public,anon,authenticated,service_role;
+
+create function public.read_team_setup(p_session uuid)
+returns jsonb language sql security invoker set search_path='' as $$ select private.read_team_setup(p_session); $$;
+create function public.reserve_team_setup(p_session uuid,p_draft jsonb,p_plan jsonb)
+returns jsonb language sql security invoker set search_path='' as $$ select private.reserve_team_setup(p_session,p_draft,p_plan); $$;
+create function public.complete_team_setup(p_session uuid)
+returns jsonb language sql security invoker set search_path='' as $$ select private.complete_team_setup(p_session); $$;
+revoke all on function public.read_team_setup(uuid), public.reserve_team_setup(uuid,jsonb,jsonb), public.complete_team_setup(uuid)
+  from public,anon,authenticated,service_role;
+grant execute on function public.read_team_setup(uuid), public.reserve_team_setup(uuid,jsonb,jsonb), public.complete_team_setup(uuid),
+  private.read_team_setup(uuid), private.reserve_team_setup(uuid,jsonb,jsonb), private.complete_team_setup(uuid) to authenticated;
+
+-- New setup is opt-in; production activation remains unchanged.
 commit;

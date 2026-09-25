@@ -2,6 +2,12 @@
 
 Atualizado: 2026-09-25
 
+## Bloco 3B — implementação em validação isolada
+Cadastro variável opt-in `TEAM_SETUP_ENABLED=true` e `?flow=2`, nunca habilitado no Vercel/produção neste bloco. Formulário 3+ pessoas, um Independente, cartões reutilizados e PINs de quatro dígitos. Plano operacional privado permite retomar Auth parcialmente criado, sem apagar contas ou trocar PINs; publicação de todos os vínculos do lote em uma transação. Receita imutável continua sem PINs: o plano operacional sensível, necessário para recuperação/reimpressão, é separado e restrito a admins protegidos.
+Novo acesso encaminha para contexto de equipe/warehouse em setup, SEM contagem ativada; legado continua pelo caminho anterior. Bloco 4 ainda precisa ligar contagem/monitor. Sem afirmar T01/T02/T55 integralmente concluídos.
+Testes novos de SQL e Chromium/Auth preparados para 3/4/5 pessoas, falha parcial Auth, rollback tardio, resposta perdida, reload/retry, concorrência e negativas. Execução ainda pendente; registrar resultado após CI. Nenhum teste manual solicitado no Preview compartilhado.
+Ponytail full: transação e locks nativos, helper PIN existente e cartões extraídos/reutilizados; nenhuma dependência/fila/framework novo.
+
 ## Bloco 3A — gravação atômica de cadastro validada
 Parte interna do bloco 3, não cadastro variável utilizável. Builder privado INVOKER cria equipe/setup/memberships/slots/assignments/recibo na mesma transação. Uma pessoa independente sem posição inicial; N-1 contadores. Identidades devem existir sem acessos/vínculos prévios e ter email compatível com PIN da equipe. Não cria Auth, não emite PIN/cartão, não libera acesso, não ativa contagem e não modifica telas/legado.
 Comando repetido retorna a mesma equipe; payload/ator diferente rejeitado. Lock de sessão e identidades ordenadas protegem concorrência. Recibo privado guarda hash, autor e IDs, não PINs/nomes em claro. Sem EXECUTE para anon/authenticated/service_role; futuro wrapper precisa validar provisionamento confiável. Não expor o builder diretamente.

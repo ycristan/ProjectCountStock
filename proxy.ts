@@ -43,6 +43,7 @@ export async function proxy(request: NextRequest) {
     const { data: account } = await supabase.from('counter_accounts').select('role')
       .eq('auth_user_id', user.id).maybeSingle()
     if (account?.role === 'independente') counterHome = '/monitor'
+    if (!account && process.env.TEAM_SETUP_ENABLED === 'true') counterHome = '/team'
   }
   const home = isAdmin ? '/admin' : isSoloCounter ? '/solo' : counterHome
 
