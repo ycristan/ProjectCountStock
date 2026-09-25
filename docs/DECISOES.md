@@ -155,3 +155,7 @@ A recuperação de inventário da PR75 foi publicada/aplicada; os textos de prep
 ## Ponytail e bloco 2A — 2026-09-25
 Ponytail full é obrigatório antes/durante a escrita e Review ao concluir, sem remover proteções/testes. Regra reafirmada em AGENTS.md, não apenas no CLAUDE histórico.
 Lista delimitada Solo deve identificar Active/Inactive na escolha de brands, ativos primeiro, usando o padrão visual da contagem; ambos selecionáveis. Não alterar lista fechada iniciada. Implementação reservada ao bloco 2A.
+
+
+## Bloco 2A — seleção delimitada Solo
+Reutilizar ResultList da busca na seleção administrativa: Active antes de Inactive, mesmos rótulos/cores, ambos selecionáveis. Removido corte silencioso de oito resultados; área rolável mantém acesso a todos os correspondentes. Escopo WHS e exclusão dos já selecionados permanecem. Não altera lista iniciada, Auth, contagem ou banco de produção.

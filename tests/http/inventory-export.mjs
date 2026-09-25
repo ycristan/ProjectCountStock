@@ -1,3 +1,4 @@
+import { verifySoloListBrowser } from './solo-list-browser.mjs'
 // Runs only in a disposable GitHub Actions runner. Never accepts production URLs.
 import { verifyRecoveryPreview } from './recovery-preview-browser.mjs'
 import { verifyRecoveredWarehouse } from './warehouse-recovery-browser.mjs'
@@ -100,6 +101,8 @@ try {
   console.log('PASS: authenticated HTTP download contains valid XLSX, separate warehouses, inactive item and leading zeros')
 
   await verifyRecoveredWarehouse({db,base,headers,cookies:[...jar].map(([name,value])=>({name,value}))})
+
+  await verifySoloListBrowser({db,base,cookies:[...jar].map(([name,value])=>({name,value}))})
 
   await verifyRecoveryPreview({db,base,headers,cookies:[...jar].map(([name,value])=>({name,value}))})
 

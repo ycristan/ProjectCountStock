@@ -2,6 +2,10 @@
 
 Atualizado: 2026-09-25
 
+## Bloco 2A — implementação em validação
+Seleção da lista Solo reutiliza ResultList: Active/Inactive, cores e ambos selecionáveis. Corte de oito removido, resultados roláveis; WHS e regras de lista preservadas. Teste Chromium acrescentado para >8 itens, grupos/cores/ordem, seleção por clique/teclado, ausência de duplicatas, remoção/reinclusão e resumo. Execução ainda pendente; não declarar aprovado até registrar evidência.
+Ponytail full: reaproveitamento sem nova dependência/abstração; Review: Lean already. Ship. (complexidade apenas, sem autorização de publicação). Produção não alterada. Nenhum teste manual necessário agora; não testar escrita no Preview compartilhado.
+
 ## Bloco 2 — confirmação do monitor validada
 UI trata erro retornado/exceção e permite retry; sucesso exige resposta explícita após UPDATE retornar linha com confirmação persistida. Não muda conciliação/finalização nova. Teste Chromium acrescentado para zero linhas, rejeição do banco, falha de transporte e retry/reload; Código 69c65e2541c282900555d6150aba239d0c26311d; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/36108456295 . 404 verificações (229 SQL/138 contratos/37 XLSX), upgrade/concorrência e Chromium/Auth/Realtime/HTTP aprovados. Navegador comprovou zero linhas, erro de banco, falha de transporte, retry persistido e reload. Primeira execução falhou por seletor genérico de alertas; especificado o alerta de confirmação sem remover cenários ou proteções.
 Ponytail full aplicado antes da escrita: manter handler/Server Action existentes, sem dependência ou helper novo. Revisão retroativa do bloco 1 (diff de integração): busca reutilizada, modo consultivo preservado, instalação de navegador não duplicada; nenhum corte adicional seguro identificado. Revisão do bloco 2: Lean already. Ship. (apenas complexidade; não autorização de publicação). Linhas removíveis identificadas: 0.
