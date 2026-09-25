@@ -750,5 +750,127 @@ $$;
 revoke all on function public.my_team_flow_contexts(uuid) from public,anon,authenticated,service_role;
 grant execute on function public.my_team_flow_contexts(uuid) to authenticated;
 
+
+-- Block 3A: atomic setup storage only, deliberately NOT an exposed RPC.
+-- The future Auth orchestrator must provision identities before calling through
+-- a scoped checked wrapper. Do not grant application roles direct access here.
+create table private.team_setup_receipts (
+  command_id uuid primary key,
+  actor_id uuid not null references auth.users(id) on delete restrict,
+  session_id uuid not null references public.count_sessions(id) on delete restrict,
+  team_id uuid not null unique references public.team_flows(team_id) on delete restrict,
+  payload_hash bytea not null,
+  created_at timestamptz not null default clock_timestamp()
+);
+create index team_setup_receipts_actor_idx on private.team_setup_receipts(actor_id);
+create index team_setup_receipts_session_idx on private.team_setup_receipts(session_id);
+alter table private.team_setup_receipts enable row level security;
+revoke all on private.team_setup_receipts from public,anon,authenticated,service_role;
+
+create function private.guard_team_setup_receipt()
+returns trigger language plpgsql security invoker set search_path = ''
+as $
+begin
+  raise exception 'Team setup receipts are immutable';
+end;
+$;
+revoke all on function private.guard_team_setup_receipt() from public,anon,authenticated,service_role;
+create trigger guard_team_setup_receipt before update or delete on private.team_setup_receipts
+for each row execute function private.guard_team_setup_receipt();
+
+create function private.build_team_setup(
+  p_session uuid, p_command uuid, p_team_name text, p_team_pin text, p_members jsonb
+) returns uuid language plpgsql security invoker set search_path = ''
+as $
+declare
+  v_actor uuid := auth.uid();
+  v_session public.count_sessions;
+  v_receipt private.team_setup_receipts;
+  v_hash bytea;
+  v_team uuid;
+  v_member uuid;
+  v_slot uuid;
+  v_order integer := 0;
+  p jsonb;
+begin
+  if v_actor is null or not private.is_admin() then
+    raise exception using errcode='42501', message='Team setup not authorized';
+  end if;
+  if p_session is null or p_command is null or p_team_name is null or btrim(p_team_name)=''
+    or p_team_pin is null or p_team_pin !~ '^[0-9]{4}
+
+    or p_members is null or jsonb_typeof(p_members) <> 'array' then
+    raise exception using errcode='22023', message='Invalid team setup';
+  end if;
+  if jsonb_array_length(p_members)<3 or exists (
+    select 1 from jsonb_array_elements(p_members) m
+    where jsonb_typeof(m) <> 'object'
+      or jsonb_typeof(m->'user_id') is distinct from 'string'
+      or (m->>'user_id') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+
+      or jsonb_typeof(m->'name') is distinct from 'string' or btrim(m->>'name')=''
+      or coalesce(m->>'role','') not in ('counter','independent')
+  ) then raise exception using errcode='22023', message='Invalid team members'; end if;
+  if (select count(*) from jsonb_array_elements(p_members) m where m->>'role'='independent') <> 1
+    or (select count(distinct (m->>'user_id')::uuid) from jsonb_array_elements(p_members) m) <> jsonb_array_length(p_members) then
+    raise exception using errcode='22023', message='Team requires distinct people and one independent';
+  end if;
+
+  -- Serialize with other setup requests and session closure, not all warehouses.
+  select * into v_session from public.count_sessions where id=p_session for update;
+  if v_session.id is null or v_session.status <> 'aberta' then
+    raise exception 'Session is not open for team setup';
+  end if;
+  v_hash := sha256(convert_to(jsonb_build_array(p_session,btrim(p_team_name),p_team_pin,p_members)::text,'UTF8'));
+  select * into v_receipt from private.team_setup_receipts where command_id=p_command;
+  if found then
+    if (v_receipt.actor_id,v_receipt.session_id,v_receipt.payload_hash)
+      is distinct from (v_actor,p_session,v_hash) then
+      raise exception using errcode='22023', message='Setup identifier already used';
+    end if;
+    return v_receipt.team_id;
+  end if;
+
+  -- Lock identities in stable order so concurrent setups cannot enroll the same
+  -- person twice. Existing admin/solo/legacy identities must never be repurposed.
+  perform u.id from auth.users u
+    where u.id in (select (m->>'user_id')::uuid from jsonb_array_elements(p_members) m)
+    order by u.id for update;
+  if exists (
+    select 1 from jsonb_array_elements(p_members) m
+    left join auth.users u on u.id=(m->>'user_id')::uuid
+    where u.id is null or u.deleted_at is not null
+      or u.email is null or u.email !~ ('^'||p_team_pin||'[0-9]{4}@count[.]local
+)
+      or exists (select 1 from public.app_user_access a where a.user_id=u.id)
+      or exists (select 1 from public.counter_accounts a where a.auth_user_id=u.id)
+      or exists (select 1 from public.team_memberships a where a.user_id=u.id)
+  ) then raise exception 'Team setup requires unused provisioned identities'; end if;
+  if exists(select 1 from public.teams where team_pin=p_team_pin) then
+    raise exception 'Team PIN is already reserved';
+  end if;
+
+  insert into public.teams(session_id,team_name,team_pin)
+    values(p_session,btrim(p_team_name),p_team_pin) returning id into v_team;
+  insert into public.team_flows(team_id) values(v_team);
+  for p in select value from jsonb_array_elements(p_members) loop
+    if p->>'role'='counter' then v_order:=v_order+1; end if;
+    insert into public.team_memberships(team_id,user_id,display_name,role,display_order)
+      values(v_team,(p->>'user_id')::uuid,btrim(p->>'name'),p->>'role',
+        case when p->>'role'='independent' then 0 else v_order end)
+      returning id into v_member;
+    if p->>'role'='counter' then
+      insert into public.team_count_slots(team_id,ordinal) values(v_team,v_order) returning id into v_slot;
+      insert into public.team_slot_assignments(team_id,slot_id,membership_id) values(v_team,v_slot,v_member);
+    end if;
+  end loop;
+  insert into private.team_setup_receipts(command_id,actor_id,session_id,team_id,payload_hash)
+    values(p_command,v_actor,p_session,v_team,v_hash);
+  -- No activation, global access grant, legacy counter_accounts, or PIN response.
+  return v_team;
+end;
+$;
+revoke all on function private.build_team_setup(uuid,uuid,text,text,jsonb) from public,anon,authenticated,service_role;
+
 -- Legacy routing and deployment activation remain unchanged.
 commit;

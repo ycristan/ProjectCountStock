@@ -88,3 +88,46 @@ commit;
 }
 // This probes SQL lock/constraint invariants, NOT signature evidence or UI completion.
 // Fixtures remain in the discarded runner database; no production cleanup/delete.
+
+
+// Block 3A internal setup transaction: concurrent retry, not Auth/UI provisioning.
+function setupSql(text) {
+  try { return sql(text) } catch { throw new Error('Synthetic team setup SQL failed (details suppressed)') }
+}
+const setupAdmin=randomUUID(),setupSession=randomUUID(),setupCommand=randomUUID()
+const setupPeople=Array.from({length:5},()=>randomUUID())
+const setupPin=setupSql("select p::text from generate_series(1000,9999) p where not exists(select 1 from public.teams where team_pin=p::text) and not exists(select 1 from auth.users where left(email,4)=p::text) order by random() limit 1")
+// Do not log generated credentials or SQL text.
+assert.match(setupPin,/^[0-9]{4}$/)
+setupSql(`
+insert into auth.users(id,email) values('${setupAdmin}','${setupAdmin}@example.invalid');
+insert into public.app_user_access(user_id,access_kind) values('${setupAdmin}','admin');
+insert into public.count_sessions(id) values('${setupSession}');
+${setupPeople.map((id,i)=>"insert into auth.users(id,email) values('"+id+"','"+setupPin+String(i).padStart(4,'0')+"@count.local');").join('\n')}
+`)
+const setupMembers=JSON.stringify(setupPeople.map((user_id,i)=>({
+  user_id,name:'Synthetic participant',role:i===4?'independent':'counter'
+})))
+const setupCall=`select private.build_team_setup('${setupSession}','${setupCommand}','Concurrent setup','${setupPin}','${setupMembers}'::jsonb);`
+const setActor=`select set_config('request.jwt.claim.sub','${setupAdmin}',false);`
+const setupFirst=start('begin;'+setActor+setupCall+"select 'SETUP_LOCKED';",'setup-first',true)
+let setupRetry
+try {
+  await until(()=>setupFirst.output().includes('SETUP_LOCKED'),'Setup lock was not acquired')
+  setupRetry=start(setActor+setupCall,'setup-retry')
+  await until(()=>setupSql("select exists(select 1 from pg_stat_activity where application_name='setup-retry' and wait_event_type='Lock')")==='t','Setup retry did not wait')
+  setupFirst.child.stdin.end('commit;\n')
+  const a=await setupFirst.done
+  const b=await setupRetry.done
+  assert.equal(a.code,0,'First setup must commit')
+  assert.equal(b.code,0,'Retry must return committed receipt')
+  const savedTeam=setupSql(`select team_id from private.team_setup_receipts where command_id='${setupCommand}'`)
+  assert.ok(a.out.includes(savedTeam)&&b.out.includes(savedTeam),'Both requests return the same team')
+  assert.equal(setupSql(`select count(*) from public.teams where session_id='${setupSession}'`),'1')
+  assert.equal(setupSql(`select count(*) from public.team_memberships where team_id='${savedTeam}'`),'5')
+  assert.equal(setupSql(`select count(*) from public.team_count_slots where team_id='${savedTeam}'`),'4')
+  console.log('PASS: concurrent internal setup retry creates exactly one five-person team and four counter positions')
+} finally {
+  setupFirst.child.kill()
+  setupRetry?.child.kill()
+}

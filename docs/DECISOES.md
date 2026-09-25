@@ -159,3 +159,8 @@ Lista delimitada Solo deve identificar Active/Inactive na escolha de brands, ati
 
 ## Bloco 2A — seleção delimitada Solo
 Reutilizar ResultList da busca na seleção administrativa: Active antes de Inactive, mesmos rótulos/cores, ambos selecionáveis. Removido corte silencioso de oito resultados; área rolável mantém acesso a todos os correspondentes. Escopo WHS e exclusão dos já selecionados permanecem. Não altera lista iniciada, Auth, contagem ou banco de produção.
+
+
+## Cadastro variável — decomposição 3A/3B, 2026-09-25
+3A valida o armazenamento transacional privado de uma equipe inteira e retry; 3B integra provisionamento Auth recuperável, formulário e PIN/cartões. Não chamar 3A de cadastro funcional pronto. Builder só recebe identidades provisionadas confiáveis através da futura orquestração; não expor diretamente parâmetros de identidade ao cliente. Mantido em setup, sem concessões de acesso/contagem. Nenhum limite máximo de cinco foi introduzido no armazenamento; 3/4/5 são cenários de aceitação.
+A atomicidade demonstrada é só PostgreSQL, não Auth+Postgres. Falha/timeout na criação Auth precisa de recuperação/compensação restrita ao pedido antes de liberar o fluxo. PINs nunca entram em logs ou recibos claros. A migration de fundação segue não publicada; complemento versionado na mesma migration.

@@ -2,6 +2,12 @@
 
 Atualizado: 2026-09-25
 
+## Bloco 3A — gravação atômica de cadastro em validação
+Parte interna do bloco 3, não cadastro variável utilizável. Builder privado INVOKER cria equipe/setup/memberships/slots/assignments/recibo na mesma transação. Uma pessoa independente sem posição inicial; N-1 contadores. Identidades devem existir sem acessos/vínculos prévios e ter email compatível com PIN da equipe. Não cria Auth, não emite PIN/cartão, não libera acesso, não ativa contagem e não modifica telas/legado.
+Comando repetido retorna a mesma equipe; payload/ator diferente rejeitado. Lock de sessão e identidades ordenadas protegem concorrência. Recibo privado guarda hash, autor e IDs, não PINs/nomes em claro. Sem EXECUTE para anon/authenticated/service_role; futuro wrapper precisa validar provisionamento confiável. Não expor o builder diretamente.
+Complemento da migration de fundação ainda não publicada; nenhum banco real alterado. Testes 3/4/5, falha tardia/rollback, autorização e retry concorrente acrescentados; execução pendente. Não declarar T01/T02 completos: Auth, UI e recuperação entre serviços ficam no bloco 3B.
+Ponytail full aplicado: tabelas existentes reaproveitadas, transação nativa, nenhum framework/dependência. Review: Lean already. Ship. (complexidade apenas). Nenhum teste manual necessário neste bloco.
+
 ## Bloco 2A — seleção Solo validada
 Seleção da lista Solo reutiliza ResultList: Active/Inactive, cores e ambos selecionáveis. Corte de oito removido, resultados roláveis; WHS e regras de lista preservadas. Teste Chromium acrescentado para >8 itens, grupos/cores/ordem, seleção por clique/teclado, ausência de duplicatas, remoção/reinclusão e resumo. Código cbfbba839053345ba8313af1cd0686284f497bf0; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/36113867343 . 404 verificações (229 SQL + 138 contratos + 37 XLSX), preservação/concorrência e integrações HTTP/Chromium passaram. Novo teste de seleção aprovado no navegador real; não cria sessão nem valida uma nova regra de gravação.
 Ponytail full: reaproveitamento sem nova dependência/abstração; Review: Lean already. Ship. (complexidade apenas, sem autorização de publicação). Produção não alterada. Nenhum teste manual necessário neste bloco; não testar escrita no Preview compartilhado. Próximo bloco: 3, cadastro variável de equipes.
