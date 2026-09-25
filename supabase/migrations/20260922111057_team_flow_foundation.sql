@@ -769,11 +769,11 @@ revoke all on private.team_setup_receipts from public,anon,authenticated,service
 
 create function private.guard_team_setup_receipt()
 returns trigger language plpgsql security invoker set search_path = ''
-as $
+as $$
 begin
   raise exception 'Team setup receipts are immutable';
 end;
-$;
+$$;
 revoke all on function private.guard_team_setup_receipt() from public,anon,authenticated,service_role;
 create trigger guard_team_setup_receipt before update or delete on private.team_setup_receipts
 for each row execute function private.guard_team_setup_receipt();
@@ -781,7 +781,7 @@ for each row execute function private.guard_team_setup_receipt();
 create function private.build_team_setup(
   p_session uuid, p_command uuid, p_team_name text, p_team_pin text, p_members jsonb
 ) returns uuid language plpgsql security invoker set search_path = ''
-as $
+as $$
 declare
   v_actor uuid := auth.uid();
   v_session public.count_sessions;
@@ -869,7 +869,7 @@ begin
   -- No activation, global access grant, legacy counter_accounts, or PIN response.
   return v_team;
 end;
-$;
+$$;
 revoke all on function private.build_team_setup(uuid,uuid,text,text,jsonb) from public,anon,authenticated,service_role;
 
 -- Legacy routing and deployment activation remain unchanged.
