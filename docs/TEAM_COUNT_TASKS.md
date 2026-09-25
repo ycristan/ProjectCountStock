@@ -7,7 +7,7 @@ Cada bloco inclui implementação, testes proporcionais e registro com commit/ex
 2A. Lista delimitada Solo — seleção mostra Active/Inactive como a busca de contagem, ambos selecionáveis; padrão existente reutilizado. CONCLUÍDO na branch, código cbfbba839053345ba8313af1cd0686284f497bf0, execução 36113867343 aprovada; >8 resultados, WHS, seleção/remoção/reinclusão e resumo comprovados no Chromium. Sem publicação.
 3. Cadastro variável — 3/4/5 participantes, PINs de quatro dígitos, um Independente. EM ANDAMENTO.
    - 3A: builder transacional privado, vínculos/posições e retry. CONCLUÍDO na branch, código ab9b93bc1f15c654957996159c20a39168de87e5, execução 36115545145 aprovada (463 verificações + integrações); sem UI/Auth ativados.
-   - 3B: provisionamento Auth recuperável, integração do formulário, PIN/cartões e teste real. IMPLEMENTADO, CI PENDENTE; somente setup opt-in isolado, sem ativação da contagem.
+   - 3B: provisionamento Auth recuperável, integração do formulário, PIN/cartões e teste real. CONCLUÍDO na branch, código c28e2fa33c43cf3da1c187c704c84c678bd2fd59, execução 36123374995 aprovada (494 verificações + integrações). Formulário/Auth/PIN, falhas e concorrência pelo navegador; somente setup opt-in isolado, sem ativação da contagem.
 4. Contagem e monitor no modelo novo — cegueira, WHS, autoria, Realtime e reconexão.
 5. Finalização individual nas telas — pedido, bloqueio, aceite/rejeição.
 6. Comparação — igualdade, ausência/zero, métodos e tolerância de peso.
@@ -21,4 +21,4 @@ Cada bloco inclui implementação, testes proporcionais e registro com commit/ex
 ## Comunicação obrigatória de teste
 Sempre declarar se Yuri precisa testar. Quando necessário: TESTE MANUAL NECESSÁRIO, link exato/ambiente, acesso, passos, resultados esperados e cuidados. Quando não: Nenhum teste manual necessário neste bloco.
 Preview compartilha produção: não realizar nem pedir escritas de teste nele. Testes técnicos com dados sintéticos no runner descartável.
-Blocos 1, 2 e 2A não exigem teste manual; verificações automatizadas no runner. Próximo bloco: 3B.
+Blocos 1, 2, 2A, 3A e 3B não exigem teste manual; verificações automatizadas no runner. Próximo bloco: 4.
