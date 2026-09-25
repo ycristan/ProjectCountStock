@@ -1,6 +1,12 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-09-24
+Atualizado: 2026-09-25
+
+## Bloco 2 — confirmação do monitor, em validação
+UI trata erro retornado/exceção e permite retry; sucesso exige resposta explícita após UPDATE retornar linha com confirmação persistida. Não muda conciliação/finalização nova. Teste Chromium acrescentado para zero linhas, rejeição do banco, falha de transporte e retry/reload; resultado CI ainda pendente.
+Ponytail full aplicado antes da escrita: manter handler/Server Action existentes, sem dependência ou helper novo. Revisão retroativa do bloco 1 (diff de integração): busca reutilizada, modo consultivo preservado, instalação de navegador não duplicada; nenhum corte adicional seguro identificado. Revisão do bloco 2: Lean already. Ship. (apenas complexidade; não autorização de publicação). Linhas removíveis identificadas: 0.
+Nenhum teste manual necessário neste bloco. Não testar escrita no Preview compartilhado; banco real e main não alterados. Próximo bloco: 2A, rótulos Active/Inactive na lista delimitada Solo.
+
 
 ## Blocos curtos — atualização da base, 2026-09-24
 Bloco 1: integração da main fdf89deecddaeda4a0387968417b51a7d816ab51 na branch de equipes. Preservados o modo consultivo do Independente e as correções de busca/histórico/WHS; suítes de ambas as linhas reunidas. Validação aprovada no código 8674f212575e89454b8ad5dd841728be658063ce: https://github.com/ycristan/ProjectCountStock/actions/runs/36014137956 . 229 SQL + 138 contratos + 37 XLSX = 404 verificações, além de upgrade, concorrência, Auth/HTTP, Chromium/Realtime, busca de sete Kinder e exportações históricas. Nenhum teste removido/ignorado. Isto valida integração/compatibilidade, não o novo fluxo completo de equipes.

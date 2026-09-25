@@ -169,6 +169,60 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
     await oldPage.waitForURL(base+'/busca')
     await oldPage.getByRole('heading',{name:'Search Item',exact:true}).waitFor()
     console.log('PASS: wrong PIN is rejected; historical four-digit password still logs in through real UI')
+
+    stage='monitor confirmation failure and retry'
+    // Prepare only the legacy finish flags; this is not the new approval flow.
+    checked(await db.from('counter_accounts').update({finalized_at:new Date().toISOString()})
+      .eq('team_id',team.id).in('role',['contador_1','contador_2']))
+    await ind.goto(base+'/monitor')
+    const confirm=ind.getByRole('button',{name:'✓ Confirm Count Complete →',exact:true})
+    const success=ind.getByText('✓ Count confirmed. Admin has been notified to check for discrepancies.',{exact:true})
+    const saved=async()=>checked(await db.from('teams').select('independente_confirmed_at').eq('id',team.id).single()).independente_confirmed_at
+    await confirm.waitFor()
+    assert.equal(await saved(),null)
+    // A trigger only in this disposable DB can reproduce both a zero-row update
+    // and a database rejection without changing the app's authorization.
+    try {
+      sql(`create function private.test_monitor_confirmation() returns trigger language plpgsql as $test$
+        begin if new.id='${team.id}'::uuid then return null; end if; return new; end $test$;
+        create trigger test_monitor_confirmation before update on public.teams
+        for each row execute function private.test_monitor_confirmation();`)
+      for(const mode of ['zero rows','database rejection']){
+        if(mode==='database rejection')sql(`create or replace function private.test_monitor_confirmation()
+          returns trigger language plpgsql as $test$ begin
+          if new.id='${team.id}'::uuid then raise exception 'Synthetic confirmation failure'; end if;
+          return new; end $test$;`)
+        await confirm.click()
+        await ind.getByRole('alert').waitFor()
+        assert.equal(await success.count(),0,mode+' must not show success')
+        assert.equal(await confirm.isEnabled(),true,mode+' must allow retry')
+        assert.equal(await saved(),null,mode+' must not persist confirmation')
+      }
+    } finally {
+      sql('drop trigger if exists test_monitor_confirmation on public.teams; drop function if exists private.test_monitor_confirmation()')
+    }
+    stage='monitor transport failure'
+    const interrupt=async route=>{
+      if(route.request().method()==='POST'&&route.request().headers()['next-action'])await route.abort('failed')
+      else await route.continue()
+    }
+    await ind.route('**/monitor',interrupt)
+    try {
+      await confirm.click()
+      await ind.getByRole('alert').waitFor()
+      assert.equal(await success.count(),0)
+      assert.equal(await confirm.isEnabled(),true)
+      assert.equal(await saved(),null)
+    } finally {await ind.unroute('**/monitor',interrupt)}
+    stage='monitor successful retry'
+    await confirm.click()
+    await success.waitFor()
+    assert.ok(await saved(),'Success requires the actual persisted confirmation')
+    assert.equal(await ind.getByRole('alert').count(),0)
+    await ind.reload()
+    await success.waitFor()
+    console.log('PASS: monitor rejects zero-row update, database error and transport failure without false success; retry persists confirmation and survives reload.')
+
     assert.equal(errors.length,0,'Browser must have no uncaught page errors')
   } catch (error) {
     console.error('browser_boundary_failed', {stage, message:safe(error.message),

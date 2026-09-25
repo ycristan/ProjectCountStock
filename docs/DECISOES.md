@@ -151,3 +151,7 @@ Sem banco separado disponível e sem custo adicional autorizado, oferecer confer
 Um bloco por execução, com implementação, testes e registro curto. Ordem operacional em TEAM_COUNT_TASKS.md; refina o plano aprovado, sem mudar regras.
 Ao encerrar todo bloco declarar TESTE MANUAL NECESSÁRIO ou Nenhum teste manual necessário neste bloco. Se necessário, fornecer link/ambiente, perfil, passos, resultado esperado e cuidados. Só pedir quando funcionalidade estiver disponível em ambiente seguro; não pedir gravações de teste no Preview que compartilha produção. Não transferir regressões técnicas rotineiras ao usuário.
 A recuperação de inventário da PR75 foi publicada/aplicada; os textos de preparação acima são históricos. Isso não autoriza publicar PR74.
+
+## Ponytail e bloco 2A — 2026-09-25
+Ponytail full é obrigatório antes/durante a escrita e Review ao concluir, sem remover proteções/testes. Regra reafirmada em AGENTS.md, não apenas no CLAUDE histórico.
+Lista delimitada Solo deve identificar Active/Inactive na escolha de brands, ativos primeiro, usando o padrão visual da contagem; ambos selecionáveis. Não alterar lista fechada iniciada. Implementação reservada ao bloco 2A.

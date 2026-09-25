@@ -318,19 +318,23 @@ export async function limparContagens(teamId: string): Promise<{ error?: string 
   return error ? { error: error.message } : {}
 }
 
-export async function confirmarIndependente(teamId: string): Promise<{ error?: string }> {
+export async function confirmarIndependente(teamId: string): Promise<{ error?: string; success?: boolean }> {
   const access = await getTeamCounterAccess()
   if (!access || access.counterRole !== 'independente' || access.teamId !== teamId) {
     return { error: 'Unauthorized' }
   }
 
   const admin = createAdminClient()
-  const { error } = await admin
+  const { data, error } = await admin
     .from('teams')
     .update({ independente_confirmed_at: new Date().toISOString() })
     .eq('id', teamId)
+    .select('id, independente_confirmed_at')
+    .single()
 
-  return error ? { error: error.message } : {}
+  return error || !data?.independente_confirmed_at
+    ? { error: 'Could not confirm the count. Please try again.' }
+    : { success: true }
 }
 
 // ─── Session management ──────────────────────────────────────────────────────
