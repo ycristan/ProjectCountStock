@@ -878,7 +878,6 @@ create table private.team_setup_jobs (
   actor_id uuid not null references auth.users(id) on delete restrict,
   draft jsonb not null,
   plan jsonb not null,
-  team_ids uuid[],
   created_at timestamptz not null default clock_timestamp(),
   completed_at timestamptz
 );
@@ -964,7 +963,7 @@ revoke all on function private.reserve_team_setup(uuid,jsonb,jsonb) from public,
 
 -- Serializes new reservations with legacy team creation, without changing legacy PINs.
 create function private.guard_reserved_team_pin()
-returns trigger language plpgsql security invoker set search_path=''
+returns trigger language plpgsql security definer set search_path=''
 as $$
 declare j private.team_setup_jobs;
 begin
@@ -980,15 +979,13 @@ begin
 end;
 $$;
 revoke all on function private.guard_reserved_team_pin() from public,anon,authenticated,service_role;
--- SECURITY DEFINER is needed only for the private reservation lookup by legacy INSERT.
-alter function private.guard_reserved_team_pin() security definer;
 create trigger guard_reserved_team_pin before insert or update of team_pin on public.teams
 for each row execute function private.guard_reserved_team_pin();
 
 create function private.complete_team_setup(p_session uuid)
 returns jsonb language plpgsql security definer set search_path=''
 as $$
-declare j private.team_setup_jobs; s public.count_sessions; t jsonb; m jsonb; members jsonb; u uuid; ids uuid[]:='{}';
+declare j private.team_setup_jobs; s public.count_sessions; t jsonb; m jsonb; members jsonb; u uuid;
 begin
   if auth.uid() is null or not private.is_admin() then raise exception using errcode='42501',message='Not authorized'; end if;
   perform pg_advisory_xact_lock(6969,3);
@@ -1005,9 +1002,9 @@ begin
       if u is null then raise exception 'Login provisioning is incomplete; retry the saved setup'; end if;
       members:=members||jsonb_build_array(jsonb_build_object('user_id',u,'name',m->>'name','role',m->>'role'));
     end loop;
-    ids:=array_append(ids,private.build_team_setup(p_session,(t->>'commandId')::uuid,t->>'name',t->>'pin',members));
+    perform private.build_team_setup(p_session,(t->>'commandId')::uuid,t->>'name',t->>'pin',members);
   end loop;
-  update private.team_setup_jobs set team_ids=ids,completed_at=clock_timestamp() where id=j.id;
+  update private.team_setup_jobs set completed_at=clock_timestamp() where id=j.id;
   perform set_config('count_stock.setup_job','',true);
   return private.read_team_setup(p_session);
 end;
