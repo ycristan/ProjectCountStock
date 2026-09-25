@@ -797,8 +797,7 @@ begin
     raise exception using errcode='42501', message='Team setup not authorized';
   end if;
   if p_session is null or p_command is null or p_team_name is null or btrim(p_team_name)=''
-    or p_team_pin is null or p_team_pin !~ '^[0-9]{4}
-
+    or p_team_pin is null or p_team_pin !~ '^[0-9]{4}$'
     or p_members is null or jsonb_typeof(p_members) <> 'array' then
     raise exception using errcode='22023', message='Invalid team setup';
   end if;
@@ -806,8 +805,7 @@ begin
     select 1 from jsonb_array_elements(p_members) m
     where jsonb_typeof(m) <> 'object'
       or jsonb_typeof(m->'user_id') is distinct from 'string'
-      or (m->>'user_id') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
-
+      or (m->>'user_id') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
       or jsonb_typeof(m->'name') is distinct from 'string' or btrim(m->>'name')=''
       or coalesce(m->>'role','') not in ('counter','independent')
   ) then raise exception using errcode='22023', message='Invalid team members'; end if;
@@ -840,8 +838,7 @@ begin
     select 1 from jsonb_array_elements(p_members) m
     left join auth.users u on u.id=(m->>'user_id')::uuid
     where u.id is null or u.deleted_at is not null
-      or u.email is null or u.email !~ ('^'||p_team_pin||'[0-9]{4}@count[.]local
-)
+      or u.email is null or u.email !~ ('^'||p_team_pin||'[0-9]{4}@count[.]local$')
       or exists (select 1 from public.app_user_access a where a.user_id=u.id)
       or exists (select 1 from public.counter_accounts a where a.auth_user_id=u.id)
       or exists (select 1 from public.team_memberships a where a.user_id=u.id)
