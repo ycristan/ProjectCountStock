@@ -3,7 +3,7 @@ Refinamento aprovado em 24/09/2026. Preservar TEAM_COUNT_FLOW.md e matriz T01–
 Cada bloco inclui implementação, testes proporcionais e registro com commit/execução/limites. Um bloco por execução; não publicar partes incompletas em produção.
 
 1. Atualizar base com inventário — CONCLUÍDO, código 8674f212575e89454b8ad5dd841728be658063ce, execução 36014137956 aprovada (404 verificações + integrações).
-2. Confirmação confiável no monitor — tratar retorno de erro/exceção, sucesso somente após salvar, nova tentativa.
+2. Confirmação confiável no monitor — CONCLUÍDO na branch, código 69c65e2541c282900555d6150aba239d0c26311d, execução 36108456295 aprovada; falhas/retry/reload testados no navegador. Sem publicação.
 2A. Lista delimitada Solo — seleção mostra Active/Inactive como a busca de contagem, ambos selecionáveis; reutilizar padrão existente. PENDENTE.
 3. Cadastro variável — 3/4/5 participantes, PINs de quatro dígitos, um Independente.
 4. Contagem e monitor no modelo novo — cegueira, WHS, autoria, Realtime e reconexão.
@@ -19,4 +19,4 @@ Cada bloco inclui implementação, testes proporcionais e registro com commit/ex
 ## Comunicação obrigatória de teste
 Sempre declarar se Yuri precisa testar. Quando necessário: TESTE MANUAL NECESSÁRIO, link exato/ambiente, acesso, passos, resultados esperados e cuidados. Quando não: Nenhum teste manual necessário neste bloco.
 Preview compartilha produção: não realizar nem pedir escritas de teste nele. Testes técnicos com dados sintéticos no runner descartável.
-Bloco 1 não exige teste manual. O defeito de confirmação do monitor é bloco 2, não corrigido por esta integração.
+Blocos 1 e 2 não exigem teste manual; verificações automatizadas no runner. Próximo bloco: 2A.
