@@ -138,6 +138,26 @@ export async function verifyTeamSetupBrowser({base,db,status,sql,login,envelopes
     }
     console.log('PASS: real four-digit PIN logins for each team reach protected setup context; Independent never receives legacy counting; metadata cannot grant admin')
 
+    stage='concurrent fresh UI provisioning'
+    const concurrent=checked(await db.from('count_sessions').insert({warehouse_id:wh.id}).select('id').single())
+    const otherContext=await browser.newContext()
+    await otherContext.addCookies(cookies.map(c=>({...c,url:base})))
+    const otherPage=await otherContext.newPage()
+    for(const p of [page,otherPage]){
+      await p.goto(base+'/admin/sessao/'+concurrent.id+'/equipes?flow=2&n=1')
+      await p.locator('[name="team_0_name"]').fill('Concurrent setup')
+      for(let j=0;j<3;j++)await p.locator('[name="team_0_member_'+j+'"]').fill('Concurrent participant '+j)
+    }
+    await Promise.all([page,otherPage].map(p=>p.getByRole('button',{name:'Create Teams and Generate Logins',exact:true}).click()))
+    await Promise.all([page,otherPage].map(p=>p.getByRole('heading',{name:'Logins Generated',exact:true}).waitFor()))
+    const cardTexts=await Promise.all([page,otherPage].map(p=>p.locator('tbody').innerText()))
+    assert.ok(cardTexts[0]===cardTexts[1])
+    const oneTeam=checked(await db.from('teams').select('id').eq('session_id',concurrent.id))
+    assert.equal(oneTeam.length,1)
+    assert.equal(checked(await db.from('team_memberships').select('id').eq('team_id',oneTeam[0].id)).length,3)
+    await otherContext.close()
+    console.log('PASS: two real browser contexts provision the same fresh request concurrently; one team and identical cards')
+
     stage='safe error telemetry'
     let envelope
     for(let i=0;i<30;i++){envelope=envelopes.find(e=>e.includes('"team.setup"'));if(envelope)break;await delay(200)}
