@@ -98,3 +98,8 @@ T03/T04/T31/T33/T45/T52 têm evidência parcial de consulta SSR real com cookies
 Código 44ec912cab3d6a0d8b4a6705773f9961f077c021, execução https://github.com/ycristan/ProjectCountStock/actions/runs/35978421959 aprovada.
 T02 agora tem percurso real de geração pela UI, entrada de três papéis, PIN errado e senha histórica curta, sem mudar credenciais reais. T05: consulta do Independente funciona, inicial negada na UI/Server Action/Data API. T51: dois contadores em contextos Chromium distintos gravam pela UI e monitor recebe via Realtime sem refresh. É fluxo LEGADO de três pessoas, não o novo cadastro variável nem reconexão completa.
 391 verificações (224 SQL/130 contratos/37 XLSX), upgrade, lint e regressões passaram. T01 e T55 continuam incompletos; nenhuma assinatura/conciliação/fechamento foi percorrida pela nova interface. Ver detalhes e limite de teste manual em TEAM_COUNT_FOUNDATION.md.
+
+
+## Evidência parcial T01/T50/T53 — bloco 3A, 2026-09-25
+Código ab9b93bc1f15c654957996159c20a39168de87e5; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/36115545145 . 59 novos testes SQL, total 463 verificações (288 SQL + 138 contratos + 37 XLSX), além de upgrade, lint, concorrência e HTTP/Chromium/Realtime. Retry simultâneo retornou uma única equipe de cinco pessoas e quatro posições. Falha inicial de geração dos delimitadores/âncoras SQL corrigida antes desta execução; nenhum teste/proteção removido.
+Camada exclusivamente interna de setup: transação, rollback tardio, ordem/papéis, retry e concorrência. Não é T01 completo: nomes/formulário/cartões/PINs e provisionamento Auth ainda não integrados; T02/T55 não ganham conclusão por estes testes. Nenhum teste manual necessário neste bloco.

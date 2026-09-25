@@ -6,7 +6,7 @@ Cada bloco inclui implementação, testes proporcionais e registro com commit/ex
 2. Confirmação confiável no monitor — CONCLUÍDO na branch, código 69c65e2541c282900555d6150aba239d0c26311d, execução 36108456295 aprovada; falhas/retry/reload testados no navegador. Sem publicação.
 2A. Lista delimitada Solo — seleção mostra Active/Inactive como a busca de contagem, ambos selecionáveis; padrão existente reutilizado. CONCLUÍDO na branch, código cbfbba839053345ba8313af1cd0686284f497bf0, execução 36113867343 aprovada; >8 resultados, WHS, seleção/remoção/reinclusão e resumo comprovados no Chromium. Sem publicação.
 3. Cadastro variável — 3/4/5 participantes, PINs de quatro dígitos, um Independente. EM ANDAMENTO.
-   - 3A: builder transacional privado, vínculos/posições e retry. Em validação; sem UI/Auth ativados.
+   - 3A: builder transacional privado, vínculos/posições e retry. CONCLUÍDO na branch, código ab9b93bc1f15c654957996159c20a39168de87e5, execução 36115545145 aprovada (463 verificações + integrações); sem UI/Auth ativados.
    - 3B: provisionamento Auth recuperável, integração do formulário, PIN/cartões e teste real. PENDENTE.
 4. Contagem e monitor no modelo novo — cegueira, WHS, autoria, Realtime e reconexão.
 5. Finalização individual nas telas — pedido, bloqueio, aceite/rejeição.
@@ -21,4 +21,4 @@ Cada bloco inclui implementação, testes proporcionais e registro com commit/ex
 ## Comunicação obrigatória de teste
 Sempre declarar se Yuri precisa testar. Quando necessário: TESTE MANUAL NECESSÁRIO, link exato/ambiente, acesso, passos, resultados esperados e cuidados. Quando não: Nenhum teste manual necessário neste bloco.
 Preview compartilha produção: não realizar nem pedir escritas de teste nele. Testes técnicos com dados sintéticos no runner descartável.
-Blocos 1, 2 e 2A não exigem teste manual; verificações automatizadas no runner. Próximo bloco: 3.
+Blocos 1, 2 e 2A não exigem teste manual; verificações automatizadas no runner. Próximo bloco: 3B.
