@@ -162,6 +162,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
           p_expected_revision:current.revision,p_command:randomUUID()}))
         assert.ok((await first.client.rpc('save_team_count',{...saveArgs(stored.id),p_revision:'3'})).error)
         await first.p.getByRole('button',{name:'Refresh team',exact:true}).click()
+        await first.p.getByText('Your count status: requested',{exact:true}).waitFor()
         await search(first.p,'Count Active')
         await first.p.getByRole('button').filter({hasText:codes[0]}).click()
         assert.equal(await first.p.getByRole('button',{name:/Confirm Count|Save Edit/}).count(),0)

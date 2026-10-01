@@ -100,6 +100,7 @@ export function TeamCountClient({ initial }: { initial: TeamCountState }) {
     <h1 className="text-xl font-semibold">{state.teamName} — {state.warehouseName}</h1>
     <p>{state.role === 'counter' ? 'Blind count — only your quantities are shown.' : 'Team monitor — product consultation only.'}</p>
     <p>Phase: {state.phase}</p>
+    {state.role === 'counter' && <p>Your count status: {state.finishState}</p>}
     {unavailable && <p role="alert">Connection or access unavailable. Counts are blocked until refreshed.</p>}
     {notice && <p role="status">{notice}</p>}
     <button className="border rounded px-3 py-2" onClick={() => void refresh()}>Refresh team</button>
