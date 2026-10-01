@@ -1022,5 +1022,175 @@ revoke all on function public.read_team_setup(uuid), public.reserve_team_setup(u
 grant execute on function public.read_team_setup(uuid), public.reserve_team_setup(uuid,jsonb,jsonb), public.complete_team_setup(uuid),
   private.read_team_setup(uuid), private.reserve_team_setup(uuid,jsonb,jsonb), private.complete_team_setup(uuid) to authenticated;
 
+
+-- Block 4: scoped initial counts, authoritative reads and native Realtime.
+create table private.team_count_commands (
+  team_id uuid not null references public.team_flows(team_id),
+  command_id uuid not null,
+  actor_id uuid not null references auth.users(id),
+  payload jsonb not null,
+  receipt jsonb not null,
+  primary key(team_id,command_id)
+);
+alter table private.team_count_commands enable row level security;
+revoke all on private.team_count_commands from public,anon,authenticated,service_role;
+
+create function private.read_team_count(p_team uuid)
+returns jsonb language plpgsql stable security definer set search_path=''
+as $$
+declare actor public.team_memberships; wh uuid; tare numeric; f public.team_flows; monitor boolean;
+begin
+  if not private.team_flow_visible(p_team,false) then
+    raise exception using errcode='42501',message='Team access unavailable';
+  end if;
+  select * into strict f from public.team_flows where team_id=p_team;
+  select * into actor from public.team_memberships where team_id=p_team and user_id=auth.uid()
+    and departed_at is null and access_revoked_at is null;
+  monitor:=private.is_admin() or actor.role='independent';
+  select s.warehouse_id,coalesce(s.box_tare_g,300) into wh,tare
+    from public.teams t join public.count_sessions s on s.id=t.session_id where t.id=p_team;
+  if not exists(select 1 from public.teams t join public.count_sessions s on s.id=t.session_id
+    where t.id=p_team and s.status<>'fechada') or f.phase='closed' then
+    raise exception using errcode='42501',message='Team access unavailable';
+  end if;
+  return jsonb_build_object(
+    'teamId',p_team,'phase',f.phase,'revision',f.revision::text,
+    'role',case when private.is_admin() then 'admin' else actor.role end,
+    'membershipId',actor.id,'finishState',actor.finish_state,
+    'teamName',(select team_name from public.teams where id=p_team),
+    'warehouseName',(select name from public.warehouses where id=wh),
+    'members',coalesce((select jsonb_agg(jsonb_build_object('id',m.id,'name',m.display_name,
+      'role',m.role,'order',m.display_order,'finishState',m.finish_state) order by m.display_order)
+      from public.team_memberships m where m.team_id=p_team),'[]'),
+    'items',coalesce((select jsonb_agg(jsonb_build_object('brand_code',i.brand_code,'brand_name',i.brand_name,
+      'brand_active',i.brand_active,'bpu',i.bpu,'pallet_size',coalesce(i.pallet_size,0),
+      'weight_avg',coalesce(i.weight_avg,0),'box_tare_g',tare,
+      'bins',coalesce((select jsonb_agg(b.bin_location order by b.bin_location)
+        from public.item_bin_locations b where b.brand_code=i.brand_code),'[]')) order by i.brand_code)
+      from public.inventory_items i where i.warehouse_id=wh),'[]'),
+    'records',coalesce((select jsonb_agg(jsonb_build_object('brandCode',r.brand_code,
+      'membershipId',a.membership_id,'pallets',r.pallets,'cases',r.cases,'units',r.units,
+      'quantity',r.quantity_units::text,'method',r.method,'revision',r.revision::text) order by r.brand_code)
+      from public.team_count_records r join public.team_slot_assignments a on a.id=r.assignment_id
+      where r.team_id=p_team and (monitor or a.membership_id=actor.id)),'[]')
+  );
+end;
+$$;
+revoke all on function private.read_team_count(uuid) from public,anon,authenticated,service_role;
+
+create function private.start_team_count(p_team uuid,p_revision bigint)
+returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare f public.team_flows;
+begin
+  if auth.uid() is null or not private.is_admin() then
+    raise exception using errcode='42501',message='Only admin can start counting';
+  end if;
+  select * into f from public.team_flows where team_id=p_team for update;
+  if f.team_id is null or f.frozen_at is not null or not exists(
+    select 1 from public.teams t join public.count_sessions s on s.id=t.session_id
+    where t.id=p_team and s.status<>'fechada') then raise exception 'Team unavailable'; end if;
+  -- A response lost after starting can safely be retried, never restart a team.
+  if f.phase='counting' and f.revision=1 and p_revision=0 then return private.read_team_count(p_team); end if;
+  if f.phase<>'setup' or f.revision is distinct from p_revision then
+    raise exception using errcode='40001',message='Team changed; refresh';
+  end if;
+  update public.team_flows set phase='counting',revision=revision+1 where team_id=p_team;
+  return private.read_team_count(p_team);
+end;
+$$;
+revoke all on function private.start_team_count(uuid,bigint) from public,anon,authenticated,service_role;
+
+create function private.save_team_count(
+  p_team uuid,p_command uuid,p_brand text,p_revision bigint,
+  p_pallets integer,p_cases integer,p_units integer,p_weight boolean,
+  p_bpu integer,p_pallet_size integer,p_weight_avg numeric,p_tare numeric
+) returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare f public.team_flows; actor public.team_memberships; a public.team_slot_assignments;
+  item public.inventory_items; previous public.team_count_records; saved public.team_count_records;
+  payload jsonb; command private.team_count_commands; wh uuid; tare numeric;
+begin
+  if auth.uid() is null or private.is_admin() or not private.team_flow_visible(p_team,false) then
+    raise exception using errcode='42501',message='Count operation not authorized';
+  end if;
+  select * into f from public.team_flows where team_id=p_team for update;
+  select * into actor from public.team_memberships where team_id=p_team and user_id=auth.uid()
+    and departed_at is null and access_revoked_at is null;
+  if actor.id is null or actor.role<>'counter' or not private.team_flow_visible(p_team,false) then
+    raise exception using errcode='42501',message='Count operation not authorized';
+  end if;
+  if p_command is null or p_brand is null or p_weight is null or p_pallets is null
+    or p_cases is null or p_units is null or least(p_pallets,p_cases,p_units)<0
+    or p_revision<0 then raise exception using errcode='22023',message='Invalid count'; end if;
+  payload:=jsonb_build_array(p_brand,p_revision,p_pallets,p_cases,p_units,p_weight,p_bpu,p_pallet_size,p_weight_avg,p_tare);
+  select * into command from private.team_count_commands where team_id=p_team and command_id=p_command;
+  if command.command_id is not null then
+    if command.actor_id<>auth.uid() or command.payload<>payload then
+      raise exception using errcode='22023',message='Command identifier already used'; end if;
+    return command.receipt;
+  end if;
+  if f.phase<>'counting' or f.frozen_at is not null or actor.finish_state<>'counting' then
+    raise exception using errcode='42501',message='Counting is blocked'; end if;
+  select * into a from public.team_slot_assignments where team_id=p_team and membership_id=actor.id and ended_at is null;
+  if a.id is null then raise exception using errcode='42501',message='No counting assignment'; end if;
+  select s.warehouse_id,coalesce(s.box_tare_g,300) into wh,tare from public.teams t
+    join public.count_sessions s on s.id=t.session_id where t.id=p_team and s.status<>'fechada';
+  select * into item from public.inventory_items where brand_code=p_brand and warehouse_id=wh for share;
+  if item.brand_code is null then raise exception using errcode='42501',message='Item outside warehouse'; end if;
+  if (item.bpu,coalesce(item.pallet_size,0),coalesce(item.weight_avg,0),tare)
+    is distinct from (p_bpu,p_pallet_size,p_weight_avg,p_tare) then
+    raise exception using errcode='40001',message='Product changed; refresh before counting'; end if;
+  if item.bpu<1 or (p_pallets>0 and coalesce(item.pallet_size,0)=0)
+    or (item.bpu=1 and (p_pallets>0 or p_cases>0))
+    or (p_weight and (coalesce(item.weight_avg,0)<=0 or p_pallets<>0)) then
+    raise exception using errcode='22023',message='Counting method unavailable'; end if;
+  if ((p_pallets::bigint*coalesce(item.pallet_size,0)+p_cases)*item.bpu+p_units)>9007199254740991 then
+    raise exception using errcode='22023',message='Quantity too large'; end if;
+  select * into previous from public.team_count_records where team_id=p_team and slot_id=a.slot_id and brand_code=p_brand;
+  if (previous.id is null and p_revision is not null)
+    or (previous.id is not null and (previous.assignment_id<>a.id or previous.revision is distinct from p_revision)) then
+    raise exception using errcode='40001',message='Count changed; refresh before editing'; end if;
+  if previous.id is null then
+    insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,pallets,cases,units,
+      pallet_size_at_entry,bpu_at_entry,method)
+    values(p_team,a.id,a.slot_id,p_brand,p_pallets,p_cases,p_units,coalesce(item.pallet_size,0),item.bpu,
+      case when p_weight then 'weight' else 'manual' end) returning * into saved;
+  else
+    update public.team_count_records set pallets=p_pallets,cases=p_cases,units=p_units,
+      pallet_size_at_entry=coalesce(item.pallet_size,0),bpu_at_entry=item.bpu,
+      method=case when p_weight then 'weight' else 'manual' end,revision=revision+1
+      where id=previous.id returning * into saved;
+  end if;
+  command.receipt:=jsonb_build_object('revision',saved.revision::text,
+    'final_cases',saved.quantity_units/item.bpu,'final_units',saved.quantity_units%item.bpu,'brand_name',item.brand_name);
+  insert into private.team_count_commands values(p_team,p_command,auth.uid(),payload,command.receipt);
+  return command.receipt;
+end;
+$$;
+revoke all on function private.save_team_count(uuid,uuid,text,bigint,integer,integer,integer,boolean,integer,integer,numeric,numeric)
+  from public,anon,authenticated,service_role;
+
+create function public.read_team_count(p_team uuid)
+returns jsonb language sql security invoker set search_path='' as $$ select private.read_team_count(p_team); $$;
+create function public.start_team_count(p_team uuid,p_revision bigint)
+returns jsonb language sql security invoker set search_path='' as $$ select private.start_team_count(p_team,p_revision); $$;
+create function public.save_team_count(p_team uuid,p_command uuid,p_brand text,p_revision bigint,
+  p_pallets integer,p_cases integer,p_units integer,p_weight boolean,
+  p_bpu integer,p_pallet_size integer,p_weight_avg numeric,p_tare numeric)
+returns jsonb language sql security invoker set search_path='' as $$
+  select private.save_team_count(p_team,p_command,p_brand,p_revision,p_pallets,p_cases,p_units,p_weight,p_bpu,p_pallet_size,p_weight_avg,p_tare);
+$$;
+revoke all on function public.read_team_count(uuid),public.start_team_count(uuid,bigint),
+  public.save_team_count(uuid,uuid,text,bigint,integer,integer,integer,boolean,integer,integer,numeric,numeric)
+  from public,anon,authenticated,service_role;
+grant execute on function public.read_team_count(uuid),public.start_team_count(uuid,bigint),
+  public.save_team_count(uuid,uuid,text,bigint,integer,integer,integer,boolean,integer,integer,numeric,numeric),
+  private.read_team_count(uuid),private.start_team_count(uuid,bigint),
+  private.save_team_count(uuid,uuid,text,bigint,integer,integer,integer,boolean,integer,integer,numeric,numeric)
+  to authenticated;
+-- Existing SELECT policies enforce blind counts on replication as well as REST.
+alter publication supabase_realtime add table public.team_count_records,public.team_flows,public.team_memberships;
+
 -- New setup is opt-in; production activation remains unchanged.
 commit;

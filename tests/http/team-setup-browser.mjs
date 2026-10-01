@@ -1,4 +1,5 @@
 // Real UI/Server Actions/Auth in disposable runner only; never emit login cards.
+import { verifyTeamCountBrowser } from './team-count-browser.mjs'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { setTimeout as delay } from 'node:timers/promises'
@@ -137,6 +138,8 @@ export async function verifyTeamSetupBrowser({base,db,status,sql,login,envelopes
       }
     }
     console.log('PASS: real four-digit PIN logins for each team reach protected setup context; Independent never receives legacy counting; metadata cannot grant admin')
+
+    await verifyTeamCountBrowser({base,db,status,sql,login,browser,page,plan:final.plan,session,wh})
 
     stage='concurrent fresh UI provisioning'
     const concurrent=checked(await db.from('count_sessions').insert({warehouse_id:wh.id}).select('id').single())

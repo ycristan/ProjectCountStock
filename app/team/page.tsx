@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTeamFlowContexts } from '@/lib/team-flow-context'
 import { logout } from '@/actions/auth'
@@ -12,7 +13,8 @@ export default async function TeamPage() {
       : context.teams.map(team => <section key={team.membershipId} className="border rounded-xl p-4 mb-4">
         <h2>{team.teamName} — {team.warehouseName}</h2>
         <p>{team.displayName} — {team.role === 'independent' ? 'Independent' : 'Counter ' + team.displayOrder}</p>
-        <p>Setup saved. Counting is not activated in this development block.</p>
+        <p>{team.phase === 'setup' ? 'Setup saved. Counting has not started.' : 'Phase: ' + team.phase}</p>
+        <Link href={'/team/' + team.teamId}>Open team</Link>
       </section>)}
     <form action={logout}><button className="border rounded p-2">Log out</button></form>
   </main>

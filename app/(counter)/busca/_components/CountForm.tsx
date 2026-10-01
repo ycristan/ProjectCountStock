@@ -379,7 +379,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
           </button>
 
           {/* Visual cases — added to weighing result */}
-          <div className="border-2 border-amber-300 rounded-xl overflow-hidden">
+          {!noBpu && <div className="border-2 border-amber-300 rounded-xl overflow-hidden">
             <div className="bg-amber-50 border-b border-amber-200 px-3 py-2 text-xs font-semibold text-amber-800">
               📦 Full Cases (visually confirmed)
             </div>
@@ -407,7 +407,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
                 </p>
               )}
             </div>
-          </div>
+          </div>}
 
           <div className={`rounded-xl p-4 border ${
             hasWeightData && weightQty > 0 ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'

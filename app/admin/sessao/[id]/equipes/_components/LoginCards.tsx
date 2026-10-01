@@ -35,7 +35,7 @@ export function LoginCards({ credentials, sessionId, setupOnly = false }: { cred
             </Link>}
           </div>
         </div>
-        {setupOnly && <p className="mb-4 text-amber-800">Setup saved. Counting is not activated in this development block.</p>}
+        {setupOnly && <p className="mb-4 text-amber-800">Setup saved. New teams must be started individually from their monitor.</p>}
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-slate-100">
