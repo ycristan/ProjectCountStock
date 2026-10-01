@@ -130,11 +130,17 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
       assert.equal(checked(await first.client.rpc('read_team_count',{p_team:stored.id})).records.find(r=>r.brandCode===codes[0]).revision,'2')
       if(index===0){
         stage='reconnection and failed read'
+        stage='reconnection: offline'
         await independent.context.setOffline(true)
+        stage='reconnection: count while monitor offline'
         checked(await first.client.rpc('save_team_count',{...saveArgs(stored.id),p_revision:'2',p_units:14}))
+        stage='reconnection: online'
         await independent.context.setOffline(false)
+        stage='reconnection: dispatch online'
         await independent.p.evaluate(()=>window.dispatchEvent(new Event('online')))
+        stage='reconnection: authoritative recovered row'
         await row.getByText('14 units · manual',{exact:true}).waitFor()
+        stage='reconnection: failed refresh'
         let blocked=false
         await independent.p.route('**/team/*',async route=>{
           if(route.request().method()==='POST'){blocked=true;await route.abort('failed')}
@@ -145,6 +151,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         assert.ok(blocked)
         await independent.p.getByRole('alert').waitFor()
         assert.equal(await independent.p.locator('tr[data-brand]').count(),0)
+        stage='reconnection: restore refresh'
         await independent.p.unroute('**/team/*')
         await independent.p.getByRole('button',{name:'Refresh team',exact:true}).click()
         await row.getByText('14 units · manual',{exact:true}).waitFor()
@@ -170,6 +177,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
   }catch(error){
     const numeric = typeof error?.actual === 'number' || typeof error?.actual === 'boolean'
       ? ' (actual='+error.actual+', expected='+error.expected+')' : ''
-    throw new Error('Team count browser verification failed at stage: '+stage+numeric)
+    const detail = error?.message?.startsWith('Team count browser verification failed at stage: fixture') ? ' '+error.message : ''
+    throw new Error('Team count browser verification failed at stage: '+stage+numeric+' ['+error?.name+']'+detail)
   }finally{for(const context of contexts)await context.close()}
 }
