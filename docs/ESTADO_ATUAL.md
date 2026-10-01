@@ -230,3 +230,16 @@ Ainda NÃO implementado/liberado:
 
 ## Correção em preparação — 2026-09-24
 PR #75: [incidente, proteção e recuperação](./WAREHOUSE_SPLIT_RECOVERY.md). Os inativos Kinder ficaram no Main criado pela migração, fora do BDS do upload. Recuperação ainda não aplicada. Quatro sessões de teste encerradas com autorização explícita de Yuri; nenhuma quantidade apagada/recalculada.
+
+## Bloco 4 — contagem e monitor variáveis, 2026-10-01
+Código 1875d2a13add577f7e859a80ff93c7ddd5d413e2; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/36868880572. 494 verificações existentes (319 SQL + 138 contratos + 37 XLSX), mais novos percursos reais Auth/HTTP/Chromium/Realtime.
+- Novo fluxo opt-in: admin inicia cada equipe pelo monitor; participantes escolhem seu contexto explicitamente. Sem conversão do legado.
+- Reutilizados CountForm, SearchInput e ResultList. Ativos/inativos consultáveis na WHS da sessão; somente contador lança inicialmente. Admin/Independente consultam e acompanham N colunas, sem inserir contagem inicial.
+- RPC deriva autoria/vínculo/posição de auth.uid(), valida fase/finalização/revogação/WHS/opcionais/BPU1 e parâmetros atuais do produto. Revisão por registro evita edição sobre tela antiga; recibo privado torna retry da mesma operação idempotente. Originais ficam no histórico.
+- Realtime nativo com RLS, filtro de equipe, autenticação e limpeza; recarrega estado autoritativo após reconexão. Poll de segurança a cada 15s recupera eventos perdidos/revogação. Falha de leitura é aviso/bloqueio, não lista vazia considerada válida; respostas antigas são descartadas.
+- Monitor distingue ausências, zero explícito, igualdade e diferença provisória; não resolve conciliação ou tolerância automaticamente.
+- Testes novos: UI/roles de 3/4/5 participantes, componentes físicos, zero/inativo, peso/BPU1, WHS errada, cegueira REST, escrita direta/roles indevidos negados, retry concorrente, edição obsoleta/histórico, resposta perdida, offline/reconexão, falha de refresh, bloqueio solicitado e revogação. Finalização via RPC e revogação por fixture NÃO equivalem à UI do bloco 5 nem ao fechamento completo.
+- As primeiras execuções falharam por diagnóstico encoberto e verificações de DOM antes do término do refresh. Corrigidos os testes para aguardar o estado, sem remover expectativas ou proteções. Resultado aprovado é somente a execução acima.
+- Ponytail full/Review: componentes existentes e recursos nativos, nenhuma dependência nova; sem abstração de workflow. Revisão de complexidade não substitui a execução funcional.
+- Nenhum merge/migration/flag de produção ou Preview compartilhado. A nova UI só foi habilitada no runner descartável.
+Nenhum teste manual necessário neste bloco. Próximo bloco: 5, pedido individual e aceite/rejeição nas telas.
