@@ -149,7 +149,8 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await independent.p.getByRole('button',{name:'Refresh team',exact:true}).click()
         for(let i=0;i<50&&!blocked;i++)await delay(100)
         assert.ok(blocked)
-        await independent.p.getByRole('alert').waitFor()
+        await independent.p.getByRole('alert').filter({hasText:'Connection or access unavailable'}).waitFor()
+        await independent.p.locator('tr[data-brand]').first().waitFor({state:'hidden'})
         assert.equal(await independent.p.locator('tr[data-brand]').count(),0)
         stage='reconnection: restore refresh'
         await independent.p.unroute('**/team/*')
