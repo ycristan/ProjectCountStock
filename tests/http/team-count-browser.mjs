@@ -9,7 +9,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
   assert.equal(process.env.GITHUB_ACTIONS,'true')
   assert.equal(base,'http://127.0.0.1:3100')
   assert.equal(new URL(status.API_URL).origin,'http://127.0.0.1:54321')
-  const checked=r=>{if(r.error)throw new Error('Isolated count fixture failed');return r.data}
+  const checked=r=>{if(r.error)throw new Error('Team count browser verification failed at stage: fixture ('+r.error.code+')');return r.data}
   const suffix=randomUUID().slice(0,8)
   const codes=['act-','off-','unit-','other-'].map(s=>s+suffix)
   const other=checked(await db.from('warehouses').insert({name:'Other count '+suffix}).select('id').single())
@@ -118,7 +118,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
       await first.p.locator('input[type="number"]').nth(2).fill('9')
       let lost=false
       await first.p.route('**/team/*',async route=>{
-        if(!lost && route.request().method()==='POST'&&route.request().headers()['next-action']){
+        if(!lost && route.request().method()==='POST'&&route.request().headers()['next-action']&&route.request().postData()?.includes(codes[0])){
           lost=true;await route.fetch();await route.abort('failed')
         }else await route.continue()
       })

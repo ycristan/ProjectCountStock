@@ -169,7 +169,8 @@ export async function verifyTeamSetupBrowser({base,db,status,sql,login,envelopes
     assert.ok(!envelope.includes(status.SERVICE_ROLE_KEY))
     for(const team of final.plan)for(const m of team.members)assert.ok(!envelope.includes(team.pin+m.pin+'@count.local'))
     console.log('PASS: setup failure reaches isolated Sentry SDK collector without names or login emails')
-  } catch {
+  } catch (error) {
+    if (error?.message?.startsWith('Team count browser verification failed at stage:')) throw error
     // Playwright assertions/requests may contain credentials; stage is sufficient.
     throw new Error('Team setup browser verification failed at stage: '+stage)
   } finally {
