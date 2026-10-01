@@ -141,8 +141,9 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
           else await route.continue()
         })
         await independent.p.getByRole('button',{name:'Refresh team',exact:true}).click()
-        await independent.p.getByRole('alert').waitFor()
+        for(let i=0;i<50&&!blocked;i++)await delay(100)
         assert.ok(blocked)
+        await independent.p.getByRole('alert').waitFor()
         assert.equal(await independent.p.locator('tr[data-brand]').count(),0)
         await independent.p.unroute('**/team/*')
         await independent.p.getByRole('button',{name:'Refresh team',exact:true}).click()
@@ -166,7 +167,9 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
       for(const context of contexts)await context.close()
       contexts=[]
     }
-  }catch{
-    throw new Error('Team count browser verification failed at stage: '+stage)
+  }catch(error){
+    const numeric = typeof error?.actual === 'number' || typeof error?.actual === 'boolean'
+      ? ' (actual='+error.actual+', expected='+error.expected+')' : ''
+    throw new Error('Team count browser verification failed at stage: '+stage+numeric)
   }finally{for(const context of contexts)await context.close()}
 }
