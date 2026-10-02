@@ -6,11 +6,12 @@ import { join } from 'node:path'
 import { startLab, labFailure } from '../../scripts/codespace-lab.mjs'
 import { verifyTeamCountBrowser } from '../http/team-count-browser.mjs'
 assert.equal(process.env.GITHUB_ACTIONS,'true')
-const privateText='password=DO_NOT_LOG secret=DO_NOT_LOG'
-assert.match(labFailure('startup',{status:1,stderr:'client version 1.41 is too old; '+privateText}),/Docker API version incompatibility/)
-assert.match(labFailure('startup',{status:1,stderr:'bind: address already in use '+privateText}),/local port/)
-assert.ok(!labFailure('startup',{status:1,stderr:privateText}).includes('DO_NOT_LOG'))
-assert.ok(!labFailure('startup',{status:1,stderr:'too many requests '+privateText}).includes('DO_NOT_LOG'))
+const privateText='DO_NOT_LOG'
+const failure=labFailure('local Supabase startup',{status:1,stdout:privateText,
+  stderr:'Unrecognized Docker failure: unsupported option --network-id\npassword='+privateText+' secret="'+privateText+'" https://example.invalid/?token='+privateText+' '+privateText.repeat(3)})
+assert.match(failure,/Unrecognized Docker failure: unsupported option --network-id/)
+assert.ok(!failure.includes(privateText))
+assert.ok(!labFailure('synthetic fixtures',{stderr:privateText}).includes(privateText))
 let stage='start',browser
 const lab=await startLab({check:true})
 const {base,db,status,admins,warehouses,work}=lab

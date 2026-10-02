@@ -10,22 +10,17 @@ import { createServer, request } from 'node:http'
 import { setTimeout as delay } from 'node:timers/promises'
 import { pathToFileURL } from 'node:url'
 
-// Only fixed diagnostic messages leave the launcher; never raw CLI logs or keys.
+// Only local startup stderr is reported; redact secrets/URLs and never print stdout keys.
 export function labFailure(stage,error) {
-  const detail=String(error?.stderr || error?.message || '')
-  const reason=[
-    [/client version.*too old|minimum supported API|client is newer than server/i,'Docker API version incompatibility'],
-    [/already allocated|address already in use/i,'A required local port is already in use'],
-    [/out of memory|not enough memory|cannot allocate memory/i,'Insufficient memory for local services'],
-    [/no space left/i,'Insufficient disk space'],
-    [/too many requests|toomanyrequests|rate limit/i,'Container registry download rate limit'],
-    [/unauthorized|authentication required|pull access denied/i,'Container registry refused the image download'],
-    [/cannot connect.*docker|docker daemon.*not running/i,'Docker daemon is unavailable'],
-    [/permission denied/i,'Local permission denied'],
-    [/config.*already exists/i,'Local Supabase config already exists'],
-    [/unexpected EOF|connection reset|TLS handshake|certificate|dial tcp/i,'Network connection failed while preparing local services']
-  ].find(([pattern])=>pattern.test(detail))?.[1] || 'No known cause identified; use the exact stage and exit code'
-  return 'Laboratory setup failed at: '+stage+'. '+reason+' (exit '+(Number.isInteger(error?.status)?error.status:'unavailable')+'). No production operation was attempted.'
+  const detail=stage==='local Supabase startup' ? String(error?.stderr || '')
+    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g,'')
+    .replace(/-----BEGIN[\s\S]*?-----END[^-]*-----/g,'[redacted]')
+    .replace(/\b(?:postgres(?:ql)?|https?|wss?):\/\/[^\s"'<>]+/gi,'[url]')
+    .replace(/\b(password|secret|token|authorization|api[_ -]?key|service[_ -]?role|anon[_ -]?key|pin)\b\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi,'$1=[redacted]')
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[email]')
+    .replace(/[A-Za-z0-9_+/=-]{20,}/g,'[redacted]')
+    .trim().slice(-6000).split('\n').slice(-20).join('\n') : ''
+  return 'Laboratory setup failed at: '+stage+' (exit '+(Number.isInteger(error?.status)?error.status:'unavailable')+'). No production operation was attempted.'+(detail ? '\nSupabase startup diagnostic:\n'+detail : '')
 }
 
 export async function startLab({check=false}={}) {
