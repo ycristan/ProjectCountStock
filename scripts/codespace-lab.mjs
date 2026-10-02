@@ -1,9 +1,9 @@
 // Remote-only laboratory. Never accepts a hosted Supabase URL or production secrets.
 import assert from 'node:assert/strict'
 import { execFileSync, spawn } from 'node:child_process'
-import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join, resolve, dirname } from 'node:path'
 import { createRequire } from 'node:module'
 import { randomUUID } from 'node:crypto'
 import { createServer, request } from 'node:http'
@@ -28,6 +28,9 @@ export async function startLab({check=false}={}) {
     if(gateway){gateway.closeAllConnections();await new Promise(r=>gateway.close(r))}
     if(app){app.kill('SIGTERM');app.stdout.destroy();app.stderr.destroy()}
     if(stopDatabase && cli)try{run(cli.bin,[...cli.prefix,'stop'])}catch{}
+    assert.equal(dirname(resolve(work)),resolve(tmpdir()))
+    assert.ok(work.startsWith(join(tmpdir(),'count-stock-lab-')))
+    rmSync(work,{recursive:true,force:true}) // Only this launcher-created remote snapshot; DB volumes are retained.
   }
   try {
     console.log('LAB: preparing isolated dependencies (first start can take several minutes)')
@@ -96,6 +99,7 @@ export async function startLab({check=false}={}) {
     writeFileSync(clientPath,client.replace('process.env.NEXT_PUBLIC_SUPABASE_URL!',"typeof window === 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL! : window.location.origin + '/__supabase'").replace('process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,',"process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,\n    { cookieOptions: { name: 'sb-count-stock-lab-auth-token' } },"))
     const env={...cleanEnv,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,
       SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,TEAM_SETUP_ENABLED:'true',VERCEL_ENV:'development'}
+    delete env.GITHUB_TOKEN;delete env.GH_TOKEN
     stage='application build'
     console.log('LAB: building tracked application; production configuration is untouched')
     execFileSync('npm',['run','build'],{cwd:work,env,stdio:['ignore','pipe','pipe'],maxBuffer:16*1024*1024,timeout:300000})
@@ -119,7 +123,9 @@ export async function startLab({check=false}={}) {
       let opts
       try{opts=target(req)}catch{res.writeHead(400);res.end('Invalid laboratory route');return}
       const upstream=request(opts,response=>{
-        res.writeHead(response.statusCode,response.headers);response.pipe(res)
+        const headers={...response.headers}
+        if(headers.location?.startsWith('http://127.0.0.1:3000/'))headers.location=(req.headers['x-forwarded-proto']==='https'?'https':'http')+'://'+req.headers.host+headers.location.slice('http://127.0.0.1:3000'.length)
+        res.writeHead(response.statusCode,headers);response.pipe(res)
       })
       upstream.on('error',()=>{if(!res.headersSent)res.writeHead(502);res.end('Laboratory upstream unavailable')})
       req.on('aborted',()=>upstream.destroy());req.pipe(upstream)
