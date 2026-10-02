@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
+import { filterItems } from '@/lib/inventory-search'
 import type { EntryExistente, ItemBusca, LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
 import { SearchInput } from './SearchInput'
 import { ResultList } from './ResultList'
@@ -23,35 +24,9 @@ type SucessoResult = {
   entry: EntryExistente
 }
 
-function filterItems(items: ItemBusca[], q: string): ItemBusca[] {
-  const ql = q.trim().toLowerCase()
-  if (!ql) return []
-
-  if (/^\d+$/.test(ql)) {
-    // Pure digits → brand_code prefix + BIN prefix combined, sorted ascending
-    const byCode = items.filter((i) => i.brand_code.toLowerCase().startsWith(ql))
-    const codeSet = new Set(byCode.map((i) => i.brand_code))
-    const byBin = items.filter(
-      (i) => !codeSet.has(i.brand_code) && i.bins.some((b) => b.toLowerCase().startsWith(ql))
-    )
-    return [...byCode, ...byBin].sort((a, b) => a.brand_code.localeCompare(b.brand_code))
-  }
-
-  if (/^\d/.test(ql)) {
-    // Starts with digit, has letters → BIN prefix only (e.g. "40A")
-    return items
-      .filter((i) => i.bins.some((b) => b.toLowerCase().startsWith(ql)))
-      .sort((a, b) => a.brand_code.localeCompare(b.brand_code))
-  }
-
-  // Starts with letter → brand_name contains, case-insensitive, sorted alphabetically
-  return items
-    .filter((i) => i.brand_name.toLowerCase().includes(ql))
-    .sort((a, b) => a.brand_name.localeCompare(b.brand_name))
-}
-
 type Props = {
   items: ItemBusca[]
+  readOnly?: boolean
   // ponytail: solo count injeta submit próprio + header; padrão = fluxo de equipe
   onSubmit?: (payload: LancarContagemPayload) => Promise<LancarContagemResult>
   headerSlot?: React.ReactNode
@@ -60,7 +35,7 @@ type Props = {
   restrictToList?: boolean
 }
 
-export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restrictToList }: Props) {
+export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restrictToList, readOnly = false }: Props) {
   const [tela, setTela] = useState<Tela>('busca')
   const [termo, setTermo] = useState('')
   const [itemSelecionado, setItemSelecionado] = useState<ItemBusca | null>(null)
@@ -121,7 +96,7 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
     setTela('form')
   }, [])
 
-  if (tela === 'sucesso' && sucesso) {
+  if (!readOnly && tela === 'sucesso' && sucesso) {
     return (
       <SuccessScreen
         brandCode={sucesso.brandCode}
@@ -133,7 +108,7 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
     )
   }
 
-  if (tela === 'form' && itemSelecionado) {
+  if (!readOnly && tela === 'form' && itemSelecionado) {
     return (
       <CountForm
         item={itemSelecionado}
@@ -151,6 +126,7 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
       <h2 className="text-xl font-semibold text-slate-900 mb-4">
         {restrictToList ? `Your items (${items.length})` : 'Search Item'}
       </h2>
+      {readOnly && <p className="text-sm text-slate-600 mb-3">Product consultation only. Initial counts are entered by the counters.</p>}
       <SearchInput value={termo} onChange={setTermo} />
 
       {termo.trim() && resultados.length === 0 && (
@@ -162,7 +138,9 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
       <ResultList
         items={resultados}
         onSelect={(item) => {
-          if (item.jaContado) {
+          if (readOnly) {
+            setModalItem(item)
+          } else if (item.jaContado) {
             setModalItem(item)
           } else {
             abrirForm(item, false)
@@ -190,7 +168,12 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
                 {modalItem.brand_code}
               </div>
               <div className="text-lg font-bold text-slate-900 mt-0.5">{modalItem.brand_name}</div>
-              {modalItem.entryExistente && (
+              {readOnly && (
+                <p className="mt-3 text-sm text-slate-600">
+                  BIN: {modalItem.bins.join(', ') || '—'} · BPU: {modalItem.bpu} · Pallet: {modalItem.pallet_size || '—'} · Weight: {modalItem.weight_avg || '—'} g
+                </p>
+              )}
+              {!readOnly && modalItem.entryExistente && (
                 <div className="mt-3 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-sm text-green-800">
                   Registered Count:{' '}
                   <span className="font-bold">
@@ -201,6 +184,7 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
               )}
             </div>
             <div className="p-4 flex flex-col gap-2">
+              {!readOnly && <>
               <button
                 onClick={() => abrirForm(modalItem, true)}
                 className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl text-base"
@@ -213,6 +197,7 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
               >
                 ✏️ Edit Count
               </button>
+              </>}
               <button
                 onClick={() => setModalItem(null)}
                 className="w-full text-slate-400 text-sm py-2"

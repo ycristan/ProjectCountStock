@@ -2,10 +2,13 @@ name: Database security tests
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, codex/team-flow-contracts]
     paths:
       - 'supabase/**'
       - 'tests/http/**'
+      - 'tests/maintenance/**'
+      - 'actions/**'
+      - 'tests/database/**'
       - 'app/**'
       - 'lib/**'
       - 'components/**'
@@ -34,7 +37,7 @@ jobs:
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: '2.117.0'
 
       - name: Initialize disposable local Supabase project
         run: |
@@ -61,8 +64,24 @@ jobs:
           supabase migration up --local
           psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/warehouse-after.sql
 
+      - name: Verify team foundation upgrade (disposable database only)
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '54322'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: |
+          test "$GITHUB_ACTIONS" = "true"
+          supabase db reset --local --version 20260917073526 --no-seed
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/warehouse-before.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/team-foundation-before.sql
+          supabase migration up --local
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/team-foundation-after.sql
+
       - name: Run database authorization tests
         run: |
+          supabase db reset --local --no-seed
           supabase test db --help
           supabase test db supabase/tests/database
 
@@ -73,11 +92,28 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Verify operational inventory recovery (disposable only)
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '54322'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: node tests/maintenance/warehouse-recovery.mjs
+
+      - name: Concurrent team edits and freeze (disposable only)
+        run: node tests/database/team-flow-concurrency.mjs
+
       - name: HTTP export and real SDK transport integration (disposable only)
         run: |
           supabase status --help
           npm ci --ignore-scripts
+          node --experimental-vm-modules --test --test-reporter=tap tests/inventory/*.test.mjs
+          node --experimental-vm-modules --test --test-reporter=tap tests/xlsx/*.test.mjs
+          npm install --prefix /tmp/count-stock-browser --no-save --ignore-scripts playwright@1.58.2
+          /tmp/count-stock-browser/node_modules/.bin/playwright install --with-deps chromium
           node tests/http/inventory-export.mjs
+          node tests/http/team-finish.mjs
 
       - name: Stop disposable Supabase
         if: always()

@@ -51,6 +51,16 @@ select lives_ok($$select public.import_warehouse_inventory('Third',jsonb_build_a
 select lives_ok($$select public.import_warehouse_inventory('Main',
  jsonb_build_array(pg_temp.import_item('006323',24,true,'["old"]',80,330),pg_temp.import_item('absent')))$$,
  'Import creates Main products');
+-- Regression: a different WHS label must not silently split an existing inventory.
+select throws_ok($$select public.import_warehouse_inventory('BDS Main Warehouse',
+ jsonb_build_array(pg_temp.import_item('006323')),true)$$,
+ 'P0001','New warehouse contains existing Brand Codes. Rename the existing warehouse or review an explicit transfer before importing.',
+ 'New name plus existing code cannot strand absent/inactive products');
+select is((select count(*) from public.warehouses where name='BDS Main Warehouse'),0::bigint,
+ 'Rejected split creates no warehouse');
+select is((select w.name from public.inventory_items i join public.warehouses w on w.id=i.warehouse_id where brand_code='006323'),
+ 'Main','Rejected split preserves original warehouse membership');
+
 select lives_ok($$select public.import_warehouse_inventory(' MAIN ',
  jsonb_build_array(pg_temp.import_item('006323',24,false,'[]')))$$, 'Main normalization updates same warehouse');
 select is((select count(*) from public.warehouses),3::bigint,'Name case/space does not duplicate warehouse');
@@ -60,6 +70,12 @@ select is((select count(*) from public.item_bin_locations where brand_code='0063
 select is((select brand_active from public.inventory_items where brand_code='absent'),false,'Missing Main product becomes inactive');
 select results_eq($$select brand_code,brand_active from public.inventory_items where brand_code in ('s','t') order by brand_code$$,
  $$values ('s'::text,true),('t'::text,true)$$,'Other warehouses remain active and unchanged');
+select throws_ok($$select public.import_warehouse_inventory('Another label',
+ jsonb_build_array(pg_temp.import_item('006323',24,false,'[]')),true)$$,
+ 'P0001','New warehouse contains existing Brand Codes. Rename the existing warehouse or review an explicit transfer before importing.',
+ 'Inactive existing codes also prevent accidental split');
+select is((select count(*) from public.warehouses where name='Another label'),0::bigint,
+ 'Inactive-code rejection is atomic');
 select throws_ok($$select public.import_warehouse_inventory('Main',
  jsonb_build_array(pg_temp.import_item('same'),pg_temp.import_item(' same ')))$$,
  'P0001','Duplicate Brand Code; choose one row before importing','Database independently rejects duplicate codes');
