@@ -56,8 +56,8 @@ export async function startLab({check=false,diagnose=false}={}) {
       console.log('LAB: preparing isolated dependencies (first start can take several minutes)')
       run('npm',['ci','--ignore-scripts'])
     }
-    try {assert.equal(run('supabase',['--version']).trim(),'2.117.0');cli={bin:'supabase',prefix:[]}}
-    catch {cli={bin:'npm',prefix:['exec','--yes','--package=supabase@2.117.0','--','supabase']};run(cli.bin,[...cli.prefix,'--version'])}
+    try {assert.equal(run('supabase',['--version']).trim(),'2.111.0');cli={bin:'supabase',prefix:[]}}
+    catch {cli={bin:'npm',prefix:['exec','--yes','--package=supabase@2.111.0','--','supabase']};run(cli.bin,[...cli.prefix,'--version'])}
     const supa=args=>run(cli.bin,[...cli.prefix,...args])
     stage='local database configuration'
     console.log('LAB: initializing local database configuration')
