@@ -21,17 +21,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - uses: supabase/setup-cli@v1
-        with:
-          version: '2.117.0'
       - name: Verify scripts before starting services
         run: |
           node --check scripts/codespace-lab.mjs
           node --check tests/lab/codespace-lab.mjs
-      - name: Prepare disposable Supabase
-        run: |
-          supabase init
-          supabase start
       - name: Prepare Chromium and existing test dependencies
         run: |
           npm ci --ignore-scripts
@@ -39,6 +32,3 @@ jobs:
           /tmp/count-stock-browser/node_modules/.bin/playwright install --with-deps chromium
       - name: Verify actual laboratory launcher and team flow
         run: node tests/lab/codespace-lab.mjs
-      - name: Stop disposable services
-        if: always()
-        run: supabase stop

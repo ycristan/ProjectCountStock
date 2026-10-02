@@ -3,9 +3,14 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
-import { startLab } from '../../scripts/codespace-lab.mjs'
+import { startLab, labFailure } from '../../scripts/codespace-lab.mjs'
 import { verifyTeamCountBrowser } from '../http/team-count-browser.mjs'
 assert.equal(process.env.GITHUB_ACTIONS,'true')
+const privateText='password=DO_NOT_LOG secret=DO_NOT_LOG'
+assert.match(labFailure('startup',{status:1,stderr:'client version 1.41 is too old; '+privateText}),/Docker API version incompatibility/)
+assert.match(labFailure('startup',{status:1,stderr:'bind: address already in use '+privateText}),/local port/)
+assert.ok(!labFailure('startup',{status:1,stderr:privateText}).includes('DO_NOT_LOG'))
+assert.ok(!labFailure('startup',{status:1,stderr:'too many requests '+privateText}).includes('DO_NOT_LOG'))
 let stage='start',browser
 const lab=await startLab({check:true})
 const {base,db,status,admins,warehouses,work}=lab

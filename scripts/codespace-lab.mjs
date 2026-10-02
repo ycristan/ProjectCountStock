@@ -10,6 +10,24 @@ import { createServer, request } from 'node:http'
 import { setTimeout as delay } from 'node:timers/promises'
 import { pathToFileURL } from 'node:url'
 
+// Only fixed diagnostic messages leave the launcher; never raw CLI logs or keys.
+export function labFailure(stage,error) {
+  const detail=String(error?.stderr || error?.message || '')
+  const reason=[
+    [/client version.*too old|minimum supported API|client is newer than server/i,'Docker API version incompatibility'],
+    [/already allocated|address already in use/i,'A required local port is already in use'],
+    [/out of memory|not enough memory|cannot allocate memory/i,'Insufficient memory for local services'],
+    [/no space left/i,'Insufficient disk space'],
+    [/too many requests|toomanyrequests|rate limit/i,'Container registry download rate limit'],
+    [/unauthorized|authentication required|pull access denied/i,'Container registry refused the image download'],
+    [/cannot connect.*docker|docker daemon.*not running/i,'Docker daemon is unavailable'],
+    [/permission denied/i,'Local permission denied'],
+    [/config.*already exists/i,'Local Supabase config already exists'],
+    [/unexpected EOF|connection reset|TLS handshake|certificate|dial tcp/i,'Network connection failed while preparing local services']
+  ].find(([pattern])=>pattern.test(detail))?.[1] || 'No known cause identified; use the exact stage and exit code'
+  return 'Laboratory setup failed at: '+stage+'. '+reason+' (exit '+(Number.isInteger(error?.status)?error.status:'unavailable')+'). No production operation was attempted.'
+}
+
 export async function startLab({check=false}={}) {
   assert.ok(process.env.CODESPACES === 'true' || (check && process.env.GITHUB_ACTIONS === 'true'), 'Use the Codespace terminal, not Windows')
   assert.ok(Number(process.versions.node.split('.')[0]) >= 20, 'Node 20 or newer required')
@@ -38,23 +56,27 @@ export async function startLab({check=false}={}) {
     try {assert.equal(run('supabase',['--version']).trim(),'2.117.0');cli={bin:'supabase',prefix:[]}}
     catch {cli={bin:'npm',prefix:['exec','--yes','--package=supabase@2.117.0','--','supabase']};run(cli.bin,[...cli.prefix,'--version'])}
     const supa=args=>run(cli.bin,[...cli.prefix,...args])
-    stage='local database'
+    stage='local database configuration'
+    console.log('LAB: initializing local database configuration')
     supa(['init','--help']);supa(['init'])
     const config=join(work,'supabase/config.toml')
-    writeFileSync(config,check ? readFileSync(join(root,'supabase/config.toml'),'utf8') : readFileSync(config,'utf8').replace(/^project_id = .*$/m,'project_id = "count-stock-lab"'))
-    if(check) {
-      // CI already runs its disposable stack. Do not start or stop an unrelated stack.
-      cli={bin:'supabase',prefix:[]}
-    } else {
-      run('docker',['info'])
-      try {run('docker',['network','inspect','count-stock-lab-loopback'])}
-      catch {run('docker',['network','create','-o','com.docker.network.bridge.host_binding_ipv4=127.0.0.1','count-stock-lab-loopback'])}
-      supa(['start','--help'])
-      stopDatabase=true
-      supa(['start','--network-id','count-stock-lab-loopback'])
-    }
+    writeFileSync(config,readFileSync(config,'utf8').replace(/^project_id = .*$/m,'project_id = "count-stock-lab"'))
+    stage='Docker connection'
+    run('docker',['info'])
+    stage='loopback Docker network'
+    try {run('docker',['network','inspect','count-stock-lab-loopback'])}
+    catch {run('docker',['network','create','-o','com.docker.network.bridge.host_binding_ipv4=127.0.0.1','count-stock-lab-loopback'])}
+    stage='Supabase startup help'
+    supa(['start','--help'])
+    stage='local Supabase startup'
+    console.log('LAB: starting local Supabase (first start downloads container images)')
+    stopDatabase=true
+    supa(['start','--network-id','count-stock-lab-loopback'])
     // Explicit local commands only; no link, db push, remote URL or db reset.
+    stage='local migrations'
+    console.log('LAB: applying local migrations')
     supa(['migration','up','--help']);supa(['migration','up','--local'])
+    stage='local Supabase status'
     supa(['status','--help'])
     const status=JSON.parse(supa(['status','-o','json']))
     assert.equal(new URL(status.API_URL).origin,'http://127.0.0.1:54321')
@@ -161,9 +183,9 @@ export async function startLab({check=false}={}) {
       console.log('Only port 3100 is needed. Keep it Private. Ctrl+C stops the application and local services, preserving test data.')
     }
     return {close,db,status,admins,warehouses,work,base:'http://127.0.0.1:3100'}
-  } catch {
+  } catch(error) {
     await close()
-    throw new Error('Laboratory setup failed at: '+stage+'. No production operation was attempted.')
+    throw new Error(labFailure(stage,error))
   }
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
