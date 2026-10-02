@@ -16,14 +16,14 @@ export function labFailure(stage,error) {
     .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g,'')
     .replace(/-----BEGIN[\s\S]*?-----END[^-]*-----/g,'[redacted]')
     .replace(/\b(?:postgres(?:ql)?|https?|wss?):\/\/[^\s"'<>]+/gi,'[url]')
-    .replace(/\b(password|secret|token|authorization|api[_ -]?key|service[_ -]?role|anon[_ -]?key|pin)\b\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi,'$1=[redacted]')
+    .replace(/\b([\w-]*(?:password|secret|token|authorization|api[_ -]?key|service[_ -]?role|anon[_ -]?key|pin)[\w-]*)["']?\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi,'$1=[redacted]')
     .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[email]')
     .replace(/[A-Za-z0-9_+/=-]{20,}/g,'[redacted]')
-    .trim().slice(-6000).split('\n').slice(-20).join('\n') : ''
+    .trim().slice(-12000).split('\n').slice(-60).join('\n') : ''
   return 'Laboratory setup failed at: '+stage+' (exit '+(Number.isInteger(error?.status)?error.status:'unavailable')+'). No production operation was attempted.'+(detail ? '\nSupabase startup diagnostic:\n'+detail : '')
 }
 
-export async function startLab({check=false}={}) {
+export async function startLab({check=false,diagnose=false}={}) {
   assert.ok(process.env.CODESPACES === 'true' || (check && process.env.GITHUB_ACTIONS === 'true'), 'Use the Codespace terminal, not Windows')
   assert.ok(Number(process.versions.node.split('.')[0]) >= 20, 'Node 20 or newer required')
   const root=execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim()
@@ -46,8 +46,16 @@ export async function startLab({check=false}={}) {
     rmSync(work,{recursive:true,force:true}) // Only this launcher-created remote snapshot; DB volumes are retained.
   }
   try {
-    console.log('LAB: preparing isolated dependencies (first start can take several minutes)')
-    run('npm',['ci','--ignore-scripts'])
+    if(diagnose){
+      stage='diagnostic preflight'
+      console.log('DIAG: Node '+process.versions.node+'; platform '+process.platform)
+      console.log(run('docker',['version','--format','Docker client={{.Client.Version}} server={{.Server.Version}}']))
+      console.log(run('free',['-h']))
+      console.log(run('df',['-h',tmpdir()]))
+    }else{
+      console.log('LAB: preparing isolated dependencies (first start can take several minutes)')
+      run('npm',['ci','--ignore-scripts'])
+    }
     try {assert.equal(run('supabase',['--version']).trim(),'2.117.0');cli={bin:'supabase',prefix:[]}}
     catch {cli={bin:'npm',prefix:['exec','--yes','--package=supabase@2.117.0','--','supabase']};run(cli.bin,[...cli.prefix,'--version'])}
     const supa=args=>run(cli.bin,[...cli.prefix,...args])
@@ -66,7 +74,7 @@ export async function startLab({check=false}={}) {
     stage='local Supabase startup'
     console.log('LAB: starting local Supabase (first start downloads container images)')
     stopDatabase=true
-    supa(['start','--network-id','count-stock-lab-loopback'])
+    supa(['start','--network-id','count-stock-lab-loopback','--debug'])
     // Explicit local commands only; no link, db push, remote URL or db reset.
     stage='local migrations'
     console.log('LAB: applying local migrations')
@@ -75,6 +83,15 @@ export async function startLab({check=false}={}) {
     supa(['status','--help'])
     const status=JSON.parse(supa(['status','-o','json']))
     assert.equal(new URL(status.API_URL).origin,'http://127.0.0.1:54321')
+    if(diagnose){
+      stage='local API health'
+      for(const route of ['/auth/v1/health','/rest/v1/']){
+        const response=await fetch(status.API_URL+route,{headers:{apikey:status.ANON_KEY},signal:AbortSignal.timeout(15000)})
+        assert.ok(response.ok,'Local API unavailable: '+route)
+      }
+      console.log('DIAG: Docker, local startup, versioned migrations and Auth/REST health passed')
+      return {close}
+    }
     const require=createRequire(join(work,'package.json'))
     const {createClient}=require('@supabase/supabase-js')
     const db=createClient(status.API_URL,status.SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}})
@@ -185,9 +202,15 @@ export async function startLab({check=false}={}) {
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
   try{
-    const lab=await startLab()
+    const diagnose=process.argv.includes('--diagnose')
+    const lab=await startLab({diagnose})
+    if(diagnose){
+      await lab.close()
+      console.log('DIAGNOSIS COMPLETE: no app accounts or counts created; test data preserved')
+    }else{
     let closing=false
     const stop=async()=>{if(closing)return;closing=true;await lab.close();process.exit(0)}
     process.on('SIGINT',stop);process.on('SIGTERM',stop)
+    }
   }catch(e){console.error(e.message);process.exitCode=1}
 }
