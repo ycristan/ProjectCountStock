@@ -13,9 +13,14 @@ try{
   const {chromium}=await import('/tmp/count-stock-browser/node_modules/playwright/index.mjs')
   browser=await chromium.launch()
   let realtimeFrames=0
-  browser.on('context',ctx=>ctx.on('page',p=>p.on('websocket',ws=>{
-    if(ws.url().includes('/__supabase/realtime/v1/'))ws.on('framereceived',()=>realtimeFrames++)
-  })))
+  const newContext=browser.newContext.bind(browser)
+  browser.newContext=async options=>{
+    const ctx=await newContext(options)
+    ctx.on('page',p=>p.on('websocket',ws=>{
+      if(ws.url().includes('/__supabase/realtime/v1/'))ws.on('framereceived',()=>realtimeFrames++)
+    }))
+    return ctx
+  }
   const context=await browser.newContext(),page=await context.newPage()
   page.setDefaultTimeout(45000)
   stage='real administrator login'
