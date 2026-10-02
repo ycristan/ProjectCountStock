@@ -5,8 +5,10 @@ Preparação isolada, sem publicação. Código rastreado da branch é copiado p
 ## Iniciar
 Na branch codex/team-flow-foundation, dentro do terminal do Codespace:
 ```bash
-node scripts/codespace-lab.mjs
+test "$(git branch --show-current)" = "codex/team-flow-foundation" && git fetch origin codex/team-flow-foundation && git merge --ff-only FETCH_HEAD && node scripts/codespace-lab.mjs
 ```
+
+O comando confirma a branch e atualiza somente por avanço linear. Se houver conflito com alterações existentes, para sem apagá-las; não executar reset/checkout forçado.
 
 Primeiro início baixa ferramentas e constrói o app. CLI Supabase fixado em 2.117.0; dependências do aplicativo vêm do lockfile com npm ci. Não usa login/link/db push, URL remota, dump de produção ou reset automático. Migrações versionadas constroem o banco local de teste.
 
@@ -30,6 +32,6 @@ Ctrl+C para aplicação/serviços locais, preservando banco sintético. Pare tam
 6. Observar atualização ao vivo; não confundir fallback de 15 segundos com comprovação de WebSocket no domínio do Codespaces.
 
 Bloco 4 é testável; pedido individual nas telas, conciliação, assinaturas e fechamento completos ainda são próximos blocos. Não tratar ausência desses botões como implementação concluída.
-CI usa o mesmo launcher e reutiliza a verificação real de contagem/monitor de 3/4/5 pessoas. Simula gateway local, não comprova autenticação externa do GitHub. Evidência registrada no estado atual após resultado.
+CI usa o mesmo launcher e reutiliza a verificação real de contagem/monitor de 3/4/5 pessoas. Simula gateway local, não comprova autenticação externa do GitHub. Resultado aprovado: https://github.com/ycristan/ProjectCountStock/actions/runs/37006686672 no código 1da71ca9a2d7258e0d147d79f901a03a12640209.
 
 Ponytail full/Review: CLI existente, biblioteca padrão Node, verificações do bloco 4 reutilizadas; nenhuma dependência de produção ou mudança de regra de negócio. Snapshot temporário evita introduzir modo laboratório no app de produção. Lean already. Ship. (complexidade; não substitui testes).

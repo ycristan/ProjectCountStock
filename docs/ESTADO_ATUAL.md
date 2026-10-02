@@ -1,6 +1,18 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-09-25
+Atualizado: 2026-10-02
+
+## Laboratório remoto preparado — 2026-10-02
+Código validado: `1da71ca9a2d7258e0d147d79f901a03a12640209`; [teste real do launcher aprovado](https://github.com/ycristan/ProjectCountStock/actions/runs/37006686672).
+- [Regressão de banco/compatibilidade também aprovada](https://github.com/ycristan/ProjectCountStock/actions/runs/37006686721) no mesmo código.
+- Comando e instruções em [CODESPACE_LAB.md](./CODESPACE_LAB.md). Banco Supabase sintético e aplicativo no Codespace, nunca cópia de dados pessoais/produção. Arquivos modificados são preservados; execução usa snapshot rastreado temporário.
+- Chromium comprovou login admin, ações SSR, PINs, equipes 3/4/5, contagem cega, Active/Inactive/WHS/BPU1/peso, retry/histórico, bloqueios e monitor pelo gateway; frames WebSocket recebidos no caminho proxy local.
+- Isolamento: API somente loopback, porta do app explicitamente privada, ambiente produtivo removido, acessos sintéticos em arquivo remoto ignorado pelo Git. Sem novas dependências de produção ou alteração de regra do aplicativo; adaptações URL/cookie somente no snapshot.
+- **TESTE MANUAL NECESSÁRIO: somente no Codespace**, depois de LAB READY. Validar login/PINs, busca de ativo/inativo, contagem pelos contadores e acompanhamento do Independente. CI não comprova autenticação/encaminhamento privado externo do GitHub nem o WebSocket nesse domínio.
+- Bloco 4 está testável no laboratório; bloco 5 (pedido individual/aceite/rejeição nas telas), conciliação e assinaturas continuam pendentes. Não anunciar T55 ou encerramento completo.
+- Nada publicado/mergeado/aplicado na produção ou Preview compartilhada. Memórias históricas abaixo descrevem etapas anteriores; prioridade seguinte é bloco 5 após acesso ao laboratório.
+- Ponytail full/Review: reutilizadas verificações e componentes existentes, CLI e stdlib; sem framework extra. Leitura/revisão não substituem os testes.
+
 
 ## Bloco 3B — cadastro variável e recuperação validados na branch
 Formulário opt-in cria equipes de 3/4/5 pessoas (sem máximo artificial de cinco), com N-1 contadores, um Independente e PINs de equipe/pessoais de quatro dígitos. Cartões existentes reutilizados. Plano operacional privado recupera Auth parcialmente provisionado; todos os vínculos do lote são publicados na mesma transação. Reserva protege PIN e sessão contra criação legada concorrente. Qualquer admin protegido pode retomar; metadados editáveis não autorizam papéis nem apropriação de identidades.
