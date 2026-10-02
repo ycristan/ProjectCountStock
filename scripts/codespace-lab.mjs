@@ -12,7 +12,7 @@ import { pathToFileURL } from 'node:url'
 
 // Only local startup stderr is reported; redact secrets/URLs and never print stdout keys.
 export function labFailure(stage,error) {
-  const detail=stage==='local Supabase startup' ? String(error?.stderr || '')
+  const detail=(stage==='local Supabase startup' || stage.startsWith('network probe')) ? (String(error?.stdout || '')+'\n'+String(error?.stderr || ''))
     .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g,'')
     .replace(/-----BEGIN[\s\S]*?-----END[^-]*-----/g,'[redacted]')
     .replace(/\b(?:postgres(?:ql)?|https?|wss?):\/\/[^\s"'<>]+/gi,'[url]')
@@ -56,8 +56,8 @@ export async function startLab({check=false,diagnose=false}={}) {
       console.log('LAB: preparing isolated dependencies (first start can take several minutes)')
       run('npm',['ci','--ignore-scripts'])
     }
-    try {assert.equal(run('supabase',['--version']).trim(),'2.111.0');cli={bin:'supabase',prefix:[]}}
-    catch {cli={bin:'npm',prefix:['exec','--yes','--package=supabase@2.111.0','--','supabase']};run(cli.bin,[...cli.prefix,'--version'])}
+    try {assert.equal(run('supabase',['--version']).trim(),'2.117.0');cli={bin:'supabase',prefix:[]}}
+    catch {cli={bin:'npm',prefix:['exec','--yes','--package=supabase@2.117.0','--','supabase']};run(cli.bin,[...cli.prefix,'--version'])}
     const supa=args=>run(cli.bin,[...cli.prefix,...args])
     stage='local database configuration'
     console.log('LAB: initializing local database configuration')
@@ -69,6 +69,24 @@ export async function startLab({check=false,diagnose=false}={}) {
     stage='loopback Docker network'
     try {run('docker',['network','inspect','count-stock-lab-loopback'])}
     catch {run('docker',['network','create','-o','com.docker.network.bridge.host_binding_ipv4=127.0.0.1','count-stock-lab-loopback'])}
+    if(diagnose){
+      stage='network probe container'
+      console.log('DIAG: network options '+run('docker',['network','inspect','count-stock-lab-loopback','--format','{{json .Options}}']).trim())
+      const probe='count-stock-net-probe-'+randomUUID()
+      const id=run('docker',['run','--rm','-d','--name',probe,'--network','count-stock-lab-loopback','busybox:1.37.0',
+        'sh','-c','while true; do printf "TCP_OK\\n" | nc -l -p 5432; done']).trim()
+      assert.match(id,/^[a-f0-9]{64}$/)
+      try{
+        await delay(500)
+        stage='network probe DNS'
+        run('docker',['run','--rm','--network','count-stock-lab-loopback','busybox:1.37.0','nslookup',probe])
+        console.log('DIAG: container DNS passed')
+        stage='network probe TCP'
+        const reply=run('docker',['run','--rm','--network','count-stock-lab-loopback','busybox:1.37.0','nc','-w','5',probe,'5432'])
+        assert.ok(reply.includes('TCP_OK'),'Cross-container TCP response missing')
+        console.log('DIAG: cross-container TCP passed')
+      }finally{run('docker',['rm','-f',id])}
+    }
     stage='Supabase startup help'
     supa(['start','--help'])
     stage='local Supabase startup'

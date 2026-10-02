@@ -7,7 +7,7 @@ import { startLab, labFailure } from '../../scripts/codespace-lab.mjs'
 import { verifyTeamCountBrowser } from '../http/team-count-browser.mjs'
 assert.equal(process.env.GITHUB_ACTIONS,'true')
 const privateText='DO_NOT_LOG'
-const failure=labFailure('local Supabase startup',{status:1,stdout:privateText,
+const failure=labFailure('local Supabase startup',{status:1,stdout:'token='+privateText,
   stderr:'Unrecognized Docker failure: unsupported option --network-id\nPOSTGRES_PASSWORD='+privateText+' "password":"'+privateText+'" secret="'+privateText+'" https://example.invalid/?token='+privateText+' '+privateText.repeat(3)})
 assert.match(failure,/Unrecognized Docker failure: unsupported option --network-id/)
 assert.ok(!failure.includes(privateText))
