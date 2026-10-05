@@ -63,7 +63,10 @@ export async function startLab({check=false,diagnose=false}={}) {
     console.log('LAB: initializing local database configuration')
     supa(['init','--help']);supa(['init'])
     const config=join(work,'supabase/config.toml')
-    writeFileSync(config,readFileSync(config,'utf8').replace(/^project_id = .*$/m,'project_id = "count-stock-lab"'))
+    const settings=readFileSync(config,'utf8')
+    const analytics=/(\[analytics\][^\[]*?\benabled\s*=\s*)true\b/
+    assert.match(settings,analytics,'Generated analytics configuration changed')
+    writeFileSync(config,settings.replace(/^project_id = .*$/m,'project_id = "count-stock-lab"').replace(analytics,'$1false'))
     stage='Docker connection'
     run('docker',['info'])
     stage='loopback Docker network'

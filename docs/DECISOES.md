@@ -199,3 +199,7 @@ Código validado: `1da71ca9a2d7258e0d147d79f901a03a12640209`; [teste real do lau
 - Bloco 4 está testável no laboratório; bloco 5 (pedido individual/aceite/rejeição nas telas), conciliação e assinaturas continuam pendentes. Não anunciar T55 ou encerramento completo.
 - Nada publicado/mergeado/aplicado na produção ou Preview compartilhada. Memórias históricas abaixo descrevem etapas anteriores; prioridade seguinte é bloco 5 após acesso ao laboratório.
 - Ponytail full/Review: reutilizadas verificações e componentes existentes, CLI e stdlib; sem framework extra. Leitura/revisão não substituem os testes.
+
+
+## Laboratório: analytics opcional — 2026-10-05
+Desabilitar analytics/Logflare somente no config temporário do laboratório: não é dependência dos testes de contagem e apresentou falha de inicialização. Preservar Auth, REST, Realtime, Storage e verificações de saúde. Isto não desativa Sentry em produção. DNS/TCP passaram; startup completo e teste manual continuam pendentes.

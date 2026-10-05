@@ -1,6 +1,11 @@
 # Estado atual e prioridades
 
-Atualizado: 2026-10-02
+Atualizado: 2026-10-05
+
+## Bloqueio atual do laboratório — 2026-10-05
+O Codespace comprovou DNS e TCP entre contêineres em 8a157997. A inicialização ainda falhou: Logflare reportou "No Free Plan created yet in database"; três serviços ficaram unhealthy. O launcher passa a desabilitar apenas analytics na configuração temporária gerada. Banco, Auth, Realtime e Storage permanecem habilitados. Configuração conferida contra o template oficial da CLI 2.117.0; execução completa no Codespace ainda pendente.
+A aprovação histórica abaixo não comprova o startup atual: aquele workflow preparava o Supabase antes do launcher. Não considerar o laboratório utilizável até LAB READY e teste manual de login/contagem/monitor. Não publicar PRs como validadas por este ambiente enquanto isso estiver pendente.
+Ponytail full/Review: ajuste nativo de configuração, sem dependência ou alteração de regra do app; nenhuma simplificação adicional identificada.
 
 ## Laboratório remoto preparado — 2026-10-02
 Código validado: `1da71ca9a2d7258e0d147d79f901a03a12640209`; [teste real do launcher aprovado](https://github.com/ycristan/ProjectCountStock/actions/runs/37006686672).
