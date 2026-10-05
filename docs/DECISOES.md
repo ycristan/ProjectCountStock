@@ -64,3 +64,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Memória e laboratório (2026-10-05)
 - Memória única em `docs/` na `main`; `CLAUDE.md` só importa `AGENTS.md`; `.claude/memory/`, handoffs e diários de estado removidos. Motivo: três memórias concorrentes se contradiziam e enganavam agentes novos.
 - Laboratório no Codespace abandonado (cerca de 10 commits sem chegar a um servidor estável). Validação ponta a ponta passa a ser feita pelo agente em banco descartável, com prints e logs como evidência.
+
+## Limpeza de sobras (2026-10-05)
+- Removida a interface de admin antiga em `app/(admin)/` (rotas `/sessao`, `/inventario`, `/upload` fora da proteção `/admin` do `proxy.ts`; os dados já eram protegidos por `isAdmin()`), stubs `export {}`, `ProgressoClient` sem uso, logo do rebrand (`NextChainMark`) e ações legadas `uploadInventory` / `buscarInventarioParaDownload`. Motivo: superfície morta que confundia agentes e Yuri.
+- Telas de admin só existem sob `/admin`.

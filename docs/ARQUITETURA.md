@@ -9,7 +9,7 @@
 - **EmailJS:** envio do resultado de sessão solo (`lib/send-solo-results-email.ts`).
 
 ## Áreas do código
-- `app/admin/`: telas administrativas (a rota usada é `/admin/sessao`; `app/(admin)/` também existe, confirmar qual arquivo serve a rota antes de editar).
+- `app/admin/`: telas administrativas; só rotas sob `/admin` recebem a checagem de admin do `proxy.ts`. Não criar telas de admin fora de `/admin`.
 - `app/(counter)/`: telas da equipe (busca, finalizar, monitor, reconciliacao). `app/solo/`: contador solo.
 - `actions/`: Server Actions; toda mutação valida o chamador.
 - `lib/supabase-client.ts` → `createClient()` no navegador (NÃO existe `createBrowserClient`; errar o nome quebra o build).
