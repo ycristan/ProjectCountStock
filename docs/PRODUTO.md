@@ -1,27 +1,33 @@
 # Produto — Count Stock
 
 ## Objetivo
-Sistema web para contagem física de inventário em warehouse. Ele reduz divergências ao separar responsabilidades, registrar contagens e conduzir a reconciliação antes de consolidar o resultado.
+Contagem física de estoque por warehouse, com responsabilidades separadas, conferência e resultados preservados. Primeira contagem real (2026-07-08): contagem + reconciliação em 1 dia, contra ~10 h + 1 semana do processo manual.
 
 ## Usuários
-- **Administrador:** importa inventário, cria sessões e equipes, acompanha o progresso, encerra/combina resultados e administra a modalidade solo.
-- **Contador 1 e Contador 2:** registram suas próprias contagens sem ver a contagem do outro.
-- **Independente:** atua na reconciliação dos itens com divergência.
-- **Contador solo fixo:** recebe sessões solo atribuídas, pode ter lista de itens restrita e encerra sua própria sessão.
+- **Administrador:** importa inventário, cria sessões e equipes, acompanha, aceita resultados, consolida e administra o solo. Nunca lança contagem.
+- **Contadores:** contam às cegas, sem ver a contagem dos colegas.
+- **Independente:** monitora a equipe, decide pedidos de finalização e registra a conciliação.
+- **Contador solo fixo:** conta sessões solo atribuídas, com lista de itens opcional, e encerra a própria sessão.
 
-## Fluxo principal
-1. Administrador importa ou atualiza o inventário.
-2. Cria uma sessão e equipes.
-3. Contadores 1 e 2 registram contagens cegas.
-4. O sistema compara resultados; itens divergentes vão para reconciliação.
-5. O independente resolve divergências.
-6. O administrador consolida as equipes e fecha a sessão.
-7. O sistema permite exportar os resultados.
+## Fluxo publicado hoje (legado de equipes)
+Equipe fixa de três: Contador 1, Contador 2 e Independente. C1 e C2 contam; divergências viram itens de reconciliação; o Independente resolve; o admin combina as equipes e encerra a sessão.
 
-## Regras de negócio importantes
-- Itens de inventário com histórico não são apagados: ficam inativos quando removidos da planilha.
-- Um contador não pode visualizar nem alterar a contagem de outro.
-- Após o fechamento, não pode haver novas contagens naquela sessão.
-- Formato exibido de quantidade: `casos+unidades`, por exemplo `10+21`.
-- Contagem por peso desconta tara das caixas e converte peso líquido usando o peso médio do item.
-- Para BPU igual a 1, a contagem é somente em unidades.
+## Novo fluxo de equipes — aprovado em 2026-09-21, em implementação (não publicado)
+Fonte normativa: [TEAM_COUNT_FLOW.md](./TEAM_COUNT_FLOW.md). Resumo, sem substituir o contrato:
+- Equipes de tamanho variável, contadores cegos entre si e um Independente; áreas divididas fisicamente, não no sistema.
+- Independente consulta e monitora; não conta, salvo substituição autorizada.
+- Contador pede finalização e fica bloqueado; Independente aceita ou rejeita cada pedido. Rejeição libera, sem campo de motivo.
+- Depois dos aceites, conciliar ausências e divergências. Valores iguais por qualquer método dispensam conciliação. Todos por peso: diferença até metade do BPU exige decisão explícita do Independente (aceitar o maior ou conciliar).
+- Independente submete a equipe. Admin aceita ou pede recontagem só de produtos contados pela equipe.
+- Assinaturas (desenho ou PIN) ou ausências formalizadas; a primeira confirmação congela; a última encerra a equipe e revoga seus acessos.
+- Equipes encerram separadamente e ficam imutáveis. No consolidado: ativo não contado = zero; inativo não contado não gera linha.
+
+## Regras gerais
+- Itens com histórico nunca são apagados: saem da planilha → ficam inativos.
+- Um contador não vê nem altera a contagem de outro.
+- Sessão fechada não aceita novas contagens. Resultado fechado não é recalculado por mudança de cadastro.
+- Exibição de quantidade sempre `cases+units` (ex.: `10+21`), sem rótulos.
+- Contagem por peso desconta a tara das caixas e converte em unidades pelo peso médio.
+- BPU ≥ 1. Com BPU 1, Cases/Pallets ficam desativados; Units e peso (se Weight Avg > 0) continuam.
+- Inventário por warehouse: ver [INVENTORY_WAREHOUSES.md](./INVENTORY_WAREHOUSES.md).
+- Solo não segue as regras do novo fluxo de equipes (sem zero automático).
