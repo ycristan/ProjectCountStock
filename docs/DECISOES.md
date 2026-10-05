@@ -203,3 +203,7 @@ Código validado: `1da71ca9a2d7258e0d147d79f901a03a12640209`; [teste real do lau
 
 ## Laboratório: analytics opcional — 2026-10-05
 Desabilitar analytics/Logflare somente no config temporário do laboratório: não é dependência dos testes de contagem e apresentou falha de inicialização. Preservar Auth, REST, Realtime, Storage e verificações de saúde. Isto não desativa Sentry em produção. DNS/TCP passaram; startup completo e teste manual continuam pendentes.
+
+
+## Porta do laboratório — 2026-10-05
+A administração de porta via gh falhou após o aplicativo iniciar. Usar encaminhamento nativo do Codespaces e conferir manualmente Private na porta 3100 antes do acesso. O launcher permanece ligado a 127.0.0.1 e não modifica visibilidade. Não exigir token adicional para essa operação. Referência: https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace .

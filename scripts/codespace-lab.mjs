@@ -203,10 +203,8 @@ export async function startLab({check=false,diagnose=false}={}) {
     })
     await new Promise((done,fail)=>{gateway.once('error',fail);gateway.listen(3100,'127.0.0.1',done)})
     if(!check){
-      stage='private port'
-      assert.match(process.env.CODESPACE_NAME || '',/^[a-z0-9-]+$/)
-      run('gh',['codespace','ports','visibility','--help'])
-      run('gh',['codespace','ports','visibility','3100:private','-c',process.env.CODESPACE_NAME],root)
+      stage='laboratory access file'
+      console.log('Before opening the app: Ports > 3100 > Port Visibility > Private.')
       const access=join(root,'.count-stock-lab-access.json')
       writeFileSync(access,JSON.stringify({warning:'SYNTHETIC LAB ONLY. Do not share this file.',admins},null,2),{mode:0o600})
       chmodSync(access,0o600)

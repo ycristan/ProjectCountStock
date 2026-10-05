@@ -2,10 +2,11 @@
 
 Atualizado: 2026-10-05
 
-## Bloqueio atual do laboratório — 2026-10-05
-O Codespace comprovou DNS e TCP entre contêineres em 8a157997. A inicialização ainda falhou: Logflare reportou "No Free Plan created yet in database"; três serviços ficaram unhealthy. O launcher passa a desabilitar apenas analytics na configuração temporária gerada. Banco, Auth, Realtime e Storage permanecem habilitados. Configuração conferida contra o template oficial da CLI 2.117.0; execução completa no Codespace ainda pendente.
-A aprovação histórica abaixo não comprova o startup atual: aquele workflow preparava o Supabase antes do launcher. Não considerar o laboratório utilizável até LAB READY e teste manual de login/contagem/monitor. Não publicar PRs como validadas por este ambiente enquanto isso estiver pendente.
-Ponytail full/Review: ajuste nativo de configuração, sem dependência ou alteração de regra do app; nenhuma simplificação adicional identificada.
+## Acesso ao laboratório — 2026-10-05
+Execução enviada pelo usuário em 2c35cc58 passou startup Supabase, migrations, fixtures, build e abertura do gateway. Falhou depois, na etapa private port (comando gh); o log não identifica a razão específica do exit 1.
+Removida a dependência desse comando administrativo para manter o app iniciado. Antes de abrir o app, conferir manualmente Ports > 3100 > Port Visibility > Private. Processo continua ligado somente ao loopback; nenhuma porta é tornada pública pelo launcher.
+TESTE MANUAL PENDENTE: chegar a LAB READY, confirmar Private, abrir porta 3100 e entrar com admin sintético do arquivo remoto .count-stock-lab-access.json. Depois seguir CODESPACE_LAB.md para contagem/monitor. Não declarar o percurso do navegador validado.
+A aprovação histórica abaixo usava Supabase previamente iniciado no CI; não comprova sozinha o launcher atual. Ponytail Review: removidas três operações dispensáveis, sem nova dependência ou mudança no app.
 
 ## Laboratório remoto preparado — 2026-10-02
 Código validado: `1da71ca9a2d7258e0d147d79f901a03a12640209`; [teste real do launcher aprovado](https://github.com/ycristan/ProjectCountStock/actions/runs/37006686672).

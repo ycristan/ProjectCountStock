@@ -12,7 +12,7 @@ O comando confirma a branch e atualiza somente por avanço linear. Se houver con
 
 Primeiro início baixa ferramentas e constrói o app. CLI Supabase fixado em 2.117.0; dependências do aplicativo vêm do lockfile com npm ci. Não usa login/link/db push, URL remota, dump de produção ou reset automático. Migrações versionadas constroem o banco local de teste.
 
-Porta 3100 é explicitamente privada pelo GitHub CLI. Se essa confirmação falhar, o laboratório é encerrado, não exposto publicamente. Abra o link LAB READY/aba Ports. Não publique nenhuma porta do banco/Studio. Fluxo privado de autenticação e WebSocket no domínio real do Codespaces ainda requer avaliação manual.
+O launcher não depende do comando de administração de portas do GitHub CLI. Após LAB READY, na aba Ports adicione 3100 se necessário e confirme Port Visibility > Private antes de abrir o navegador. Private é o padrão do Codespaces, mas uma porta previamente alterada precisa ser conferida. O processo escuta somente em 127.0.0.1. Não publique nenhuma porta do banco/Studio. Fluxo privado de autenticação e WebSocket no domínio real do Codespaces ainda requer avaliação manual.
 
 Dois admins sintéticos são gerados a cada início; contas anteriores e contagens não são apagadas. Os acessos ficam exclusivamente em .count-stock-lab-access.json (ignorado pelo Git, permissão 0600), aberto no editor quando disponível. Não compartilhar arquivo, credenciais ou cartões. Dados fictícios permanecem nos volumes do Codespace; não há garantia de conservação se o Codespace for excluído.
 
