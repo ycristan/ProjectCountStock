@@ -79,10 +79,10 @@ export async function startLab({check=false,diagnose=false}={}) {
       try{
         await delay(500)
         stage='network probe DNS'
-        run('docker',['run','--rm','--network','count-stock-lab-loopback','busybox:1.37.0','nslookup',probe])
+        run('docker',['run','--rm','--network','count-stock-lab-loopback','busybox:1.37.0','nslookup',probe+'.'])
         console.log('DIAG: container DNS passed')
         stage='network probe TCP'
-        const reply=run('docker',['run','--rm','--network','count-stock-lab-loopback','busybox:1.37.0','nc','-w','5',probe,'5432'])
+        const reply=run('docker',['run','--rm','--network','count-stock-lab-loopback','busybox:1.37.0','nc','-w','5',probe+'.','5432'])
         assert.ok(reply.includes('TCP_OK'),'Cross-container TCP response missing')
         console.log('DIAG: cross-container TCP passed')
       }finally{run('docker',['rm','-f',id])}
