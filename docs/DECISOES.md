@@ -73,3 +73,6 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Prazo da contagem de 02/01/2027 (2026-10-05)
 - Datas-limite: fluxo novo em produção até 27/11; contagem simulada com pessoas reais até 11/12; congelamento de 12/12 a 02/01. Motivo: blocos restantes são os mais delicados e fim de ano é janela ruim para publicar.
 - Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independente no legado e contar 02/01 no fluxo antigo. A sessão de equipes aberta desde 01/10 é de teste.
+
+## Agente único (2026-10-05)
+- O projeto passa a ter um único agente (Claude). `AGENTS.md` foi incorporado ao `CLAUDE.md` e removido; o CI recusa a volta de `AGENTS.md`. O trabalho útil do agente anterior é absorvido por revisão, sem menções a ele nos documentos.
