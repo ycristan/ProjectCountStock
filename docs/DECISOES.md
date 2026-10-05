@@ -76,3 +76,9 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 
 ## Agente único (2026-10-05)
 - O projeto passa a ter um único agente (Claude). `AGENTS.md` foi incorporado ao `CLAUDE.md` e removido; o CI recusa a volta de `AGENTS.md`. O trabalho útil do agente anterior é absorvido por revisão, sem menções a ele nos documentos.
+
+## Auditoria da base do fluxo de equipes (2026-10-05)
+- Base mantida, sem reescrita: autorização no banco, retry idempotente e histórico estão corretos e testados. O cadastro de equipes é mais complexo do que o necessário, mas fica; nenhum mecanismo desse porte nos blocos 5–12.
+- Correções aprovadas para os próximos blocos: carregar o inventário uma vez e recarregar só as contagens; tela de equipe com o mesmo seletor "Add to Count / Edit Count" das telas atuais; monitor em `cases+units`; conferir o limite de tentativas de login do Supabase (PIN de 4 dígitos).
+- Pesagem: guardar peso bruto, número de caixas e rodadas de cada lançamento por peso. Esses dados e o histórico de edições aparecem num menu admin "Audit Count", que exporta tudo o que cada pessoa lançou.
+- PR só de documentação pode ser mergeada pelo agente após CI verde. Motivo: tirar de Yuri aprovações sem risco.
