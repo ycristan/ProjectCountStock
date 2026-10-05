@@ -13,7 +13,6 @@ Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consu
 ## Decisões pendentes de Yuri
 1. Regressão do Independente (vinda da PR #63): segundo a PR #72, contas de equipe criadas depois da #63 caem na tela de lançamento e o Independente vê "Finalise". Correção existe na #74, não publicada, não reverificada em produção. Há uma sessão de equipes aberta desde 01/10, ainda sem equipes. Decidir: publicar a correção isolada antes da próxima contagem real?
 2. Revisar as regras pré-aprovadas com o agente.
-3. Ativar no GitHub "Automatically delete head branches".
 
 ## A verificar
 - Inventário BDS hoje: 2.301 produtos (460 ativos / 1.841 inativos). Logo após a recuperação: 2.295 (446 / 1.849). Sem registro da mudança.
