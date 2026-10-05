@@ -1,209 +1,71 @@
 # Decisões do projeto
 
-## Como trabalhamos
-- O repositório GitHub é a fonte de verdade; toda alteração vai por branch e PR.
-- Yuri define comportamento de negócio; o agente propõe, explica e implementa a solução técnica.
-- A comunicação com Yuri deve ser em português simples.
-- Não fazer merge em `main` sem autorização explícita.
+Registro de decisões e do motivo. **Só acréscimos**, no fim do arquivo: data, decisão, motivo (2 a 5 linhas). Evidências de teste ficam nas PRs.
+Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches das PRs #68, #71, #72, #73 e #74.
 
-## Banco de dados
-- Mudanças no Supabase devem existir como migration versionada em `supabase/migrations/`.
-- A aplicação pode exigir aplicação manual da migration no Supabase; o PR deve dizer claramente se há esse passo.
-- Dados de inventário com histórico são desativados, não excluídos.
+## Processo
+- GitHub é a fonte de verdade; toda mudança por branch + PR; merge com squash e só com autorização explícita de Yuri naquela vez (já houve dois merges não autorizados, incluindo o rebrand da PR #53, revertido).
+- Yuri define o negócio; o agente decide e executa a parte técnica e explica em português simples.
+- Após aprovar uma entrega, o agente segue sem pedir "continue". Para só por decisão de negócio nova, acesso, custo ou autorização de produção.
+- Toda entrega declara se há teste manual e, se houver, exatamente o que testar. Testes técnicos rotineiros não são transferidos para Yuri.
+- Nada de clone, arquivos, tokens ou variáveis do projeto no computador de Yuri. Exceção única (2026-09-18): backup local com pg_dump, autorizado por Yuri; nunca enviar backup ao repositório ou a Actions.
 
-## Segurança
-- Papéis e permissões não devem usar `user_metadata` como fonte de autorização.
-- Cada ação que altera dados precisa conferir permissão no servidor, mesmo que a rota já seja protegida visualmente.
-- O cliente com `service_role` só pode ser usado depois da conferência de autorização.
+## Banco de dados e segurança
+- Toda mudança de schema, RLS ou função vira migration versionada; a PR diz se há aplicação manual.
+- Autorização pela tabela protegida `app_user_access` (pode ter mais de um papel por usuário). `user_metadata` só guarda apresentação, como nome.
+- `service_role` só depois da conferência de autorização no servidor.
+- Inventário com histórico é desativado, nunca excluído.
+- Advisor: proteção contra senhas vazadas segue desativada (não alterada); aviso INFO de `app_user_access` sem policies é esperado (acesso só por funções protegidas). Não abrir acesso para sumir com o aviso.
+- Backup de 2026-09-18 foi lido integralmente por pg_restore, mas nunca restaurado em banco separado: não afirmar recuperação testada. Não fazer `restore --clean` em produção nem reverter código às cegas depois de cadastrar outras warehouses.
 
-## Produto
-- O contador solo usa uma conta fixa administrada pela tela de configurações; credenciais nunca são documentadas.
-- A abordagem antiga de login solo por cookie/PIN foi abandonada; não reintroduzir sem uma nova especificação.
+## Solo
+- Contador solo usa conta fixa administrada em Configurações, com login 2-PIN. Login por cookie/PIN foi abandonado; não reintroduzir sem nova especificação.
+- Proteções publicadas na PR #69 (2026-09-15): registros solo encerrados imutáveis, lista iniciada fechada, BPU bloqueado durante solo aberto.
 
+## Inventory e Warehouses (2026-09-14 a 2026-09-17)
+- Contrato completo em [INVENTORY_WAREHOUSES.md](./INVENTORY_WAREHOUSES.md). PR #65 tinha regras superadas e foi fechada sem merge.
+- Uma planilha por warehouse; WHS obrigatório e único no arquivo; a importação afeta só aquela warehouse, inclusive a inativação de ausentes.
+- Warehouses dinâmicas (não só Main/Service); nome novo exige confirmação do admin. ID interno estável permite renomear sem perder histórico. Comparação de WHS ignora só maiúsculas e espaços nas pontas.
+- Brand Code globalmente único. Sessão escolhe a warehouse e só vê os produtos dela.
+- 13 cabeçalhos fixos, em qualquer ordem: Brand Code, Brand Name, Category, Category1, BPU, Pallet Size, Weight AVG, BIN Location 1–4, Status, WHS. Weight AVG em gramas.
+- Planilha inválida é rejeitada inteira, nunca importada em parte. Duplicatas exigem escolha explícita da linha. Arquivo vazio não desativa tudo.
+- Importação em uma única transação, com autorização admin e revalidação no banco; qualquer erro reverte tudo.
+- Transferência de produto entre warehouses bloqueada com sessão ativa na origem ou destino.
+- BPU corrigido durante contagem: exige duas aprovações de admin, recalcula registros da sessão aberta sem recontagem física; fechados nunca mudam. **Ainda não implementado**: hoje edição de BPU fica bloqueada com equipe ou solo aberto.
+- Lista fechada iniciada não recebe produtos novos, nem por admin.
+- Exportação: ZIP com uma planilha por warehouse, ativos e inativos, com Status e WHS. Template Excel de upload disponível para download no app.
 
-## Autorização protegida
-- A fonte de autorização será a tabela protegida `app_user_access`, lida no servidor e nas políticas RLS. Ela poderá conter mais de um tipo de acesso por usuário.
-- `user_metadata` pode continuar a guardar apenas informação de apresentação, como nome; não concede permissões.
-- A migration de autorização precisa ser aplicada no Supabase antes de publicar o código que passa a depender dela.
+## Publicação da PR #70 (2026-09-18)
+- Merge autorizado por Yuri; migration `warehouse_inventory_import` aplicada pelo conector. Produtos e sessões existentes associados a Main, com hashes de 14 tabelas idênticos antes e depois.
 
-## Inventory e Warehouses — 2026-09-14
-- Regras consolidadas em [INVENTORY_WAREHOUSES.md](./INVENTORY_WAREHOUSES.md); consultar antes de implementar.
-- Distinguir decisões explícitas de Yuri, propostas técnicas e pendências. Não inferir regras ausentes a partir de validações antigas.
-- PR #65 contém regras superadas; não fazer merge.
-- Fluxo acordado: revisar especificação, depois implementar em etapas verificáveis.
-- Trabalho de código pelo GitHub, sem clone local; conectores/API primeiro conforme AGENTS.md.
+## Incidente de identidade de warehouse (2026-09-24, PR #75)
+- O upload "BDS Main Warehouse" criou uma identidade nova e moveu só os códigos presentes; os ausentes ficaram em Main (criado pela migration, não por upload de Yuri). Isso escondia inativos na busca (caso Kinder: 9888 ativo; 9816, 9767, 6152, 2746, 1231 e 1213 inativos).
+- Correção: criar warehouse nova é rejeitado se a planilha tiver Brand Code já cadastrado. Renomear deve preservar o ID.
+- Recuperação aplicada com `supabase/maintenance/recover-split-inventory.sql` (padrão ROLLBACK, `apply=true` só com aprovação). Main ficou vazio e preservado por histórico; seletor de sessão omite warehouses sem produtos.
+- Quatro sessões de teste foram encerradas com autorização de Yuri, sem apagar ou recalcular contagens.
 
-### Warehouses — complemento aprovado
-- Uma planilha por warehouse; WHS obrigatório e único no arquivo. Importação afeta apenas essa warehouse, inclusive inativação de produtos ausentes.
-- Cadastro dinâmico, sem limitar a Main/Service; novos nomes exigem confirmação administrativa. Identificação interna estável permite renomear sem perder vínculos/histórico.
-- Brand Code permanece globalmente único. Sessão escolhe warehouse e restringe seus produtos.
+## PINs e perfil Independente (2026-09-21, PR #72, não publicada)
+- PIN de equipe e PIN pessoal continuam com 4 dígitos. Senha interna do Auth é derivada do par de PINs: atende a política do Auth, mas NÃO aumenta segurança nem substitui limite de tentativas. Nunca aparece no cliente ou em logs.
+- Login tenta a senha derivada e, só em `invalid_credentials`, a senha PIN legada. Não redefinir credenciais existentes.
+- Regressão vinda da PR #63: busca, layout e reconciliação ainda liam papel/equipe de `user_metadata`; contas novas caem na tela de lançamento e o Independente vê "Finalise". A correção usa identidade protegida, manda o Independente para `/monitor` e bloqueia lançamento inicial dele no servidor e na RLS.
+- A PR #74 incorporou essas correções (sem o bloqueio total de busca do Independente, que contraria R02).
 
-### Decisões finais aprovadas — 2026-09-14
-- BPU corrigido com duas aprovações recalcula registros da sessão aberta sem recontagem física; futuros usam novo BPU, fechados são imutáveis. Manter trilha de aprovação.
-- BPU 1 permite contagem por peso se Weight Avg > 0, além de Units; Cases/Pallets desativados.
-- Lista fechada iniciada não recebe novos produtos nem por administrador.
-- Exportação completa em ZIP, uma planilha por WHS com ativos/inativos, Status e WHS.
-- WHS ignora caixa e espaços nas pontas. Transferência bloqueada durante sessão ativa na origem ou destino (restrição aceita por enquanto).
-- Todos os produtos e sessões atuais pertencem a Main; migração preserva histórico/resultados. Não existem itens Service.
+## Fluxo de equipes (2026-09-21 em diante)
+- Contrato aprovado em [TEAM_COUNT_FLOW.md](./TEAM_COUNT_FLOW.md); substitui, para o novo fluxo, a contagem tripla fixa, a tolerância em gramas, o admin iniciando conciliação, o encerramento conjunto e a rejeição de todos os registros de quem saiu.
+- Novo fluxo é opt-in por equipe; sessões legadas não são convertidas. Não manter dois fluxos completos indefinidamente.
+- Resultados de equipe assinada são imutáveis, inclusive frente a correções posteriores de BPU ou cadastro.
+- Autoria sempre derivada de `auth.uid()` e vínculo protegido, nunca de parâmetro ou metadata. Pedido, decisão e evento gravados na mesma transação; retry idempotente por UUID; revisão esperada impede decisão sobre tela desatualizada.
+- Eventos de finalização não guardam quantidades, PINs nem motivo livre. Contador lê só os próprios eventos.
+- Versões de resultado são seladas por revisão; só uma versão completa da revisão atual vai para assinatura; cancelar antes da primeira confirmação preserva a versão antiga.
+- Sem limite máximo de participantes (3/4/5 são cenários de teste). Cadastro: Auth provisionado fora da transação com recuperação do mesmo pedido; nada parcial é publicado e nenhum cartão sai antes de completar.
+- Seleção da lista delimitada Solo mostra Active e Inactive como a busca de contagem, ambos selecionáveis.
+- Monitor distingue ausência, zero explícito, igualdade e diferença provisória; não resolve conciliação automaticamente. Poll de segurança de 15 s complementa o Realtime.
 
-## Publicação das proteções solo — 2026-09-15
-- PR #69 e sua migration foram explicitamente autorizadas e publicadas. Não confundir esse escopo com implementação de warehouses ou aprovação dupla de equipes.
-- Migration no repositório: 20260914142358_solo_inventory_write_guards.sql; registro remoto do conector: 20260915071703 / solo_inventory_write_guards. Comparar nomes e SQL antes de sincronizar histórico; não reaplicar por divergência de timestamp.
-- Preservar testes e decisões da PR #69 ao atualizar esta branch documental em relação à main.
+## Memória e laboratório (2026-10-05)
+- Memória única em `docs/` na `main`; `CLAUDE.md` só importa `AGENTS.md`; `.claude/memory/`, handoffs e diários de estado removidos. Motivo: três memórias concorrentes se contradiziam e enganavam agentes novos.
+- Laboratório no Codespace abandonado (cerca de 10 commits sem chegar a um servidor estável). Validação ponta a ponta passa a ser feita pelo agente em banco descartável, com prints e logs como evidência.
 
-## Cabeçalhos aprovados — 2026-09-16
-- Modelo único: Brand Code, Brand Name, Category, Category1, BPU, Pallet Size, Weight AVG, BIN Location 1, BIN Location 2, BIN Location 3, BIN Location 4, Status, WHS.
-- BPU substitui Brand Purchase Unit. Weight AVG é em gramas.
-- Todas as colunas presentes, qualquer ordem no upload; valores opcionais podem ficar vazios. Regras detalhadas em INVENTORY_WAREHOUSES.md.
-
-## Testes e implementação incremental — 2026-09-17
-- Preservar contratos da PR #69: funções reais com dependências simuladas, sem usar skip/inverter expectativas para aparentar aprovação; testes da aplicação não substituem banco.
-- Proteções da PR #69 foram publicadas em 15/09, conforme registro acima; referências antigas a "proposta, sem produção" descrevem a etapa anterior à publicação.
-- PR #70 começa pelo formato/validação sem ligar gravações. Não aceitar parcialmente uma planilha inválida, nem desativar tudo ao receber arquivo vazio.
-- Resolução de duplicatas revalida a linha escolhida; seleção inexistente/repetida é rejeitada. WHS misturadas continuam proibidas mesmo se uma linha de outra WHS seria descartada.
-- Comparação de WHS normaliza apenas caixa e espaços nas pontas; não assumir que "Main" e "Main Warehouse" são sinônimos. O adaptador deverá preservar os identificadores formatados de Excel antes da validação.
-- Validador não cria warehouses, não autoriza usuários e não substitui a futura transação/constraints. Ativação do novo importador depende de warehouse e isolamento de sessões prontos em conjunto.
-
-## Base técnica da importação — 2026-09-17
-- Importação em uma única função transacional SECURITY INVOKER, com autorização administrativa protegida e revalidação do payload no banco. Não expor o RPC até concluir o isolamento de leitura/gravação das sessões e substituir o upload antigo.
-- Cadastro de WHS e substituição de produtos/BINs fazem parte da mesma transação; qualquer erro reverte tudo. Desativação de ausentes usa warehouse_id, nunca o inventário inteiro.
-- Associação inicial de registros a Main usa ADD COLUMN com default constante para não disparar UPDATE de sessões fechadas. Teste de upgrade compara todos os campos anteriores de nove tabelas.
-- Identidade da warehouse de uma sessão fica fixa desde sua criação. Mudança do nome da warehouse preserva IDs e vínculos. Transferência de produto respeita contagens ativas na origem/destino.
-- Edição/importação comum de BPU fica bloqueada enquanto houver equipe aberta; não introduzir bypass até existir operação dedicada com duas identidades aprovadoras e recálculo seguro. Preservada também a trava de solo da PR #69.
-- Importação e mudanças de ciclo de sessão/inventário usam o lock transacional já existente, tomado antes dos locks de linha. Leituras e contagens comuns não ganham esse lock global diretamente; medir contenção antes de elevar a escala.
-- A biblioteca Excel do npm estava na versão antiga 0.18.5. Esta branch usa a distribuição oficial SheetJS 0.20.3 e lockfile; validar importações/exportações legadas antes de publicar a mudança de dependência.
-- Referências técnicas consultadas: https://supabase.com/docs/guides/database/functions ; https://docs.sheetjs.com/docs/getting-started/installation/nodejs/ ; https://github.com/thejoshwolfe/yauzl . Changelog markdown do Supabase indisponível ao leitor web; referências de funções/CLI verificadas na documentação oficial.
-
-## Template Excel para download — 2026-09-17
-- Pedido explícito de Yuri: disponibilizar download do modelo do novo upload dentro do app.
-- Reutilizar os 13 cabeçalhos do validador. Uma folha, sem produtos fictícios ou linhas instrutivas importáveis; instruções ficam na interface.
-- Enquanto o upload antigo existir, mostrar aviso claro de incompatibilidade com o novo formato. Não publicar a PR antes dos critérios de isolamento/importação já estabelecidos.
-
-## Execução por entregas — 2026-09-17
-- Após aprovar uma entrega, Yuri não precisa autorizar cada passo técnico nem pedir continuidade. O agente executa implementação, correções e testes até concluir ou encontrar impedimento real.
-- Comunicação breve: progresso relevante, riscos ou decisões necessárias. Build isolado não é entrega funcional.
-- Interromper apenas por decisão de negócio não documentada, acesso indispensável, custo ou autorização de produção. Não confundir autonomia técnica com autorização para merge/migration em produção.
-- Ao encerrar, registrar estado verificável, evidências, pendências e próximo passo no repositório. Entregar link e roteiro curto de avaliação; não transferir testes técnicos rotineiros ao usuário.
-
-## Sem armazenamento local — regra reforçada
-- Não criar clones, arquivos do projeto, tokens ou variáveis de ambiente do projeto no computador de Yuri. Não orientar configuração de SENTRY_AUTH_TOKEN no Windows.
-- Testes descartáveis nos runners do GitHub continuam permitidos, sem segredos de produção. Credenciais sintéticas são geradas no runner e não são registradas no repositório.
-- Falta de acesso de leitura ao Sentry não autoriza solicitar armazenamento local nem declarar a captura do aplicativo inoperante.
-
-
-## Equipes — contrato aprovado em 2026-09-21
-O plano revisado de nove entregas e sua implementação foram aprovados. Regras normativas em [TEAM_COUNT_FLOW.md](./TEAM_COUNT_FLOW.md); [cenários](./TEAM_COUNT_TEST_MATRIX.md) estão planejados, não executados.
-Este contrato substitui para o novo fluxo a contagem tripla, a tolerância em gramas, o admin iniciando conciliação normal, o encerramento conjunto e a rejeição de todos os registros de quem saiu. Preservar a precedência e as exceções completas, sem copiar resumos contraditórios.
-Resultados de equipe assinada são imutáveis inclusive frente a correções posteriores de BPU/cadastro; não aplicar recálculo de sessão aberta sobre equipe já congelada/encerrada. Nenhuma nova implementação do fluxo de aprovação dupla de BPU está incluída por inferência.
-PR72 não está autorizada para publicação. Aprovação do plano permite branches/testes remotos, não merge/migration de produção. Entrega1 só documentação; seguir plano sem pedir reconfirmação das regras.
-
-## Fundação de equipes — 2026-09-22
-- PR #74 depende da #73; opt-in técnico por team_flows, sem converter sessões existentes. A migração é aditiva e a aplicação ainda não roteia para ela.
-- Identidade Auth separada de membership; posição lógica separada da pessoa que contou, preservando autoria em substituições. Não criar contador_3/contador_4 como colunas.
-- Revogação/visibilidade consultam vínculo e etapa atuais, não apenas JWT. Novas tabelas são somente leitura para authenticated e service_role até existirem comandos transacionais autorizados.
-- Estados/guardas de banco são fundação, não prova de processo completo: conciliação, evidências de confirmação e autorização dos comandos ainda dependem das próximas partes.
-- Testes de upgrade e testes de regras têm bancos descartáveis reinicializados entre si para não compartilhar sessões sintéticas abertas. Nunca remover travas para acomodar fixtures.
-
-- Preservar componentes físicos e parâmetros da contagem, não apenas total convertido: total canônico gerado pela mesma aritmética de convert_count. Histórico mantém componentes e total; correção administrativa de BPU continua sem comando autorizado neste bloco.
-- Em 22/09 a base passou nos 136 testes SQL, duas disputas concorrentes, upgrade e regressão HTTP (execução 35722151547). Isso não conclui a entrega 2 nem libera produção.
-
-## Comandos individuais — 2026-09-22
-- Autoria derivada de auth.uid() e vínculo protegido, nunca parâmetro livre ou metadata. Função interna elevada no schema private, wrappers públicos invoker; sem concessão de escrita nas tabelas.
-- Pedido/decisão/avanço da etapa e evento persistem na mesma transação. UUID de comando mais payload original permite retry sem reaplicar; revisão esperada impede decisão sobre tela antiga.
-- Eventos de finalização sem quantidades, PINs ou motivo livre. Contador lê apenas eventos próprios; independente da equipe/admin leem conforme vínculo protegido. Eventos não podem ser reescritos/excluídos.
-- Comandos deste bloco cobrem somente finalização normal; não simulam admin excepcional antes de implementar posse/substituição. Último aceite abre etapa de reconciliação, não aceita produtos nem submete equipe automaticamente.
-
-- Evidência dos comandos: commit f8326fcdc89a96539e8d4051c79d81221762b786, run35731209411: 170 SQL e Auth/PostgREST reais aprovados, incluindo concorrência/retry/revogação. Sem publicação ou interface nova ativada.
-
-## Versões de resultados — 2026-09-22
-- Snapshot relacional por equipe/revisão: versão com warehouse/equipe/participantes e itens com quantidade oficial, BPU/cadastro/locais e fontes originais. Campos de cadastro são copiados pelo banco, sem payload de identidade/metadata vindo do cliente.
-- Somente uma versão completa e selada da revisão atual pode ser escolhida para coleta. Cancelar antes da primeira confirmação libera seleção, preservando a versão antiga; nova revisão gera outra versão. Depois do congelamento não há troca.
-- Fontes são preservadas por registro/posição/pessoa/revisão/componentes/método. Não somar participantes para obter resultado da equipe.
-- Builder interno sem elevação/permissões de aplicativo; os futuros comandos devem entregar resultado validado. Estes testes de armazenamento não equivalem a algoritmo de conciliação, assinatura ou aprovação implementados.
-- Snapshots não acrescentam zero global e não alteram solo; apenas marcas efetivamente contadas pela equipe entram. R13 continua etapa9.
-
-- Validação aprovada: aad292839465853614831d64aeb084de8cd0f363, execução35735213309, 211 SQL mais Auth/PostgREST e regressões. Mudanças de cadastro testadas não alteram versões anteriores; correção de BPU pós-fechamento geral e relatórios consumidores ainda não testados/implementados.
-
-## Contexto protegido do participante — 2026-09-22
-- Consulta `my_team_flow_contexts` deriva usuário de auth.uid(), sem parâmetro de identidade nem user_metadata. Retorna somente vínculos próprios ativos em equipes/sessões abertas, papel, warehouse, etapa e revisão textual.
-- Independente compartilhado recebe todos os seus contextos; filtro opcional por equipe verifica o mesmo escopo. Não escolher a primeira equipe automaticamente. Admin monitor não é participante por inferência.
-- Helper SSR usa cookies e chave pública, sem service_role/cache/fallback legado. Rota de leitura `GET /api/team-flow/context` retorna no-store; equipe sem vínculo é 404, parâmetros inválidos 400 e falha de consulta 503 correlacionada.
-- Falha de consulta não vira lista vazia de equipes. Telemetria contém operação e erro genérico, sem identidade, cookies, PINs ou erro bruto do banco.
-- Esta consulta NÃO autoriza comandos de escrita: cada transação continua revalidando vínculo, papel, etapa e revisão. Nenhuma tela/login legado foi redirecionado; novo PIN, seleção visual e ativação ainda são etapas posteriores.
-
-Validação: commit 5203567c70b2ebd4842c5c607915585f6bdfbacb; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/35745578043. 224 asserções SQL (211 anteriores + 13 novas); upgrade, lint, duas disputas concorrentes, build, Auth/SSR/contexto, ZIP e comandos Auth/PostgREST passaram. Recebimento de telemetria comprovado somente no coletor isolado, não na conta Sentry hospedada.
-
-## Compatibilidade e verificação visual — 2026-09-24
-- Integrar as correções úteis de PINs da PR72 sem seu bloqueio consultivo do Independente. PINs pessoais/equipe continuam de quatro dígitos; senha derivada interna não aumenta segurança entrópica.
-- Login navega diretamente para destino de papel protegido; não depende de encadeamento por "/" numa resposta de Server Action.
-- Modo consultivo reutiliza busca sem formular lançamento; proteção efetiva também no servidor e RLS. Solo mantém default original.
-- Novo cadastro variável permanece pendente; teste de equipe legada de três pessoas não é T01 completo nem valida novo encerramento.
-- Evidência 44ec912cab3d6a0d8b4a6705773f9961f077c021, https://github.com/ycristan/ProjectCountStock/actions/runs/35978421959: 391 testes numéricos mais browser/Auth/Realtime reais aprovados. Preview READY permite somente avaliação manual sem escritas de teste. Nenhuma publicação em produção.
-
-
-## Incidente de identidade WHS — 2026-09-24
-Não confundir criação de WHS com renomeação: o novo nome não autoriza mover silenciosamente códigos existentes e deixar os ausentes atrás. PR #75 prepara proteção e recuperação controlada; ver WAREHOUSE_SPLIT_RECOVERY.md. Main foi criado pela migration, não por upload de Yuri. Preservar IDs de sessões históricas e testar a recuperação antes de pedir aplicação em produção.
-
-## Conferência da recuperação — 2026-09-24
-Sem banco separado disponível e sem custo adicional autorizado, oferecer conferência administrativa somente leitura explicitamente rotulada no Preview; não simular gravação bem-sucedida. Novo seletor de sessão omite cadastro sem produtos, mas considera inativos e preserva IDs históricos. Dados reais só serão recuperados na etapa operacional autorizada; Preview não é autorização de produção.
-
-## Entregas curtas e teste manual explícito — 2026-09-24
-Um bloco por execução, com implementação, testes e registro curto. Ordem operacional em TEAM_COUNT_TASKS.md; refina o plano aprovado, sem mudar regras.
-Ao encerrar todo bloco declarar TESTE MANUAL NECESSÁRIO ou Nenhum teste manual necessário neste bloco. Se necessário, fornecer link/ambiente, perfil, passos, resultado esperado e cuidados. Só pedir quando funcionalidade estiver disponível em ambiente seguro; não pedir gravações de teste no Preview que compartilha produção. Não transferir regressões técnicas rotineiras ao usuário.
-A recuperação de inventário da PR75 foi publicada/aplicada; os textos de preparação acima são históricos. Isso não autoriza publicar PR74.
-
-## Ponytail e bloco 2A — 2026-09-25
-Ponytail full é obrigatório antes/durante a escrita e Review ao concluir, sem remover proteções/testes. Regra reafirmada em AGENTS.md, não apenas no CLAUDE histórico.
-Lista delimitada Solo deve identificar Active/Inactive na escolha de brands, ativos primeiro, usando o padrão visual da contagem; ambos selecionáveis. Não alterar lista fechada iniciada. Implementação reservada ao bloco 2A.
-
-
-## Bloco 2A — seleção delimitada Solo
-Reutilizar ResultList da busca na seleção administrativa: Active antes de Inactive, mesmos rótulos/cores, ambos selecionáveis. Removido corte silencioso de oito resultados; área rolável mantém acesso a todos os correspondentes. Escopo WHS e exclusão dos já selecionados permanecem. Não altera lista iniciada, Auth, contagem ou banco de produção.
-
-
-## Cadastro variável — decomposição 3A/3B, 2026-09-25
-3A valida o armazenamento transacional privado de uma equipe inteira e retry; 3B integra provisionamento Auth recuperável, formulário e PIN/cartões. Não chamar 3A de cadastro funcional pronto. Builder só recebe identidades provisionadas confiáveis através da futura orquestração; não expor diretamente parâmetros de identidade ao cliente. Mantido em setup, sem concessões de acesso/contagem. Nenhum limite máximo de cinco foi introduzido no armazenamento; 3/4/5 são cenários de aceitação.
-A atomicidade demonstrada é só PostgreSQL, não Auth+Postgres. Falha/timeout na criação Auth precisa de recuperação/compensação restrita ao pedido antes de liberar o fluxo. PINs nunca entram em logs ou recibos claros. A migration de fundação segue não publicada; complemento versionado na mesma migration.
-
-## Bloco 3B — recuperação de provisionamento
-- Reserva técnica privada por sessão conserva nomes e PINs entre tentativas; somente admins protegidos podem ler/retomar. Qualquer admin pode retomar; registro conserva iniciador, recibos da publicação registram quem a concluiu.
-- Auth é provisionado fora da transação, com marcador protegido de propriedade da operação. O servidor nunca recebe IDs de Auth livres do formulário; banco resolve email + marcador protegido + confirmação. Marcador não determina papéis em execução.
-- Após falha não excluir contas: retomar as identidades pertencentes ao mesmo pedido. Antes de completar, nenhuma equipe/vínculo parcial é publicada e nenhum cartão é emitido. Plano operacional sensível não é log/recibo de auditoria; não incluir valores em telemetria.
-- Reserva de PIN serializada também com criação legada; builder permanece privado. Publicação do lote é transacional/idempotente e permanece em setup, sem habilitar contagem.
-- Ativação de desenvolvimento exige flag no servidor e seleção explícita do novo formulário. Habilitada somente no runner descartável; não configurar na produção/Preview compartilhado. Login novo mostra contexto protegido sem abrir contagem legada. Legado não é convertido.
-- Não há limite de cinco participantes: 3/4/5 são testes, botão permite adicionar contadores. Alterar cadastro reservado não é suportado durante recuperação; retry conserva payload original.
-
-Validação do bloco 3B: Código c28e2fa33c43cf3da1c187c704c84c678bd2fd59; execução https://github.com/ycristan/ProjectCountStock/actions/runs/36123374995. 31 novas asserções SQL, total 494 verificações (319 SQL + 138 contratos + 37 XLSX), além de upgrade, lint, concorrência, build e integrações Auth/HTTP/Chromium/Realtime. Falhas injetadas mantêm o mesmo plano/PINs e não publicam equipes parciais; duas janelas concorrentes criam uma única equipe. Ponytail Review removeu armazenamento redundante de IDs e configuração duplicada; sem dependências novas. Retentativa pressupõe sessão aberta e identidades preservadas: exclusões/alterações externas exigem diagnóstico, não recriação silenciosa. Novo fluxo continua sem ativação de contagem/publicação; próximo bloco 4. Nenhum teste manual necessário neste bloco.
-
-## Bloco 4 — contagem e monitor variáveis, 2026-10-01
-Código 1875d2a13add577f7e859a80ff93c7ddd5d413e2; execução aprovada https://github.com/ycristan/ProjectCountStock/actions/runs/36868880572. 494 verificações existentes (319 SQL + 138 contratos + 37 XLSX), mais novos percursos reais Auth/HTTP/Chromium/Realtime.
-- Novo fluxo opt-in: admin inicia cada equipe pelo monitor; participantes escolhem seu contexto explicitamente. Sem conversão do legado.
-- Reutilizados CountForm, SearchInput e ResultList. Ativos/inativos consultáveis na WHS da sessão; somente contador lança inicialmente. Admin/Independente consultam e acompanham N colunas, sem inserir contagem inicial.
-- RPC deriva autoria/vínculo/posição de auth.uid(), valida fase/finalização/revogação/WHS/opcionais/BPU1 e parâmetros atuais do produto. Revisão por registro evita edição sobre tela antiga; recibo privado torna retry da mesma operação idempotente. Originais ficam no histórico.
-- Realtime nativo com RLS, filtro de equipe, autenticação e limpeza; recarrega estado autoritativo após reconexão. Poll de segurança a cada 15s recupera eventos perdidos/revogação. Falha de leitura é aviso/bloqueio, não lista vazia considerada válida; respostas antigas são descartadas.
-- Monitor distingue ausências, zero explícito, igualdade e diferença provisória; não resolve conciliação ou tolerância automaticamente.
-- Testes novos: UI/roles de 3/4/5 participantes, componentes físicos, zero/inativo, peso/BPU1, WHS errada, cegueira REST, escrita direta/roles indevidos negados, retry concorrente, edição obsoleta/histórico, resposta perdida, offline/reconexão, falha de refresh, bloqueio solicitado e revogação. Finalização via RPC e revogação por fixture NÃO equivalem à UI do bloco 5 nem ao fechamento completo.
-- As primeiras execuções falharam por diagnóstico encoberto e verificações de DOM antes do término do refresh. Corrigidos os testes para aguardar o estado, sem remover expectativas ou proteções. Resultado aprovado é somente a execução acima.
-- Ponytail full/Review: componentes existentes e recursos nativos, nenhuma dependência nova; sem abstração de workflow. Revisão de complexidade não substitui a execução funcional.
-- Nenhum merge/migration/flag de produção ou Preview compartilhado. A nova UI só foi habilitada no runner descartável.
-Nenhum teste manual necessário neste bloco. Próximo bloco: 5, pedido individual e aceite/rejeição nas telas.
-
-
-## Laboratório remoto preparado — 2026-10-02
-Código validado: `1da71ca9a2d7258e0d147d79f901a03a12640209`; [teste real do launcher aprovado](https://github.com/ycristan/ProjectCountStock/actions/runs/37006686672).
-- [Regressão de banco/compatibilidade também aprovada](https://github.com/ycristan/ProjectCountStock/actions/runs/37006686721) no mesmo código.
-- Comando e instruções em [CODESPACE_LAB.md](./CODESPACE_LAB.md). Banco Supabase sintético e aplicativo no Codespace, nunca cópia de dados pessoais/produção. Arquivos modificados são preservados; execução usa snapshot rastreado temporário.
-- Chromium comprovou login admin, ações SSR, PINs, equipes 3/4/5, contagem cega, Active/Inactive/WHS/BPU1/peso, retry/histórico, bloqueios e monitor pelo gateway; frames WebSocket recebidos no caminho proxy local.
-- Isolamento: API somente loopback, porta do app explicitamente privada, ambiente produtivo removido, acessos sintéticos em arquivo remoto ignorado pelo Git. Sem novas dependências de produção ou alteração de regra do aplicativo; adaptações URL/cookie somente no snapshot.
-- **TESTE MANUAL NECESSÁRIO: somente no Codespace**, depois de LAB READY. Validar login/PINs, busca de ativo/inativo, contagem pelos contadores e acompanhamento do Independente. CI não comprova autenticação/encaminhamento privado externo do GitHub nem o WebSocket nesse domínio.
-- Bloco 4 está testável no laboratório; bloco 5 (pedido individual/aceite/rejeição nas telas), conciliação e assinaturas continuam pendentes. Não anunciar T55 ou encerramento completo.
-- Nada publicado/mergeado/aplicado na produção ou Preview compartilhada. Memórias históricas abaixo descrevem etapas anteriores; prioridade seguinte é bloco 5 após acesso ao laboratório.
-- Ponytail full/Review: reutilizadas verificações e componentes existentes, CLI e stdlib; sem framework extra. Leitura/revisão não substituem os testes.
-
-
-## Laboratório: analytics opcional — 2026-10-05
-Desabilitar analytics/Logflare somente no config temporário do laboratório: não é dependência dos testes de contagem e apresentou falha de inicialização. Preservar Auth, REST, Realtime, Storage e verificações de saúde. Isto não desativa Sentry em produção. DNS/TCP passaram; startup completo e teste manual continuam pendentes.
-
-
-## Porta do laboratório — 2026-10-05
-A administração de porta via gh falhou após o aplicativo iniciar. Usar encaminhamento nativo do Codespaces e conferir manualmente Private na porta 3100 antes do acesso. O launcher permanece ligado a 127.0.0.1 e não modifica visibilidade. Não exigir token adicional para essa operação. Referência: https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace .
+## Limpeza de sobras (2026-10-05)
+- Removida a interface de admin antiga em `app/(admin)/` (rotas `/sessao`, `/inventario`, `/upload` fora da proteção `/admin` do `proxy.ts`; os dados já eram protegidos por `isAdmin()`), stubs `export {}`, `ProgressoClient` sem uso, logo do rebrand (`NextChainMark`) e ações legadas `uploadInventory` / `buscarInventarioParaDownload`. Motivo: superfície morta que confundia agentes e Yuri.
+- Telas de admin só existem sob `/admin`.
+- Branches antigas são apagadas pela automação manual `cleanup-branches.yml` (Actions → Run workflow), disparada por Yuri: simula por padrão, só apaga com `APAGAR` e nunca toca a branch padrão nem branches com PR aberta. Motivo: o ambiente do agente só pode gravar na própria branch. O GitHub apaga automaticamente a branch de cada PR mergeada.

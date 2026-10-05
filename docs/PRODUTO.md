@@ -1,20 +1,33 @@
 # Produto — Count Stock
 
 ## Objetivo
-Contagem física de estoque por warehouse, com responsabilidades separadas, conferência e resultados preservados.
+Contagem física de estoque por warehouse, com responsabilidades separadas, conferência e resultados preservados. Primeira contagem real (2026-07-08): contagem + reconciliação em 1 dia, contra ~10 h + 1 semana do processo manual.
 
-## Fluxo de equipes aprovado em 2026-09-21
-Fonte completa: [TEAM_COUNT_FLOW.md](./TEAM_COUNT_FLOW.md). Plano aprovado não significa funcionalidades publicadas.
-- Equipes variáveis, contadores cegos entre si e um independente responsável; áreas distribuídas fisicamente.
-- Independente consulta/monitora; não conta inicialmente, salvo substituição autorizada.
-- Contador solicita finalização e fica bloqueado; independente aceita/rejeita individualmente. Rejeição libera, sem campo de motivo.
-- Depois dos aceites, conciliar ausências/divergências; iguais por qualquer método dispensam conciliação. Todos por peso: tolerância de metade do BPU com decisão explícita do independente.
-- Independente submete equipe, mesmo sem divergências. Admin aceita ou pede recontagem somente de produtos contados pela equipe; nunca registra quantidades.
-- Assinaturas/PIN ou ausências formalizadas; primeira confirmação impede cancelamento/alteração; todas recebidas encerram equipe e revogam seus vínculos.
-- Equipes encerram separadamente e ficam imutáveis. Consolidado geral usa Status no fechamento: ativo não contado gera zero; inativo não contado não gera linha.
-- Saídas preservam anteriores. Exceção de substituição tem admin exclusivo; independente compartilhado mantém acessos por equipe. Detalhes obrigatórios no contrato, não inferir pelo resumo.
+## Usuários
+- **Administrador:** importa inventário, cria sessões e equipes, acompanha, aceita resultados, consolida e administra o solo. Nunca lança contagem.
+- **Contadores:** contam às cegas, sem ver a contagem dos colegas.
+- **Independente:** monitora a equipe, decide pedidos de finalização e registra a conciliação.
+- **Contador solo fixo:** conta sessões solo atribuídas, com lista de itens opcional, e encerra a própria sessão.
 
-## Outros módulos preservados
-Admin importa inventário, configura sessões e administra solo. Contador solo fixo recebe atribuições e encerra sua sessão; as novas regras de equipe não autorizam alterar solo.
-Itens com histórico não são apagados. Formato de quantidade: cases+units. Peso desconta tara e converte em unidades. BPU >= 1; BPU 1 desativa Cases/Pallets, mantendo Units e peso quando Weight Avg > 0, conforme decisões aprovadas.
-Ver [Inventory/Warehouses](./INVENTORY_WAREHOUSES.md), [decisões](./DECISOES.md) e [estado](./ESTADO_ATUAL.md) para diferenças entre especificação e publicação.
+## Fluxo publicado hoje (legado de equipes)
+Equipe fixa de três: Contador 1, Contador 2 e Independente. C1 e C2 contam; divergências viram itens de reconciliação; o Independente resolve; o admin combina as equipes e encerra a sessão.
+
+## Novo fluxo de equipes — aprovado em 2026-09-21, em implementação (não publicado)
+Fonte normativa: [TEAM_COUNT_FLOW.md](./TEAM_COUNT_FLOW.md). Resumo, sem substituir o contrato:
+- Equipes de tamanho variável, contadores cegos entre si e um Independente; áreas divididas fisicamente, não no sistema.
+- Independente consulta e monitora; não conta, salvo substituição autorizada.
+- Contador pede finalização e fica bloqueado; Independente aceita ou rejeita cada pedido. Rejeição libera, sem campo de motivo.
+- Depois dos aceites, conciliar ausências e divergências. Valores iguais por qualquer método dispensam conciliação. Todos por peso: diferença até metade do BPU exige decisão explícita do Independente (aceitar o maior ou conciliar).
+- Independente submete a equipe. Admin aceita ou pede recontagem só de produtos contados pela equipe.
+- Assinaturas (desenho ou PIN) ou ausências formalizadas; a primeira confirmação congela; a última encerra a equipe e revoga seus acessos.
+- Equipes encerram separadamente e ficam imutáveis. No consolidado: ativo não contado = zero; inativo não contado não gera linha.
+
+## Regras gerais
+- Itens com histórico nunca são apagados: saem da planilha → ficam inativos.
+- Um contador não vê nem altera a contagem de outro.
+- Sessão fechada não aceita novas contagens. Resultado fechado não é recalculado por mudança de cadastro.
+- Exibição de quantidade sempre `cases+units` (ex.: `10+21`), sem rótulos.
+- Contagem por peso desconta a tara das caixas e converte em unidades pelo peso médio.
+- BPU ≥ 1. Com BPU 1, Cases/Pallets ficam desativados; Units e peso (se Weight Avg > 0) continuam.
+- Inventário por warehouse: ver [INVENTORY_WAREHOUSES.md](./INVENTORY_WAREHOUSES.md).
+- Solo não segue as regras do novo fluxo de equipes (sem zero automático).

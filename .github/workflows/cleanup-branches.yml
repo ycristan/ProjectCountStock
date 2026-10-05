@@ -1,0 +1,39 @@
+name: Limpar branches antigas
+# Disparo manual (Actions > "Limpar branches antigas" > Run workflow).
+# Nunca apaga a branch padrão nem branches com PR aberta.
+on:
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: 'Digite APAGAR para apagar de verdade. Vazio = só simulação (lista o que seria apagado).'
+        required: false
+        default: ''
+permissions:
+  contents: write
+  pull-requests: read
+jobs:
+  limpar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      DEFAULT: ${{ github.event.repository.default_branch }}
+      CONFIRMAR: ${{ inputs.confirmar }}
+    steps:
+      - name: Listar e apagar
+        run: |
+          set -euo pipefail
+          gh pr list -R "$REPO" --state open --limit 200 --json headRefName -q '.[].headRefName' | sort -u > protegidas.txt
+          echo "$DEFAULT" >> protegidas.txt
+          gh api "repos/$REPO/branches" --paginate -q '.[].name' | sort -u > todas.txt
+          grep -vxFf protegidas.txt todas.txt > apagar.txt || true
+          echo "Protegidas (não serão apagadas):"; sort -u protegidas.txt | sed 's/^/  - /'
+          echo "A apagar: $(wc -l < apagar.txt)"; sed 's/^/  - /' apagar.txt
+          if [ "$CONFIRMAR" != "APAGAR" ]; then
+            echo "SIMULAÇÃO: nada foi apagado. Rode de novo digitando APAGAR para confirmar."
+            exit 0
+          fi
+          while read -r b; do
+            gh api -X DELETE "repos/$REPO/git/refs/heads/$b" && echo "apagada: $b"
+          done < apagar.txt
