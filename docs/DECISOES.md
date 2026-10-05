@@ -69,3 +69,10 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Removida a interface de admin antiga em `app/(admin)/` (rotas `/sessao`, `/inventario`, `/upload` fora da proteção `/admin` do `proxy.ts`; os dados já eram protegidos por `isAdmin()`), stubs `export {}`, `ProgressoClient` sem uso, logo do rebrand (`NextChainMark`) e ações legadas `uploadInventory` / `buscarInventarioParaDownload`. Motivo: superfície morta que confundia agentes e Yuri.
 - Telas de admin só existem sob `/admin`.
 - Branches antigas são apagadas pela automação manual `cleanup-branches.yml` (Actions → Run workflow), disparada por Yuri: simula por padrão, só apaga com `APAGAR` e nunca toca a branch padrão nem branches com PR aberta. Motivo: o ambiente do agente só pode gravar na própria branch. O GitHub apaga automaticamente a branch de cada PR mergeada.
+
+## Prazo da contagem de 02/01/2027 (2026-10-05)
+- Datas-limite: fluxo novo em produção até 27/11; contagem simulada com pessoas reais até 11/12; congelamento de 12/12 a 02/01. Motivo: blocos restantes são os mais delicados e fim de ano é janela ruim para publicar.
+- Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independente no legado e contar 02/01 no fluxo antigo. A sessão de equipes aberta desde 01/10 é de teste.
+
+## Agente único (2026-10-05)
+- O projeto passa a ter um único agente (Claude). `AGENTS.md` foi incorporado ao `CLAUDE.md` e removido; o CI recusa a volta de `AGENTS.md`. O trabalho útil do agente anterior é absorvido por revisão, sem menções a ele nos documentos.
