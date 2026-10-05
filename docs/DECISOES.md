@@ -90,3 +90,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Substituição de contador (R09) e Independente compartilhado (R10) adiados: raros e caros para o prazo. Fica só "contador ausente" marcado pelo Independente (R08), senão a equipe trava.
 - Assinatura por PIN + nome completo; desenho é melhoria futura. Ativo não contado só vira zero após confirmação do admin na lista de não contados. Erro após assinatura: ajuste separado por dois admins, sem editar o original (depois de 02/01).
 - PIN de 4 dígitos mantido (poucas equipes, contas revogadas ao fim); só conferir o limite de tentativas do Supabase. QR Code futuro traz praticidade, não mais segurança: carrega a mesma credencial.
+
+## Sessão de teste e pesagem (2026-10-05)
+- Sessão de equipes de teste aberta desde 01/10 (sem equipes nem contagens) encerrada em produção com autorização de Yuri.
+- Aprovado guardar peso bruto, número de caixas e rodadas de cada lançamento por peso no fluxo novo, para o Audit Count.

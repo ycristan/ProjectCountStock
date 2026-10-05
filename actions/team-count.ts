@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { reportTeamContextError } from '@/lib/report-team-context-error'
 import type { ItemBusca, LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
-import type { TeamCountState } from '@/lib/team-count-types'
+import type { TeamComparisonItem, TeamCountState } from '@/lib/team-count-types'
 
 export async function readTeamCount(teamId: string): Promise<TeamCountState | null> {
   if (process.env.TEAM_SETUP_ENABLED !== 'true') return null
@@ -46,6 +46,30 @@ export async function requestTeamFinish(teamId: string, membershipId: string, re
 export async function decideTeamFinish(teamId: string, membershipId: string, accept: boolean, revision: string, command: string) {
   return finishCommand('decide_team_finish',
     { p_team: teamId, p_membership: membershipId, p_accept: accept, p_expected_revision: revision, p_command: command })
+}
+
+// Block 6: comparison is read by the Independent/admin only; counters stay blind.
+export async function readTeamComparison(teamId: string): Promise<TeamComparisonItem[] | null> {
+  if (process.env.TEAM_SETUP_ENABLED !== 'true') return null
+  const db = await createClient()
+  const { data, error } = await db.rpc('read_team_comparison', { p_team: teamId })
+  if (error) {
+    if (error.code !== '42501') await reportTeamContextError('team.count')
+    return null
+  }
+  return data as TeamComparisonItem[]
+}
+
+// recordId = chosen count inside weight tolerance; null = send to reconciliation.
+export async function decideTeamItem(teamId: string, brand: string, recordId: string | null, revision: string, command: string) {
+  if (process.env.TEAM_SETUP_ENABLED !== 'true') return { error: 'Team access unavailable.' }
+  const db = await createClient()
+  const { error } = await db.rpc('decide_team_item', {
+    p_team: teamId, p_brand: brand, p_record: recordId, p_expected_revision: revision, p_command: command,
+  })
+  if (!error) return {}
+  if (!['40001', '42501', '22023', 'P0001'].includes(error.code)) await reportTeamContextError('team.count')
+  return { error: error.code === '40001' ? 'The team changed. Refresh and try again.' : 'Not confirmed. Refresh and try again.' }
 }
 
 export async function startTeamCount(teamId: string, revision: string) {

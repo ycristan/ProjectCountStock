@@ -9,3 +9,10 @@ export type TeamCountState = {
   members: { id: string; name: string; role: string; order: number; finishState: string }[]
   records: TeamCountRecord[]
 }
+export type TeamComparisonItem = {
+  brandCode: string
+  status: 'equal' | 'tolerance' | 'reconcile'
+  limit: string
+  cells: { membershipId: string; recordId: string | null; quantity: string | null; method: 'manual' | 'weight' | null }[]
+  decision: { decision: 'accept_value' | 'reconcile'; recordId: string | null; quantity: string | null } | null
+}

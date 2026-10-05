@@ -157,6 +157,9 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await independent.p.unroute('**/team/*')
         await independent.p.getByRole('button',{name:'Refresh team',exact:true}).click()
         await row.getByText('1+4',{exact:true}).waitFor()
+        stage='weight counts inside tolerance (block 6 fixture through authorized RPC)'
+        checked(await first.client.rpc('save_team_count',{...unit,p_command:randomUUID(),p_weight:true,p_units:50,p_revision:'0'}))
+        checked(await second.client.rpc('save_team_count',{...unit,p_command:randomUUID(),p_weight:true,p_units:49,p_revision:'0'}))
         stage='finish request through the screen (block 5)'
         const current=checked(await first.client.rpc('read_team_count',{p_team:stored.id}))
         const requestFinish=async()=>{
@@ -183,6 +186,22 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await search(first.p,'Count Active')
         await first.p.getByRole('button').filter({hasText:codes[0]}).click()
         assert.equal(await first.p.getByRole('button',{name:/Confirm Count|Save Edit/}).count(),0)
+        stage='comparison after every finish is accepted (block 6)'
+        const secondState=checked(await second.client.rpc('read_team_count',{p_team:stored.id}))
+        checked(await second.client.rpc('request_team_finish',{p_team:stored.id,p_membership:secondState.membershipId,
+          p_expected_revision:secondState.revision,p_command:randomUUID()}))
+        const monitorState=checked(await independent.client.rpc('read_team_count',{p_team:stored.id}))
+        checked(await independent.client.rpc('decide_team_finish',{p_team:stored.id,p_membership:secondState.membershipId,
+          p_accept:true,p_expected_revision:monitorState.revision,p_command:randomUUID()}))
+        await independent.p.getByText('Phase: reconciling',{exact:true}).waitFor()
+        const weightRow=independent.p.locator('tr[data-brand="'+codes[2]+'"]')
+        await weightRow.getByText('Within weight tolerance').waitFor()
+        await independent.p.locator('tr[data-brand="'+codes[0]+'"][data-result="Needs reconciliation"]').waitFor()
+        assert.ok((await second.client.rpc('read_team_comparison',{p_team:stored.id})).error,'counters stay blind after finishing')
+        assert.equal(await page.getByRole('button',{name:/^Use /}).count(),0,'admin never chooses a value')
+        await weightRow.getByRole('button',{name:'Use 49+0',exact:true}).click()
+        await independent.p.locator('tr[data-brand="'+codes[2]+'"][data-result="Using 49+0"]').waitFor()
+        assert.equal(await weightRow.getByRole('button').count(),0)
         // Privileged fixture only for selective revocation, not a completed close.
         sql("update public.team_memberships set access_revoked_at=clock_timestamp() where id='"+current.membershipId+"'")
         assert.ok((await first.client.rpc('read_team_count',{p_team:stored.id})).error)

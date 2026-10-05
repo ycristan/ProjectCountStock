@@ -1,15 +1,16 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
-import { decideTeamFinish, readTeamCount, readTeamInventory, requestTeamFinish, saveTeamCount, startTeamCount } from '@/actions/team-count'
+import { decideTeamFinish, decideTeamItem, readTeamComparison, readTeamCount, readTeamInventory, requestTeamFinish, saveTeamCount, startTeamCount } from '@/actions/team-count'
 import { createClient } from '@/lib/supabase-client'
 import type { ItemBusca, LancarContagemPayload } from '@/actions/contagem'
-import type { TeamCountState } from '@/lib/team-count-types'
+import type { TeamComparisonItem, TeamCountState } from '@/lib/team-count-types'
 import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
 
 export function TeamCountClient({ initial, inventory }: { initial: TeamCountState; inventory: ItemBusca[] }) {
   const [state, setState] = useState(initial)
   const [catalog, setCatalog] = useState(inventory)
+  const [comparison, setComparison] = useState<TeamComparisonItem[]>([])
   const [unavailable, setUnavailable] = useState(false)
   const [notice, setNotice] = useState('')
   const [pending, startTransition] = useTransition()
@@ -24,6 +25,12 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       const next = await readTeamCount(teamId)
       if (sequence !== readSequence.current) return
       if (!next) { setUnavailable(true); return }
+      // Comparison exists only after every finish is accepted, and only for the monitor.
+      const compared = next.role !== 'counter' && !['setup', 'counting'].includes(next.phase)
+        ? await readTeamComparison(teamId) : []
+      if (sequence !== readSequence.current) return
+      if (!compared) { setUnavailable(true); return }
+      setComparison(compared)
       setState(next)
       setUnavailable(false)
     } catch { if (sequence === readSequence.current) setUnavailable(true) }
@@ -50,7 +57,7 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       running = false
     }
     const channel = db.channel('team-count-' + teamId)
-    for (const table of ['team_count_records', 'team_flows', 'team_memberships'])
+    for (const table of ['team_count_records', 'team_flows', 'team_memberships', 'team_item_decisions'])
       channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: 'team_id=eq.' + teamId }, reload)
     void db.auth.getSession().then(({ data }) => {
       if (disposed) return
@@ -167,7 +174,42 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
     </div>}
     {state.phase !== 'setup' && <BuscaClient key={canCount ? 'count' : 'consult'}
       items={items} readOnly={!canCount} onSubmit={submit} />}
-    {monitor && !unavailable && state.phase !== 'setup' && <div className="overflow-x-auto">
+    {monitor && !unavailable && !['setup', 'counting'].includes(state.phase) && <div className="overflow-x-auto">
+      <h2 className="font-semibold mb-2">Comparison</h2>
+      <table className="w-full text-sm border-collapse">
+        <thead><tr><th className="border p-2">Product</th>
+          {counters.map(m => <th key={m.id} className="border p-2">Counter {m.order} — {m.name}</th>)}
+          <th className="border p-2">Result</th></tr></thead>
+        <tbody>{comparison.map(row => {
+          const item = catalog.find(i => i.brand_code === row.brandCode)
+          const decided = row.decision
+          const result = row.status === 'equal' ? 'Equal'
+            : row.status === 'tolerance' && decided?.decision === 'accept_value' ? 'Using ' + format(decided.quantity!, row.brandCode)
+            : row.status === 'tolerance' && !decided ? 'Within weight tolerance'
+            : 'Needs reconciliation'
+          const choosing = row.status === 'tolerance' && !decided && state.role === 'independent' && state.phase === 'reconciling'
+          return <tr key={row.brandCode} data-brand={row.brandCode} data-result={result}>
+            <td className="border p-2">{row.brandCode} — {item?.brand_name}</td>
+            {row.cells.map(cell => <td key={cell.membershipId} className="border p-2">
+              {cell.quantity == null ? 'Not counted' : format(cell.quantity, row.brandCode)}
+            </td>)}
+            <td className="border p-2">{result}
+              {choosing && <span className="flex flex-wrap gap-2 mt-1">
+                {row.cells.filter((c, i, all) => all.findIndex(o => o.quantity === c.quantity) === i).map(cell =>
+                  <button key={cell.recordId} disabled={pending} className="bg-slate-900 text-white rounded px-3 py-2"
+                    onClick={() => finish(() => decideTeamItem(teamId, row.brandCode, cell.recordId, state.revision, crypto.randomUUID()),
+                      'Using ' + format(cell.quantity!, row.brandCode) + ' for ' + row.brandCode + '.')}>
+                    Use {format(cell.quantity!, row.brandCode)}</button>)}
+                <button disabled={pending} className="border rounded px-3 py-2"
+                  onClick={() => finish(() => decideTeamItem(teamId, row.brandCode, null, state.revision, crypto.randomUUID()),
+                    row.brandCode + ' sent to reconciliation.')}>Reconcile</button>
+              </span>}
+            </td>
+          </tr>
+        })}</tbody>
+      </table>
+    </div>}
+    {monitor && !unavailable && state.phase === 'counting' && <div className="overflow-x-auto">
       <h2 className="font-semibold mb-2">Provisional counts — not a reconciled result</h2>
       <table className="w-full text-sm border-collapse">
         <thead><tr><th className="border p-2">Product</th>
