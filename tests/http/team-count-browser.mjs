@@ -66,9 +66,9 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
       const inputs=first.p.locator('input[type="number"]')
       await inputs.nth(0).fill('1');await inputs.nth(1).fill('2');await inputs.nth(2).fill('3')
       await first.p.getByRole('button',{name:'Confirm Count',exact:true}).click()
-      await first.p.getByText('Count confirmed: 7+3',{exact:true}).waitFor()
+      await first.p.getByText('7 cases · 3 units',{exact:true}).waitFor()
       const row=independent.p.locator('tr[data-brand="'+codes[0]+'"]')
-      await row.getByText('73 units · manual',{exact:true}).waitFor()
+      await row.getByText('7+3',{exact:true}).waitFor()
       assert.equal(await row.locator('td').count(),index+4)
       assert.equal(await row.getByText('Not counted',{exact:true}).count(),index+1)
       const c1state=checked(await first.client.rpc('read_team_count',{p_team:stored.id}))
@@ -107,14 +107,15 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
       await second.p.locator('input[type="number"]').fill('1')
       await second.p.locator('input[type="text"]').fill('1300')
       await second.p.getByRole('button',{name:'Confirm Count',exact:true}).click()
-      await second.p.getByText('Count confirmed: 10+0',{exact:true}).waitFor()
-      await independent.p.locator('tr[data-brand="'+codes[1]+'"]').getByText('0 units · manual',{exact:true}).waitFor()
+      await second.p.getByText('10 cases · 0 units',{exact:true}).waitFor()
+      await independent.p.locator('tr[data-brand="'+codes[1]+'"]').getByText('0+0',{exact:true}).waitFor()
       assert.equal(await independent.p.getByRole('button',{name:/Confirm Count|Save Edit/}).count(),0)
       stage='lost successful response '+index
       await first.p.reload()
       await first.p.getByText('Phase: counting',{exact:true}).waitFor()
       await search(first.p,'Count Active')
       await first.p.getByRole('button').filter({hasText:codes[0]}).click()
+      await first.p.getByRole('button',{name:/Edit Count/}).click()
       await first.p.locator('input[type="number"]').nth(2).fill('9')
       let lost=false
       await first.p.route('**/team/*',async route=>{
@@ -126,7 +127,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
       await first.p.getByText('Response unavailable. Retry the same count to confirm it safely.').waitFor()
       await first.p.unroute('**/team/*')
       await first.p.getByRole('button',{name:'Save Edit',exact:true}).click()
-      await first.p.getByText('Count confirmed: 0+9',{exact:true}).waitFor()
+      await first.p.getByText('0 cases · 9 units',{exact:true}).waitFor()
       assert.equal(checked(await first.client.rpc('read_team_count',{p_team:stored.id})).records.find(r=>r.brandCode===codes[0]).revision,'2')
       if(index===0){
         stage='reconnection and failed read'
@@ -139,7 +140,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         stage='reconnection: dispatch online'
         await independent.p.evaluate(()=>window.dispatchEvent(new Event('online')))
         stage='reconnection: authoritative recovered row'
-        await row.getByText('14 units · manual',{exact:true}).waitFor()
+        await row.getByText('1+4',{exact:true}).waitFor()
         stage='reconnection: failed refresh'
         let blocked=false
         await independent.p.route('**/team/*',async route=>{
@@ -155,14 +156,30 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         stage='reconnection: restore refresh'
         await independent.p.unroute('**/team/*')
         await independent.p.getByRole('button',{name:'Refresh team',exact:true}).click()
-        await row.getByText('14 units · manual',{exact:true}).waitFor()
-        stage='finish lock and retained blind history'
+        await row.getByText('1+4',{exact:true}).waitFor()
+        stage='finish request through the screen (block 5)'
         const current=checked(await first.client.rpc('read_team_count',{p_team:stored.id}))
-        checked(await first.client.rpc('request_team_finish',{p_team:stored.id,p_membership:current.membershipId,
-          p_expected_revision:current.revision,p_command:randomUUID()}))
+        const requestFinish=async()=>{
+          first.p.once('dialog',dialog=>dialog.accept())
+          await first.p.getByRole('button',{name:'Finish my count',exact:true}).click()
+          await first.p.getByText('Your count status: Waiting for the Independent',{exact:true}).waitFor()
+        }
+        const counterRow=independent.p.locator('[data-member="'+current.members.find(m=>m.id===current.membershipId).order+'"]')
+        await requestFinish()
         assert.ok((await first.client.rpc('save_team_count',{...saveArgs(stored.id),p_revision:'3'})).error)
-        await first.p.getByRole('button',{name:'Refresh team',exact:true}).click()
-        await first.p.getByText('Your count status: requested',{exact:true}).waitFor()
+        assert.equal(await first.p.getByRole('button',{name:'Finish my count',exact:true}).count(),0)
+        stage='independent rejects, counter counts again'
+        await counterRow.getByRole('button',{name:'Reject',exact:true}).click()
+        await first.p.getByText('Your count status: Counting',{exact:true}).waitFor()
+        stage='second request and acceptance'
+        await requestFinish()
+        assert.equal(await page.getByRole('button',{name:/^(Accept|Reject)$/}).count(),0)
+        await counterRow.getByRole('button',{name:'Accept',exact:true}).click()
+        await first.p.getByText('Your count status: Accepted',{exact:true}).waitFor()
+        await counterRow.getByText(/Accepted$/).waitFor()
+        assert.equal(checked(await first.client.rpc('read_team_count',{p_team:stored.id})).phase,'counting')
+        assert.ok((await first.client.rpc('save_team_count',{...saveArgs(stored.id),p_revision:'3'})).error)
+        stage='finish lock and retained blind history'
         await search(first.p,'Count Active')
         await first.p.getByRole('button').filter({hasText:codes[0]}).click()
         assert.equal(await first.p.getByRole('button',{name:/Confirm Count|Save Edit/}).count(),0)

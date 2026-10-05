@@ -16,6 +16,38 @@ export async function readTeamCount(teamId: string): Promise<TeamCountState | nu
   return data as TeamCountState
 }
 
+export async function readTeamInventory(teamId: string): Promise<ItemBusca[] | null> {
+  if (process.env.TEAM_SETUP_ENABLED !== 'true') return null
+  const db = await createClient()
+  const { data, error } = await db.rpc('read_team_inventory', { p_team: teamId })
+  if (error) {
+    if (error.code !== '42501') await reportTeamContextError('team.count')
+    return null
+  }
+  return (data as Omit<ItemBusca, 'jaContado' | 'entryExistente'>[])
+    .map(item => ({ ...item, jaContado: false, entryExistente: null }))
+}
+
+// Individual finish (R03): the database checks identity, role, phase and revision.
+async function finishCommand(rpc: 'request_team_finish' | 'decide_team_finish', args: Record<string, unknown>) {
+  if (process.env.TEAM_SETUP_ENABLED !== 'true') return { error: 'Team access unavailable.' }
+  const db = await createClient()
+  const { error } = await db.rpc(rpc, args)
+  if (!error) return {}
+  if (!['40001', '42501', 'P0001'].includes(error.code)) await reportTeamContextError('team.count')
+  return { error: error.code === '40001' ? 'The team changed. Refresh and try again.' : 'Not confirmed. Refresh and try again.' }
+}
+
+export async function requestTeamFinish(teamId: string, membershipId: string, revision: string, command: string) {
+  return finishCommand('request_team_finish',
+    { p_team: teamId, p_membership: membershipId, p_expected_revision: revision, p_command: command })
+}
+
+export async function decideTeamFinish(teamId: string, membershipId: string, accept: boolean, revision: string, command: string) {
+  return finishCommand('decide_team_finish',
+    { p_team: teamId, p_membership: membershipId, p_accept: accept, p_expected_revision: revision, p_command: command })
+}
+
 export async function startTeamCount(teamId: string, revision: string) {
   if (process.env.TEAM_SETUP_ENABLED !== 'true') return { error: 'Team access unavailable.' }
   const db = await createClient()

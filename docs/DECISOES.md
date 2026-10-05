@@ -82,3 +82,6 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Correções aprovadas para os próximos blocos: carregar o inventário uma vez e recarregar só as contagens; tela de equipe com o mesmo seletor "Add to Count / Edit Count" das telas atuais; monitor em `cases+units`; conferir o limite de tentativas de login do Supabase (PIN de 4 dígitos).
 - Pesagem: guardar peso bruto, número de caixas e rodadas de cada lançamento por peso. Esses dados e o histórico de edições aparecem num menu admin "Audit Count", que exporta tudo o que cada pessoa lançou.
 - PR só de documentação pode ser mergeada pelo agente após CI verde. Motivo: tirar de Yuri aprovações sem risco.
+
+## Correção: dados da pesagem (2026-10-05)
+- O legado nunca guardou peso bruto nem número de caixas (as colunas não existem no banco; o schema antigo da memória estava errado). Guardar esses dados é funcionalidade nova, não regressão do fluxo novo; aguarda confirmação de Yuri.

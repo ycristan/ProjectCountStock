@@ -13,13 +13,14 @@ Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independen
 `main` com inventário por warehouse, ZIP e recuperação BDS aplicada. Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo).
 
 ## Em andamento
-- Fluxo novo de equipes nesta PR (substitui a antiga #74): blocos 1–4 prontos, base auditada e mantida. Próximo: bloco 5 (finalização individual nas telas) junto com as correções da auditoria.
-- Correções da auditoria: inventário carregado uma vez; seletor "Add to Count / Edit Count" igual ao das telas atuais; monitor em `cases+units`; guardar dados brutos da pesagem; conferir limite de tentativas de login.
-- Menu admin "Audit Count" (exporta todos os lançamentos, edições e pesagens) entra no bloco 12.
+- Fluxo novo de equipes nesta PR (substitui a antiga #74): blocos 1–5 prontos, não publicados. Bloco 5: o contador pede a finalização pela tela e fica bloqueado; o Independente aceita ou rejeita cada pedido. Próximo: bloco 6 (comparação), depois da revisão das regras.
+- Correções da auditoria feitas: inventário carregado uma vez; tela de equipe usa a mesma busca/"Add to Count"/"Edit Count" das telas atuais; monitor em `cases+units`. Pendente: conferir limite de tentativas de login.
+- Menu admin "Audit Count" (exporta todos os lançamentos e edições) entra no bloco 12.
 
 ## Decisões pendentes de Yuri
 1. Encerrar a sessão de equipes de teste aberta desde 01/10 (sem equipes)? Só com autorização.
 2. Revisar as regras pré-aprovadas, antes do bloco 6 (inclui a tolerância de peso de 50% do BPU).
+3. Pesagem: o legado nunca guardou peso bruto e caixas. Guardar esses dados para o "Audit Count" é funcionalidade nova; confirmar se vale fazer.
 
 ## Problema conhecido em produção
 Regressão do Independente (vinda da PR #63): contas de equipe criadas depois da #63 caem na tela de lançamento e o Independente vê "Finalise". Correção existe nesta PR, não publicada. Nenhuma contagem de equipe programada antes de 02/01/2027.
