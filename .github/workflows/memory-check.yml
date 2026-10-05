@@ -18,11 +18,10 @@ jobs:
           fail=0
           lines=$(wc -l < docs/ESTADO.md)
           if [ "$lines" -gt 40 ]; then echo "::error file=docs/ESTADO.md::$lines linhas (máx. 40). Reescreva, não acrescente."; fail=1; fi
-          for p in .claude/memory docs/ESTADO_ATUAL.md docs/HANDOFF_*.md; do
-            if compgen -G "$p" > /dev/null || [ -e "$p" ]; then echo "::error::$p é memória paralela; use docs/ (ver AGENTS.md)."; fail=1; fi
+          for p in .claude/memory AGENTS.md docs/ESTADO_ATUAL.md docs/HANDOFF_*.md; do
+            if compgen -G "$p" > /dev/null || [ -e "$p" ]; then echo "::error::$p é memória paralela; use docs/ (ver CLAUDE.md)."; fail=1; fi
           done
-          if [ "$(cat CLAUDE.md)" != "@AGENTS.md" ]; then echo "::error file=CLAUDE.md::CLAUDE.md deve conter apenas @AGENTS.md."; fail=1; fi
-          for f in AGENTS.md docs/*.md; do
+          for f in CLAUDE.md docs/*.md; do
             for link in $(grep -oE '\]\(\./?[^)#]+' "$f" | sed -E 's/^\]\(//'); do
               [ -e "$(dirname "$f")/$link" ] || { echo "::error file=$f::link quebrado: $link"; fail=1; }
             done

@@ -1,6 +1,6 @@
 # Memória do projeto — Count Stock
 
-Fonte única de contexto para Claude e Codex. Regras de uso em [AGENTS.md](../AGENTS.md#memória-do-projeto).
+Fonte única de contexto do projeto. Regras de uso em [CLAUDE.md](../CLAUDE.md#memória-do-projeto).
 
 | Documento | Conteúdo | Como muda |
 |---|---|---|
