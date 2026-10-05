@@ -7,7 +7,7 @@ Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consu
 
 ## Em andamento
 - Limpeza do repositório: memória única (PR #76) e PRs obsoletas fechadas (#56, #68, #71, #72, #73). Sobras de código removidas nesta PR.
-- 74 branches obsoletas aguardam remoção: o ambiente do agente bloqueia apagar branch remota; precisa de permissão de Yuri ou remoção pelo GitHub.
+- 74 branches obsoletas aguardam remoção: o agente não pode apagar branches; Yuri dispara a automação "Limpar branches antigas" (Actions) depois do merge desta PR.
 - Novo fluxo de equipes: blocos 1–4 prontos na PR #74 (rascunho), não publicados. Antes do bloco 5: tirar dela o laboratório Codespace e os documentos de memória antigos.
 
 ## Decisões pendentes de Yuri

@@ -68,3 +68,4 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Limpeza de sobras (2026-10-05)
 - Removida a interface de admin antiga em `app/(admin)/` (rotas `/sessao`, `/inventario`, `/upload` fora da proteção `/admin` do `proxy.ts`; os dados já eram protegidos por `isAdmin()`), stubs `export {}`, `ProgressoClient` sem uso, logo do rebrand (`NextChainMark`) e ações legadas `uploadInventory` / `buscarInventarioParaDownload`. Motivo: superfície morta que confundia agentes e Yuri.
 - Telas de admin só existem sob `/admin`.
+- Branches antigas são apagadas pela automação manual `cleanup-branches.yml` (Actions → Run workflow), disparada por Yuri: simula por padrão, só apaga com `APAGAR` e nunca toca a branch padrão nem branches com PR aberta. Motivo: o ambiente do agente só pode gravar na própria branch. O GitHub apaga automaticamente a branch de cada PR mergeada.
