@@ -1,6 +1,6 @@
 # Contagem por equipes — contrato aprovado
 
-Aprovado por Yuri em 2026-09-21. Plano autorizado para implementação em nove entregas.
+Aprovado por Yuri em 2026-09-21; revisado com Yuri em 2026-10-05 (R05, R08–R13; motivos em DECISOES.md).
 Status: especificação; NÃO significa implementado, testado ou publicado.
 Fonte normativa para o novo fluxo; prevalece sobre descrições antigas de contagem tripla, tolerância em gramas e encerramento conjunto.
 Ver [matriz de verificação](./TEAM_COUNT_TEST_MATRIX.md) e [plano](./TEAM_COUNT_PLAN.md).
@@ -21,7 +21,7 @@ Contando -> pedido enviado e imediatamente bloqueado -> independente aceita OU r
 Aguardando e aceito: sem novos lançamentos ou edições. Rejeitado: notificação e liberação para contar/editar e pedir novamente.
 Pedidos tratados individualmente, em momentos distintos. Não existe campo de motivo para rejeição normal; explicação pessoal.
 Depois de todos os pedidos exigidos aceitos, comparar e liberar conciliação sem autorização intermediária do admin.
-Na exceção R09, quem decide os pedidos individuais é o admin responsável, inclusive o pedido do independente substituto.
+Na exceção R09, quem decide os pedidos individuais é o admin responsável, inclusive o pedido do independente substituto. (R09 adiado: sem efeito no primeiro lançamento.)
 
 ## R04 — Comparação
 Comparar quantidades equivalentes convertidas em unidades. Zero explicitamente lançado é válido; ausência não é zero.
@@ -33,13 +33,13 @@ Ordem obrigatória:
 Maioria não resolve divergência. Se ninguém registrou o produto na equipe, o sistema não conhece sua presença física; não inventar pendência para todo o inventário.
 As saídas/substituições de R08/R09 alteram os registros exigidos prospectivamente, não invalidam quantidades anteriores.
 
-## R05 — Tolerância por peso
-Guardar método de cada lançamento. Substituir tolerância em gramas por limite em unidades de 50% do BPU.
-Com todos por peso: diferença entre máximo e mínimo <= BPU/2. Pode ser implementado sem arredondar limite como 2 * diferença <= BPU.
-BPU 100: 50/100 dentro; 49/100 fora; 50/75/100 dentro; 50/100/150 fora. Para BPU ímpar não arredondar limite para cima.
-Dentro: independente escolhe explicitamente aceitar MAIOR valor ou solicitar conciliação. Não usar média, maioria nem aceite automático. Até decisão, item pendente.
+## R05 — Tolerância por peso (revisada em 2026-10-05)
+Guardar método de cada lançamento. Tolerância proporcional à quantidade, não ao BPU.
+Com todos os registros exigidos por peso: diferença entre máximo e mínimo ≤ limite, onde limite = maior entre 1 unidade e 2% do maior valor, arredondado para baixo.
+Exemplos: 100/98 dentro (limite 2); 100/97 fora; 30/29 dentro (limite 1); 30/28 fora; 1000/980 dentro (limite 20); 1000/979 fora.
+Dentro: Independente escolhe explicitamente QUAL dos valores registrados é o oficial, ou pede conciliação. Sem média, maioria ou aceite automático; sem preferência pelo maior. Até a decisão, item pendente.
 Fora: conciliação obrigatória. Ausência não pode ser absorvida pela tolerância.
-Fórmulas de tara e conversão permanecem; esta decisão muda comparação/aceite, não o cálculo físico de peso.
+Fórmulas de tara e conversão permanecem; a regra muda só a comparação.
 
 ## R06 — Conciliação e submissão
 Independente abre card do item, confere fisicamente com a equipe e registra resultado. Reutilizar formulário e regras de Pallets/Cases/Units/peso.
@@ -54,34 +54,21 @@ Cada rodada mantém itens, solicitante, responsável, ordem e resultados. Novo v
 Resolvida a rodada, independente solicita novamente; admin aceita/rejeita. Sem limite artificial de rodadas antes de assinatura.
 No fluxo normal ambos os admins atuam; decisões conflitantes simultâneas devem ser impedidas.
 
-## R08 — Saída de contador
-Independente informa saída e razão; admin é notificado. Revogar lançamento/edição do ausente.
-Contagens já realizadas continuam válidas, com autoria, método e participação na comparação/conciliação preservados.
-Para produtos que ele ainda não contou, a ausência dali em diante não exige sua nova contagem nem gera pendência somente por sua saída.
-Nunca apagar ou ignorar retroativamente todas as contagens do ausente.
-Se restar um contador ativo mais independente, aplicar R09, mesmo que a equipe originalmente fosse maior.
+## R08 — Contador ausente (simplificada em 2026-10-05)
+Se um contador sai e não volta, o Independente marca-o como ausente e informa o motivo; o admin é notificado. Acesso de lançamento/edição revogado.
+Contagens já feitas continuam válidas, com autoria e método. Produtos que ele não contou deixam de exigir a contagem dele. Nunca apagar contagens do ausente.
+O ausente conta como finalizado para abrir a conciliação; na assinatura vale a ausência formalizada (R11).
 
-## R09 — Independente como contador substituto
-Independente comunica saída; admin confirma a mudança. Contar somente produtos ainda não contados pelo ausente, sem sobrepor nem somar segunda contagem à mesma posição do produto.
-Registros anteriores do ausente permanecem com autoria original. Novo registro é atribuído à pessoa que efetivamente contou.
-Independente acumula contagem substituta e conciliação. Admin aceita/rejeita pedidos individuais e determina necessidade de conciliação; independente continua registrando as quantidades conciliadas. Admin nunca conta.
-Primeiro admin que assumir formalmente o caso fica responsável até encerramento; outro pode acompanhar sem interferir. Aquisição de responsabilidade não pode ser simultânea.
-Não estender exclusividade ao fluxo normal.
-Independente já pode ter visto números antes de substituir: registrar condição excepcional, não alegar cegueira retroativa.
-Se acompanha duas equipes, transferir acompanhamento de uma delas antes de autorizar acúmulo com contagem (R10).
+## R09 — Independente como contador substituto — ADIADO
+Fora do primeiro lançamento (02/01/2027). Sem substituição de contador.
 
-## R10 — Independente compartilhado
-Se independente sair, admin designa independente de outra equipe para ambas. Usa sua própria conta; não compartilhar PIN nem assumir identidade do ausente.
-Escolher equipe/contexto; manter equipe e WHS claramente visíveis. Cada aprovação, conciliação, rodada, submissão e confirmação contém equipe e autor.
-Substituto assume TODAS as funções pendentes: pedidos individuais, conciliações, submissão e confirmação como responsável substituto. Não reatribuir ações antigas.
-Encerrar A revoga vínculo A, não conta inteira nem vínculo B.
-Antes de também virar contador, transferir acompanhamento de uma equipe para outro independente.
-Participação do substituto e ausência do original são distinguíveis no encerramento; não contar uma confirmação como se fosse de outra pessoa.
+## R10 — Independente compartilhado — ADIADO
+Fora do primeiro lançamento. Cada equipe tem seu próprio Independente.
 
 ## R11 — Assinaturas e ausências
 Admin aceita resultados e inicia coleta, sem lançamento de quantidades.
-Exibir independente primeiro, depois contadores em ordem crescente. Cada bloco: nome, campo dedo/caneta, botão SIGN BY PIN CODE. Não adicionar seleção prévia obrigatória de pessoa pelo admin.
-Confirmar por PIN substitui desenho no bloco do participante; registrar modalidade, pessoa, equipe, momento e versão dos resultados. Não criar imagem de assinatura genérica.
+Exibir independente primeiro, depois contadores em ordem crescente. Cada bloco: nome completo e botão SIGN BY PIN CODE. Assinatura desenhada (dedo/caneta) é melhoria futura, fora do primeiro lançamento. Não adicionar seleção prévia obrigatória de pessoa pelo admin.
+Confirmar por PIN; registrar modalidade, pessoa, equipe, momento e versão dos resultados. Não criar imagem de assinatura genérica.
 Contador ausente: independente registra motivo e confirma formalmente, SEM testemunha.
 Independente ausente: admin formaliza motivo e testemunha identificada (outro contador ou admin) assina.
 Ausência formalizada substitui confirmação daquele participante e não bloqueia encerramento indefinidamente. Não disfarçar ausência como assinatura pessoal.
@@ -95,11 +82,12 @@ Equipes encerram em momentos diferentes. Não aguardar as demais para proteger o
 Após encerramento, dados TOTALMENTE IMUTÁVEIS: contagens, versões, conciliações, assinaturas e histórico. Nem admin altera/exclui/reabre.
 Proteger servidor, banco, chamadas diretas, credenciais já emitidas e telas antigas. Logout/ocultar botão não é proteção suficiente.
 Não excluir contas/dados para revogar. R10 preserva acessos às outras equipes. A primeira confirmação já bloqueia mudanças conforme R11, antes da revogação definitiva.
+Correção posterior (revisado em 2026-10-05): o resultado assinado nunca é editado. Erro descoberto depois vira um AJUSTE separado, registrado por dois admins com motivo, visível no relatório e no Audit Count. Fora do primeiro lançamento.
 
 ## R13 — Consolidado final por WHS
 Depois de todas as equipes encerradas, somar resultados oficiais preservados. Nunca somar contadores da mesma equipe.
 No fechamento geral, considerar Status do inventário naquele momento:
-- ativo não contado por NENHUMA equipe: gerar zero;
+- ativo não contado por NENHUMA equipe: listar para o admin antes do fechamento ("ativos não contados"); zero só depois de o admin confirmar, em lote ou item a item, ou mandar contar;
 - inativo não contado por nenhuma: não gerar registro, nem zero;
 - item contado, inclusive inativo: incluir resultado oficial, inclusive zero explícito.
 Congelar consolidado. Mudança posterior de Status, BPU, nome ou cadastro não altera resultado/relatório fechado; fechamento geral não recalcula contagem assinada de equipe.

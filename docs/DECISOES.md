@@ -76,3 +76,9 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 
 ## Agente único (2026-10-05)
 - O projeto passa a ter um único agente (Claude). `AGENTS.md` foi incorporado ao `CLAUDE.md` e removido; o CI recusa a volta de `AGENTS.md`. O trabalho útil do agente anterior é absorvido por revisão, sem menções a ele nos documentos.
+
+## Revisão das regras do fluxo de equipes (2026-10-05)
+- Tolerância de peso: 2% da maior quantidade (mínimo 1 unidade), no lugar de 50% do BPU; o Independente escolhe qualquer valor ou concilia. Motivo: erro de balança é proporcional ao peso, e "aceitar o maior" inflava o estoque.
+- Substituição de contador (R09) e Independente compartilhado (R10) adiados: raros e caros para o prazo. Fica só "contador ausente" marcado pelo Independente (R08), senão a equipe trava.
+- Assinatura por PIN + nome completo; desenho é melhoria futura. Ativo não contado só vira zero após confirmação do admin na lista de não contados. Erro após assinatura: ajuste separado por dois admins, sem editar o original (depois de 02/01).
+- PIN de 4 dígitos mantido (poucas equipes, contas revogadas ao fim); só conferir o limite de tentativas do Supabase. QR Code futuro traz praticidade, não mais segurança: carrega a mesma credencial.
