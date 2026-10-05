@@ -23,11 +23,11 @@ insert into public.team_slot_assignments(id,team_id,slot_id,membership_id) value
 ('40000000-0000-0000-0000-000000000502','40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000402','40000000-0000-0000-0000-000000000302');
 update public.team_flows set phase='counting',revision=1 where team_id='40000000-0000-0000-0000-000000000200';
 -- (brand, A units, A method, B units, B method); 'miss' has no record from B.
-insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,units,bpu_at_entry,method)
+insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,units,bpu_at_entry,method,weighing)
 select '40000000-0000-0000-0000-000000000200',
   case s when 1 then '40000000-0000-0000-0000-000000000501' else '40000000-0000-0000-0000-000000000502' end::uuid,
   case s when 1 then '40000000-0000-0000-0000-000000000401' else '40000000-0000-0000-0000-000000000402' end::uuid,
-  'cmp-'||b, q, 10, m
+  'cmp-'||b, q, 10, m, case when m='weight' then '{"rounds":[{"boxes":0,"grams":1}],"visualCases":0}'::jsonb end
 from (values ('eq',1,10,'manual'),('eq',2,10,'manual'),('mix',1,100,'manual'),('mix',2,100,'weight'),
   ('zero',1,0,'manual'),('zero',2,0,'manual'),('t98',1,100,'weight'),('t98',2,98,'weight'),
   ('t97',1,100,'weight'),('t97',2,97,'weight'),('t29',1,30,'weight'),('t29',2,29,'weight'),

@@ -21,9 +21,9 @@ insert into public.team_count_slots(id,team_id,ordinal) values('30000000-0000-00
 insert into public.team_slot_assignments(id,team_id,slot_id,membership_id) values
 ('30000000-0000-0000-0000-000000000501','30000000-0000-0000-0000-000000000200','30000000-0000-0000-0000-000000000401','30000000-0000-0000-0000-000000000301'),('30000000-0000-0000-0000-000000000502','30000000-0000-0000-0000-000000000200','30000000-0000-0000-0000-000000000402','30000000-0000-0000-0000-000000000302');
 update public.team_flows set phase='counting',revision=1 where team_id='30000000-0000-0000-0000-000000000200';
-insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,cases,method,bpu_at_entry) values
-('30000000-0000-0000-0000-000000000200','30000000-0000-0000-0000-000000000501','30000000-0000-0000-0000-000000000401','snapshot-a',10,'manual',20),
-('30000000-0000-0000-0000-000000000200','30000000-0000-0000-0000-000000000502','30000000-0000-0000-0000-000000000402','snapshot-a',10,'weight',20);
+insert into public.team_count_records(team_id,assignment_id,slot_id,brand_code,cases,method,bpu_at_entry,weighing) values
+('30000000-0000-0000-0000-000000000200','30000000-0000-0000-0000-000000000501','30000000-0000-0000-0000-000000000401','snapshot-a',10,'manual',20,null),
+('30000000-0000-0000-0000-000000000200','30000000-0000-0000-0000-000000000502','30000000-0000-0000-0000-000000000402','snapshot-a',10,'weight',20,'{"rounds":[{"boxes":0,"grams":1}],"visualCases":0}');
 select throws_ok($q$select private.build_team_result_snapshot('30000000-0000-0000-0000-000000000200',1,'30000000-0000-0000-0000-000000000303','[{"brand_code":"snapshot-a","quantity_units":200,"resolution":"reconciled","resolved_by":"30000000-0000-0000-0000-000000000303"}]'::jsonb)$q$,'P0001','Result snapshot requires current admin review','Cannot snapshot during counting');
 
 update public.team_memberships set finish_state='requested' where team_id='30000000-0000-0000-0000-000000000200' and role='counter';

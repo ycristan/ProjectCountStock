@@ -87,7 +87,8 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
   const totalPeso = rodadas.reduce((s, r) => s + parseGrams(r.pesoFmt), 0)
   const liquido = totalPeso - totalTara
   const raw = liquido > 0 && item.weight_avg > 0 ? liquido / item.weight_avg : 0
-  const decimal = raw - Math.floor(raw)
+  // Rounded to 6 places so an exact .7 (e.g. 10.7) is not read as 0.69999… (same rule in the database)
+  const decimal = Math.round((raw - Math.floor(raw)) * 1e6) / 1e6
   const weightQty = raw > 0 ? (decimal >= 0.7 ? Math.ceil(raw) : Math.floor(raw)) : 0
   const hasWeightData = totalPeso > 0
 
@@ -145,6 +146,10 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
           cases: c,
           units: u,
           is_weight_count: modo === 'peso',
+          weighing: modo === 'peso' ? {
+            rounds: rodadas.map((r) => ({ boxes: parseInt(r.caixas || '0', 10), grams: parseGrams(r.pesoFmt) })),
+            visualCases: extraCases,
+          } : undefined,
         })
         if (result.error) {
           setErro(result.error)

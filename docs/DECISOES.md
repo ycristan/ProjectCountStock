@@ -94,3 +94,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Sessão de teste e pesagem (2026-10-05)
 - Sessão de equipes de teste aberta desde 01/10 (sem equipes nem contagens) encerrada em produção com autorização de Yuri.
 - Aprovado guardar peso bruto, número de caixas e rodadas de cada lançamento por peso no fluxo novo, para o Audit Count.
+
+## Bloco 7 e dados da pesagem (2026-10-05)
+- Contagem conciliada do Independente fica em registro próprio, só de acréscimo; as contagens dos contadores nunca mudam. Vale a última por produto e todas ficam guardadas. Motivo: rastreabilidade para o Audit Count.
+- Envio ao admin só com todos os produtos resolvidos (igual, valor escolhido na tolerância ou conciliado); o resultado selado é criado na mesma transação.
+- Pesagem: o banco recalcula a quantidade a partir das rodadas (caixas e peso bruto), da tara e do peso por unidade e recusa divergência. Fração de 0,7 ou mais sobe, calculada com 6 casas: o formulário arredondava para baixo alguns casos de 0,7 exato (1.070 g / 100 g dava 10, não 11), defeito que também atinge Solo e legado.

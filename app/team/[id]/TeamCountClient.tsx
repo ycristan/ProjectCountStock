@@ -1,11 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
-import { decideTeamFinish, decideTeamItem, readTeamComparison, readTeamCount, readTeamInventory, requestTeamFinish, saveTeamCount, startTeamCount } from '@/actions/team-count'
+import { decideTeamFinish, decideTeamItem, readTeamComparison, readTeamCount, readTeamInventory, requestTeamFinish, saveTeamCount, saveTeamReconciliation, startTeamCount, submitTeamReconciliation } from '@/actions/team-count'
 import { createClient } from '@/lib/supabase-client'
 import type { ItemBusca, LancarContagemPayload } from '@/actions/contagem'
 import type { TeamComparisonItem, TeamCountState } from '@/lib/team-count-types'
 import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
+import { CountForm } from '@/app/(counter)/busca/_components/CountForm'
 
 export function TeamCountClient({ initial, inventory }: { initial: TeamCountState; inventory: ItemBusca[] }) {
   const [state, setState] = useState(initial)
@@ -13,8 +14,10 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
   const [comparison, setComparison] = useState<TeamComparisonItem[]>([])
   const [unavailable, setUnavailable] = useState(false)
   const [notice, setNotice] = useState('')
+  const [reconciling, setReconciling] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   const command = useRef<{ payload: string; id: string; revision: string | null } | null>(null)
+  const submission = useRef<{ revision: string; id: string } | null>(null)
   // Revision of each own record saved on this screen; never older than the last read.
   const saved = useRef(new Map<string, string>())
   const readSequence = useRef(0)
@@ -57,7 +60,7 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       running = false
     }
     const channel = db.channel('team-count-' + teamId)
-    for (const table of ['team_count_records', 'team_flows', 'team_memberships', 'team_item_decisions'])
+    for (const table of ['team_count_records', 'team_flows', 'team_memberships', 'team_item_decisions', 'team_reconciliations'])
       channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: 'team_id=eq.' + teamId }, reload)
     void db.auth.getSession().then(({ data }) => {
       if (disposed) return
@@ -124,6 +127,24 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
     }
   }
 
+  // Same retry rule as counts: one command and one team revision per reconciled quantity.
+  async function reconcile(payload: LancarContagemPayload) {
+    const item = catalog.find(i => i.brand_code === payload.brand_code)
+    if (!item || state.role !== 'independent' || state.phase !== 'reconciling') return { error: 'Reconciliation is blocked. Refresh your team.' }
+    const fingerprint = 'reconcile:' + JSON.stringify(payload)
+    if (command.current?.payload !== fingerprint)
+      command.current = { payload: fingerprint, id: crypto.randomUUID(), revision: state.revision }
+    try {
+      const result = await saveTeamReconciliation(teamId, command.current.id, command.current.revision!, item, payload)
+      if (result.error) { void reloadCatalog(); return result }
+      command.current = null
+      void refresh()
+      return result
+    } catch {
+      return { error: 'Response unavailable. Retry the same count to confirm it safely.' }
+    }
+  }
+
   function finish(action: () => Promise<{ error?: string }>, done: string) {
     startTransition(async () => {
       const result = await action()
@@ -133,6 +154,41 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
   }
   const statusLabel: Record<string, string> = {
     counting: 'Counting', requested: 'Waiting for the Independent', accepted: 'Accepted',
+  }
+
+  const needsReconciliation = (row: TeamComparisonItem) =>
+    row.status === 'reconcile' || (row.status === 'tolerance' && row.decision?.decision === 'reconcile')
+  const resolved = (row: TeamComparisonItem) => row.status === 'equal'
+    || (row.status === 'tolerance' && row.decision?.decision === 'accept_value')
+    || (needsReconciliation(row) && !!row.reconciliation)
+  const pendingItems = comparison.filter(row => !resolved(row)).length
+  const canReconcile = !unavailable && state.role === 'independent' && state.phase === 'reconciling'
+  const reconcilingRow = canReconcile ? comparison.find(row => row.brandCode === reconciling && needsReconciliation(row)) : undefined
+  const reconcilingItem = reconcilingRow && catalog.find(i => i.brand_code === reconcilingRow.brandCode)
+
+  if (reconcilingRow && reconcilingItem) {
+    const previous = reconcilingRow.reconciliation
+    return <section className="mt-4 space-y-4">
+      <h1 className="text-xl font-semibold">{state.teamName} — Reconciliation</h1>
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Original counts</div>
+        {reconcilingRow.cells.map(cell => {
+          const member = counters.find(m => m.id === cell.membershipId)
+          return <div key={cell.membershipId} className="flex justify-between text-sm">
+            <span>Counter {member?.order} — {member?.name}</span>
+            <span className="font-semibold">{cell.quantity == null ? 'Not counted'
+              : format(cell.quantity, reconcilingRow.brandCode) + (cell.method === 'weight' ? ' (weight)' : '')}</span>
+          </div>
+        })}
+      </div>
+      <CountForm item={{ ...reconcilingItem, jaContado: !!previous,
+          entryExistente: previous ? { pallets: previous.pallets, cases: previous.cases, units: previous.units } : null }}
+        onSubmit={reconcile} onVoltar={() => setReconciling(null)}
+        onSucesso={result => {
+          setReconciling(null)
+          setNotice('Reconciled ' + reconcilingRow.brandCode + ': ' + result.final_cases + '+' + result.final_units + '.')
+        }} />
+    </section>
   }
 
   return <section className="mt-4 space-y-4">
@@ -186,6 +242,7 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
           const result = row.status === 'equal' ? 'Equal'
             : row.status === 'tolerance' && decided?.decision === 'accept_value' ? 'Using ' + format(decided.quantity!, row.brandCode)
             : row.status === 'tolerance' && !decided ? 'Within weight tolerance'
+            : row.reconciliation ? 'Reconciled ' + format(row.reconciliation.quantity, row.brandCode)
             : 'Needs reconciliation'
           const choosing = row.status === 'tolerance' && !decided && state.role === 'independent' && state.phase === 'reconciling'
           return <tr key={row.brandCode} data-brand={row.brandCode} data-result={result}>
@@ -204,10 +261,26 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
                   onClick={() => finish(() => decideTeamItem(teamId, row.brandCode, null, state.revision, crypto.randomUUID()),
                     row.brandCode + ' sent to reconciliation.')}>Reconcile</button>
               </span>}
+              {canReconcile && needsReconciliation(row) && <button disabled={pending}
+                className="block mt-1 bg-slate-900 text-white rounded px-3 py-2"
+                onClick={() => { setNotice(''); setReconciling(row.brandCode) }}>
+                {row.reconciliation ? 'Edit reconciled count' : 'Enter reconciled count'}</button>}
             </td>
           </tr>
         })}</tbody>
       </table>
+      {canReconcile && comparison.length > 0 && <div className="mt-3 space-y-2">
+        <p>{pendingItems === 0 ? 'Every item is resolved.' : pendingItems + ' item(s) still need a decision or reconciled count.'}</p>
+        <button disabled={pending || pendingItems > 0} className="w-full bg-slate-900 text-white rounded-xl py-3 font-semibold disabled:opacity-40"
+          onClick={() => {
+            if (!window.confirm('Submit the team result to the admin? Reconciliation will be closed for this team.')) return
+            if (submission.current?.revision !== state.revision)
+              submission.current = { revision: state.revision, id: crypto.randomUUID() }
+            const { revision, id } = submission.current
+            finish(() => submitTeamReconciliation(teamId, revision, id), 'Submitted to the admin for review.')
+          }}>Submit to admin</button>
+      </div>}
+      {state.phase === 'admin_review' && <p className="mt-3">Waiting for admin review. The submitted result is sealed.</p>}
     </div>}
     {monitor && !unavailable && state.phase === 'counting' && <div className="overflow-x-auto">
       <h2 className="font-semibold mb-2">Provisional counts — not a reconciled result</h2>

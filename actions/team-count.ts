@@ -88,7 +88,7 @@ export async function saveTeamCount(teamId: string, command: string, revision: s
     p_team: teamId, p_command: command, p_brand: payload.brand_code, p_revision: revision,
     p_pallets: payload.pallets, p_cases: payload.cases, p_units: payload.units,
     p_weight: payload.is_weight_count ?? false, p_bpu: item.bpu, p_pallet_size: item.pallet_size,
-    p_weight_avg: item.weight_avg, p_tare: item.box_tare_g,
+    p_weight_avg: item.weight_avg, p_tare: item.box_tare_g, p_weighing: payload.weighing ?? null,
   })
   if (error) {
     if (!['40001', '42501', '22023'].includes(error.code)) await reportTeamContextError('team.count')
@@ -97,4 +97,37 @@ export async function saveTeamCount(teamId: string, command: string, revision: s
       : 'Count was not confirmed. Check access and retry.' }
   }
   return data as LancarContagemResult
+}
+
+// Block 7 (R06): reconciled count by the Independent, same form and checks as a count.
+export async function saveTeamReconciliation(teamId: string, command: string, revision: string,
+  item: ItemBusca, payload: LancarContagemPayload): Promise<LancarContagemResult> {
+  if (process.env.TEAM_SETUP_ENABLED !== 'true') return { error: 'Team access unavailable.' }
+  const db = await createClient()
+  const { data, error } = await db.rpc('save_team_reconciliation', {
+    p_team: teamId, p_command: command, p_brand: payload.brand_code, p_expected_revision: revision,
+    p_pallets: payload.pallets, p_cases: payload.cases, p_units: payload.units,
+    p_weight: payload.is_weight_count ?? false, p_bpu: item.bpu, p_pallet_size: item.pallet_size,
+    p_weight_avg: item.weight_avg, p_tare: item.box_tare_g, p_weighing: payload.weighing ?? null,
+  })
+  if (error) {
+    if (!['40001', '42501', '22023', 'P0001'].includes(error.code)) await reportTeamContextError('team.count')
+    return { error: error.code === '40001'
+      ? 'The team or product changed. Close this form, refresh and retry.'
+      : 'Reconciliation was not confirmed. Refresh and retry.' }
+  }
+  return data as LancarContagemResult
+}
+
+// R07: every counted product must be resolved; the database seals the result for the admin.
+export async function submitTeamReconciliation(teamId: string, revision: string, command: string) {
+  if (process.env.TEAM_SETUP_ENABLED !== 'true') return { error: 'Team access unavailable.' }
+  const db = await createClient()
+  const { error } = await db.rpc('submit_team_reconciliation',
+    { p_team: teamId, p_expected_revision: revision, p_command: command })
+  if (!error) return {}
+  if (!['40001', '42501', '22023', 'P0001'].includes(error.code)) await reportTeamContextError('team.count')
+  return { error: error.code === '40001' ? 'The team changed. Refresh and try again.'
+    : error.message === 'Every item must be resolved before submitting'
+      ? 'Every item must be resolved before submitting.' : 'Not submitted. Refresh and try again.' }
 }

@@ -36,6 +36,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
     p_team:team,p_command:randomUUID(),p_brand:brand,p_revision:revision,
     p_pallets:0,p_cases:0,p_units:units,p_weight:false,p_bpu:10,p_pallet_size:5,p_weight_avg:100,p_tare:300,
   })
+  const weighing=grams=>({rounds:[{boxes:0,grams}],visualCases:0})
   const search=async(p,name)=>p.getByPlaceholder('Brand Code (e.g. 6323), Name or BIN (e.g. 40A02)').fill(name)
   try {
     for(const [index,team] of plan.entries()){
@@ -96,7 +97,9 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
       const unit={...saveArgs(stored.id,codes[2]),p_bpu:1}
       assert.ok((await first.client.rpc('save_team_count',{...unit,p_cases:1})).error)
       assert.ok((await first.client.rpc('save_team_count',{...unit,p_pallets:1})).error)
-      checked(await first.client.rpc('save_team_count',{...unit,p_weight:true,p_units:12}))
+      assert.ok((await first.client.rpc('save_team_count',{...unit,p_weight:true,p_units:12})).error,'weight needs the weighing')
+      assert.ok((await first.client.rpc('save_team_count',{...unit,p_weight:true,p_units:13,p_weighing:weighing(1200)})).error,'weighing must match')
+      checked(await first.client.rpc('save_team_count',{...unit,p_weight:true,p_units:12,p_weighing:weighing(1200)}))
       assert.equal(checked(await first.client.rpc('read_team_count',{p_team:stored.id})).records.find(r=>r.brandCode===codes[2]).method,'weight')
       stage='weight form and zero in monitor '+index
       await search(second.p,'Count Unit')
@@ -158,8 +161,8 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await independent.p.getByRole('button',{name:'Refresh team',exact:true}).click()
         await row.getByText('1+4',{exact:true}).waitFor()
         stage='weight counts inside tolerance (block 6 fixture through authorized RPC)'
-        checked(await first.client.rpc('save_team_count',{...unit,p_command:randomUUID(),p_weight:true,p_units:50,p_revision:'0'}))
-        checked(await second.client.rpc('save_team_count',{...unit,p_command:randomUUID(),p_weight:true,p_units:49,p_revision:'0'}))
+        checked(await first.client.rpc('save_team_count',{...unit,p_command:randomUUID(),p_weight:true,p_units:50,p_revision:'0',p_weighing:weighing(5000)}))
+        checked(await second.client.rpc('save_team_count',{...unit,p_command:randomUUID(),p_weight:true,p_units:49,p_revision:'0',p_weighing:weighing(4900)}))
         stage='finish request through the screen (block 5)'
         const current=checked(await first.client.rpc('read_team_count',{p_team:stored.id}))
         const requestFinish=async()=>{
@@ -202,6 +205,37 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await weightRow.getByRole('button',{name:'Use 49+0',exact:true}).click()
         await independent.p.locator('tr[data-brand="'+codes[2]+'"][data-result="Using 49+0"]').waitFor()
         assert.equal(await weightRow.getByRole('button').count(),0)
+        assert.equal(checked(await db.from('team_count_records').select('weighing').eq('team_id',stored.id).eq('brand_code',codes[2])
+          .eq('units',49).single()).weighing.grossG,4900,'raw weighing stored')
+        stage='reconciliation through the screen (block 7)'
+        const submitButton=independent.p.getByRole('button',{name:'Submit to admin',exact:true})
+        assert.ok(await submitButton.isDisabled(),'submission blocked while items are pending')
+        assert.equal(await page.getByRole('button',{name:/Enter reconciled count|Submit to admin/}).count(),0,'admin never reconciles')
+        await independent.p.locator('tr[data-brand="'+codes[0]+'"]').getByRole('button',{name:'Enter reconciled count',exact:true}).click()
+        await independent.p.getByText('Original counts',{exact:true}).waitFor()
+        await independent.p.getByText('1+4',{exact:true}).waitFor()
+        const reconcileInputs=independent.p.locator('input[type="number"]')
+        await reconcileInputs.nth(1).fill('1');await reconcileInputs.nth(2).fill('5')
+        await independent.p.getByRole('button',{name:'Confirm Count',exact:true}).click()
+        await independent.p.locator('tr[data-brand="'+codes[0]+'"][data-result="Reconciled 1+5"]').waitFor()
+        assert.ok(await submitButton.isDisabled(),'one item still pending')
+        const reviewState=checked(await independent.client.rpc('read_team_count',{p_team:stored.id}))
+        assert.ok((await second.client.rpc('save_team_reconciliation',{p_team:stored.id,p_command:randomUUID(),p_brand:codes[1],
+          p_expected_revision:reviewState.revision,p_pallets:0,p_cases:0,p_units:0,p_weight:false,p_bpu:10,p_pallet_size:0,
+          p_weight_avg:0,p_tare:300})).error,'counter cannot reconcile')
+        checked(await independent.client.rpc('save_team_reconciliation',{p_team:stored.id,p_command:randomUUID(),p_brand:codes[1],
+          p_expected_revision:reviewState.revision,p_pallets:0,p_cases:0,p_units:0,p_weight:false,p_bpu:10,p_pallet_size:0,
+          p_weight_avg:0,p_tare:300}))
+        await independent.p.locator('tr[data-brand="'+codes[1]+'"][data-result="Reconciled 0+0"]').waitFor()
+        stage='submission to the admin (block 7)'
+        independent.p.once('dialog',dialog=>dialog.accept())
+        await submitButton.click()
+        await independent.p.getByText('Phase: admin_review',{exact:true}).waitFor()
+        await page.getByText('Phase: admin_review',{exact:true}).waitFor()
+        const result=checked(await db.from('team_result_items').select('brand_code,quantity_units,resolution').eq('team_id',stored.id))
+        assert.deepEqual(Object.fromEntries(result.map(r=>[r.brand_code,r.quantity_units+':'+r.resolution])),
+          {[codes[0]]:'15:reconciled',[codes[1]]:'0:reconciled',[codes[2]]:'49:weight_tolerance'})
+        assert.equal(await independent.p.getByRole('button',{name:/Enter reconciled count|Edit reconciled count|Submit to admin/}).count(),0)
         // Privileged fixture only for selective revocation, not a completed close.
         sql("update public.team_memberships set access_revoked_at=clock_timestamp() where id='"+current.membershipId+"'")
         assert.ok((await first.client.rpc('read_team_count',{p_team:stored.id})).error)

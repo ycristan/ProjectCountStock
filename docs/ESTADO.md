@@ -13,10 +13,10 @@ Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independen
 `main` com inventário por warehouse, ZIP e recuperação BDS aplicada. Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo).
 
 ## Em andamento
-- Fluxo novo de equipes nesta PR (#79): blocos 1–6 prontos, não publicados. Bloco 6: comparação após todos os aceites (igual, tolerância de peso de 2% com escolha do Independente, ou conciliação), visível só para Independente e admin. Próximo: bloco 7 (conciliação) + guardar peso bruto e caixas de cada pesagem.
+- Fluxo novo de equipes nesta PR (#79): blocos 1–7 prontos, não publicados. Bloco 7: o Independente registra a contagem conciliada (mesmo formulário, originais visíveis) e envia a equipe ao admin, gerando o resultado selado. Contagens por peso guardam rodadas, caixas e peso bruto. Próximo: bloco 8 (revisão do admin e recontagens).
 - Correções da auditoria feitas: inventário carregado uma vez; mesma busca/"Add to Count"/"Edit Count" das telas atuais; monitor em `cases+units`.
 - Regras revisadas com Yuri em 2026-10-05: substituição e Independente compartilhado adiados; contador ausente simples; assinatura por PIN + nome completo; lista de ativos não contados antes do zero.
-- Blocos restantes para 02/01: 7, 8, 11, 12. Menu "Audit Count" no bloco 12.
+- Blocos restantes para 02/01: 8, 11, 12. Menu "Audit Count" no bloco 12.
 
 ## Decisões pendentes de Yuri
 Nenhuma no momento.
@@ -28,6 +28,7 @@ Regressão do Independente (vinda da PR #63): contas de equipe criadas depois da
 - Limite de tentativas de login do Supabase (PIN de 4 dígitos).
 - Inventário BDS: 2.301 produtos (460 ativos / 1.841 inativos) contra 2.295 (446 / 1.849) logo após a recuperação. Sem registro da mudança.
 - Backup de 2026-09-18 nunca foi restaurado em teste. Sentry hospedado sem leitura pelo agente.
+- Arredondamento do peso: o formulário arredondava para baixo alguns casos de 0,7 exato (Solo e legado também); corrigido na #79, não publicado.
 - Contagem por peso no legado: "adicionar rodada" e reconciliação por peso quebradas em agosto; sem registro de correção.
 
 ## Backlog aprovado, não iniciado

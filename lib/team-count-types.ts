@@ -15,4 +15,5 @@ export type TeamComparisonItem = {
   limit: string
   cells: { membershipId: string; recordId: string | null; quantity: string | null; method: 'manual' | 'weight' | null }[]
   decision: { decision: 'accept_value' | 'reconcile'; recordId: string | null; quantity: string | null } | null
+  reconciliation: { pallets: number; cases: number; units: number; quantity: string; method: 'manual' | 'weight' } | null
 }
