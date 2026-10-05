@@ -16,10 +16,10 @@ Aprovar o plano não autoriza merge nem migration em produção. Em que bloco es
 | 6 | Comparação: igualdade, ausência/zero, métodos, tolerância de peso | 4 |
 | 7 | Conciliação: registro do Independente, originais, submissão | 4 |
 | 8 | Revisão do admin: recontagens seletivas, rodadas preservadas | 5 |
-| 9 | Saídas e substituição pelo Independente; admin exclusivo | 6 |
-| 10 | Independente compartilhado entre equipes | 7 |
-| 11 | Assinaturas (desenho/PIN/ausências), congelamento na 1ª confirmação | 8 |
-| 12 | Encerramento por equipe, consolidado, Excel, verificação ponta a ponta | 9 |
+| 9 | ~~Saídas e substituição~~ ADIADO; contador ausente simples vai no bloco 11 | 6 |
+| 10 | ~~Independente compartilhado~~ ADIADO | 7 |
+| 11 | Assinatura por PIN + nome completo, ausências (contador e Independente), congelamento na 1ª confirmação | 8 |
+| 12 | Encerramento por equipe, lista de ativos não contados, consolidado, Excel, Audit Count, verificação ponta a ponta | 9 |
 
 Entregas 1 (contrato) e 2 (fundação: pessoas, vínculos, autoria, versões) foram feitas antes dos blocos. Blocos marcados com — são ajustes de base fora da numeração original.
 Cada bloco inclui implementação e testes proporcionais. Nenhuma parte incompleta vai para produção.
