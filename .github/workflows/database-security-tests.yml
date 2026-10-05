@@ -2,7 +2,7 @@ name: Database security tests
 
 on:
   pull_request:
-    branches: [main, codex/team-flow-contracts]
+    branches: [main]
     paths:
       - 'supabase/**'
       - 'tests/http/**'
