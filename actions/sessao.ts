@@ -2,18 +2,11 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
-import { fetchAllRows } from '@/lib/fetch-all-rows'
 import { redirect } from 'next/navigation'
 import { getDefaultTare } from '@/actions/settings'
 import { getTeamCounterAccess, isAdmin } from '@/lib/authorization'
 
-type UploadState = { error?: string; success?: boolean; count?: number; skipped?: number } | null
 type SessaoState = { error?: string } | null
-
-// Legacy endpoint cannot bypass review or warehouse scoping.
-export async function uploadInventory(_prevState: UploadState, _formData: FormData): Promise<UploadState> {
-  return { error: 'Use Inventory > Import inventory to review the new-format spreadsheet.' }
-}
 
 export async function criarSessao(
   _prevState: SessaoState,
@@ -41,59 +34,6 @@ export async function criarSessao(
   if (error || !data) return { error: 'Error creating session.' }
 
   redirect(`/admin/sessao/${data.id}/equipes?n=${numEquipes}`)
-}
-
-export async function buscarInventarioParaDownload() {
-  if (!(await isAdmin())) return null
-  const supabase = await createClient()
-
-  const [items, bins] = await Promise.all([
-    fetchAllRows<{
-      brand_code: string
-      brand_name: string
-      bpu: number
-      pallet_size: number
-      weight_avg: number
-      category: string
-      category1: string
-    }>((from, to) =>
-      supabase
-        .from('inventory_items')
-        .select('brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1')
-        .order('brand_code')
-        .range(from, to)
-    ),
-    fetchAllRows<{ brand_code: string; bin_location: string }>((from, to) =>
-      supabase
-        .from('item_bin_locations')
-        .select('brand_code, bin_location')
-        .order('brand_code')
-        .range(from, to)
-    ),
-  ])
-
-  const binMap: Record<string, string[]> = {}
-  for (const b of bins) {
-    if (!binMap[b.brand_code]) binMap[b.brand_code] = []
-    binMap[b.brand_code].push(b.bin_location)
-  }
-
-  return items.map((item) => {
-    const b = binMap[item.brand_code] ?? []
-    return {
-      'Brand Code': item.brand_code,
-      'Brand Name': item.brand_name,
-      'Brand Purchase Unit': item.bpu,
-      'Pallet Size': item.pallet_size,
-      'Weight AVG': item.weight_avg ?? 0,
-      'Category': item.category ?? '',
-      'Category1': item.category1 ?? '',
-      'BIN Location 1': b[0] ?? '',
-      'BIN Location 2': b[1] ?? '',
-      'BIN Location 3': b[2] ?? '',
-      'BIN Location 4': b[3] ?? '',
-    }
-  })
 }
 
 export type EquipeInput = {
