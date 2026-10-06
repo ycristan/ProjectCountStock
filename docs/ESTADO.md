@@ -27,7 +27,8 @@ Regressão do Independente (vinda da PR #63): contas de equipe criadas depois da
 ## A verificar
 - Limite de tentativas de login do Supabase (PIN de 4 dígitos).
 - Inventário BDS: 2.301 produtos (460 ativos / 1.841 inativos) contra 2.295 (446 / 1.849) logo após a recuperação. Sem registro da mudança.
-- Backup de 2026-09-18 nunca foi restaurado em teste. Sentry hospedado sem leitura pelo agente.
+- Backup de 2026-09-18 nunca foi restaurado em teste.
+- Sentry lido pelo agente desde 06/10: sem dado pessoal; só capta falhas não tratadas. Erros que as telas mostram ao usuário (ex.: falha ao salvar) não chegam lá.
 - Contagem por peso no legado: "adicionar rodada" e reconciliação por peso quebradas em agosto; sem registro de correção.
 - Migrations da #79 com data anterior à última aplicada em produção (21/09 e 22/09): renomear antes de aplicar.
 
