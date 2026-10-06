@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
+import { weightUnits } from '@/lib/weight-count'
 import type { ReconcItemLista } from '@/actions/reconciliacao'
 import { resolverItemReconciliacao, confirmarReconciliacao } from '@/actions/reconciliacao'
 
@@ -27,8 +28,7 @@ function calcWeight(
   const tara = numCaixas * box_tare_g
   const liquido = pesoGrams - tara
   const raw = liquido > 0 && weight_avg > 0 ? liquido / weight_avg : 0
-  const decimal = raw - Math.floor(raw)
-  const units_total = raw > 0 ? (decimal >= 0.7 ? Math.ceil(raw) : Math.floor(raw)) : 0
+  const units_total = weightUnits(raw)
   const safeBpu = bpu > 0 ? bpu : 1
   return {
     tara,
