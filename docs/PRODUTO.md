@@ -20,7 +20,7 @@ Fonte normativa: [TEAM_COUNT_FLOW.md](./TEAM_COUNT_FLOW.md). Resumo, sem substit
 - Depois dos aceites, conciliar ausências e divergências. Valores iguais por qualquer método dispensam conciliação. Todos por peso: diferença de até 2% (mínimo 1 unidade) exige decisão explícita do Independente (escolher um dos valores ou conciliar).
 - Independente submete a equipe. Admin aceita ou pede recontagem só de produtos contados pela equipe.
 - Assinatura por PIN com nome completo, ou ausência formalizada; a primeira confirmação congela; a última encerra a equipe e revoga seus acessos. Contador que sai é marcado ausente pelo Independente (sem substituição).
-- Antes do fechamento geral, o admin confirma a lista de ativos não contados antes de virarem zero.
+- Antes do fechamento geral, o admin dá ciência da lista de ativos não contados (não encontrados); no Excel eles saem com 0 e a marcação "não contado".
 - Equipes encerram separadamente e ficam imutáveis; correção posterior só por ajuste com dois admins (após o primeiro lançamento). No consolidado: inativo não contado não gera linha.
 
 ## Regras gerais
