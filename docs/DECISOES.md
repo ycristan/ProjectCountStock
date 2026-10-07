@@ -77,8 +77,42 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Agente único (2026-10-05)
 - O projeto passa a ter um único agente (Claude). `AGENTS.md` foi incorporado ao `CLAUDE.md` e removido; o CI recusa a volta de `AGENTS.md`. O trabalho útil do agente anterior é absorvido por revisão, sem menções a ele nos documentos.
 
+## Auditoria da base do fluxo de equipes (2026-10-05)
+- Base mantida, sem reescrita: autorização no banco, retry idempotente e histórico estão corretos e testados. O cadastro de equipes é mais complexo do que o necessário, mas fica; nenhum mecanismo desse porte nos blocos 5–12.
+- Correções aprovadas para os próximos blocos: carregar o inventário uma vez e recarregar só as contagens; tela de equipe com o mesmo seletor "Add to Count / Edit Count" das telas atuais; monitor em `cases+units`; conferir o limite de tentativas de login do Supabase (PIN de 4 dígitos).
+- Pesagem: guardar peso bruto, número de caixas e rodadas de cada lançamento por peso. Esses dados e o histórico de edições aparecem num menu admin "Audit Count", que exporta tudo o que cada pessoa lançou.
+- PR só de documentação pode ser mergeada pelo agente após CI verde. Motivo: tirar de Yuri aprovações sem risco.
+
+## Correção: dados da pesagem (2026-10-05)
+- O legado nunca guardou peso bruto nem número de caixas (as colunas não existem no banco; o schema antigo da memória estava errado). Guardar esses dados é funcionalidade nova, não regressão do fluxo novo; aguarda confirmação de Yuri.
 ## Revisão das regras do fluxo de equipes (2026-10-05)
 - Tolerância de peso: 2% da maior quantidade (mínimo 1 unidade), no lugar de 50% do BPU; o Independente escolhe qualquer valor ou concilia. Motivo: erro de balança é proporcional ao peso, e "aceitar o maior" inflava o estoque.
 - Substituição de contador (R09) e Independente compartilhado (R10) adiados: raros e caros para o prazo. Fica só "contador ausente" marcado pelo Independente (R08), senão a equipe trava.
 - Assinatura por PIN + nome completo; desenho é melhoria futura. Ativo não contado só vira zero após confirmação do admin na lista de não contados. Erro após assinatura: ajuste separado por dois admins, sem editar o original (depois de 02/01).
 - PIN de 4 dígitos mantido (poucas equipes, contas revogadas ao fim); só conferir o limite de tentativas do Supabase. QR Code futuro traz praticidade, não mais segurança: carrega a mesma credencial.
+
+## Sessão de teste e pesagem (2026-10-05)
+- Sessão de equipes de teste aberta desde 01/10 (sem equipes nem contagens) encerrada em produção com autorização de Yuri.
+- Aprovado guardar peso bruto, número de caixas e rodadas de cada lançamento por peso no fluxo novo, para o Audit Count.
+
+## Bloco 7 e dados da pesagem (2026-10-05)
+- Contagem conciliada do Independente fica em registro próprio, só de acréscimo; as contagens dos contadores nunca mudam. Vale a última por produto e todas ficam guardadas. Motivo: rastreabilidade para o Audit Count.
+- Envio ao admin só com todos os produtos resolvidos (igual, valor escolhido na tolerância ou conciliado); o resultado selado é criado na mesma transação.
+- Pesagem: o banco recalcula a quantidade a partir das rodadas (caixas e peso bruto), da tara e do peso por unidade e recusa divergência. Fração de 0,7 ou mais sobe, calculada com 6 casas: o formulário arredondava para baixo alguns casos de 0,7 exato (1.070 g / 100 g dava 10, não 11), defeito que também atinge Solo e legado.
+
+## Bloco 8 — revisão do admin (2026-10-07)
+- Admin aceita o resultado selado (a equipe passa à coleta de assinaturas, R11) ou devolve produtos que a equipe contou; cada decisão guarda o admin, a versão e a hora, só de acréscimo. Dois admins ao mesmo tempo: vale o primeiro, o segundo recebe "a equipe mudou".
+- Na rodada de recontagem só os produtos devolvidos aceitam novo valor; os demais mantêm o resultado e ficam sem nova escolha de tolerância. O valor oficial de um produto devolvido é a última recontagem da última rodada que o incluiu. Motivo: R07 ("itens não selecionados permanecem preservados").
+- Cada reenvio gera nova versão selada; as anteriores ficam guardadas para o Audit Count.
+
+## Bloco 11 — assinaturas, ausências e encerramento (2026-10-08)
+- Assinatura por PIN na tela da coleta: o servidor entra com o PIN da própria pessoa e é a sessão dela que grava a assinatura. Motivo: o banco confere quem assinou, sem confiar na tela de quem coleta.
+- Contador que sai durante a contagem (R08): o Independente marca, com motivo; o acesso é revogado e as contagens dele continuam valendo. Na assinatura, o Independente formaliza a ausência com o próprio PIN.
+- Independente ausente: o admin registra o motivo, e a ausência só conta depois que uma testemunha confirma: um contador presente, com o PIN dele, ou um admin (pode ser o mesmo que registrou).
+- Cancelar a coleta antes da primeira confirmação volta à revisão e sela de novo o mesmo resultado; a primeira confirmação congela a equipe; a última encerra e revoga todos os acessos na mesma transação.
+
+## Credenciais por PIN (2026-10-07)
+- O admin vê os PINs de propósito: precisa imprimir os cartões. Não é falha; o cuidado é não copiar PINs em documentos, commits, logs, PRs ou Sentry.
+- Formato do PIN mantido até 02/01 (código de equipe com letras e teclado de 8 letras rejeitados: o teclado reduz as combinações e a troca mexe em login, cadastro e cartões perto do prazo).
+- Ao encerrar a equipe, os logins dela são desativados, não só o acesso aos dados.
+- Limite de tentativas do Supabase para login por senha: 1.800 por hora por endereço, não ajustável; como o login passa pelo servidor, todos contam como um endereço. Proteção própria do sistema contra tentativas erradas fica proposta para decisão de Yuri.
