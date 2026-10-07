@@ -122,3 +122,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - No Excel saem com 0 e a marcação "não contado" (opção A). Motivo: sem a linha, o estoque antigo do item continuaria no sistema da empresa.
 - A lista vem ordenada por BIN para deixar visível um corredor inteiro esquecido, já que a divisão de corredores entre equipes não fica no sistema.
 - Bloqueio do login após PINs errados: adiado por Yuri, não urgente; fica no backlog.
+
+## Bloco 12 — fechamento, Excel e Audit Count (2026-10-07)
+- Colunas do Excel final aprovadas por Yuri: uma aba por equipe (cada contador, conciliado, final e como resolveu), Consolidado só com o final de cada equipe, total e "Not counted", e Template Import Reconc idêntico ao atual.
+- A ciência da lista de não contados congela o consolidado e fecha a sessão na mesma operação; se a lista mudou desde que o admin a viu, o sistema pede para revisar de novo.
+- Audit Count é um item do menu admin com uma planilha por sessão: todas as contagens e versões substituídas, pesagens, conciliações, recontagens, decisões, ausências e assinaturas. Admins aparecem pelo e-mail; membros de equipe pelo nome (o login deles contém PINs e nunca é exibido).
