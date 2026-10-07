@@ -270,6 +270,39 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         assert.ok((await first.client.rpc('read_team_count',{p_team:stored.id})).error)
         assert.ok((await first.client.rpc('save_team_count',{...args})).error)
         assert.equal(checked(await first.client.from('team_count_records').select('*').eq('team_id',stored.id)).length,0)
+        stage='signature collection by PIN on the admin screen (block 11)'
+        const lead=team.members.find(m=>m.role==='independent'), present=team.members[1], gone=team.members[0]
+        const block=name=>page.locator('[data-participant="'+name+'"]')
+        await page.locator('[data-signing]').waitFor()
+        assert.equal(await page.locator('[data-participant]').first().getAttribute('data-participant'),lead.name,'Independent first')
+        await block(present.name).getByRole('button',{name:'SIGN BY PIN CODE',exact:true}).click()
+        await block(present.name).locator('input[type="password"]').fill(lead.pin)
+        await block(present.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
+        await page.getByText('PIN does not match this person.',{exact:true}).waitFor()
+        assert.equal(checked(await db.from('team_confirmations').select('id').eq('team_id',stored.id)).length,0,'wrong PIN saves nothing')
+        await block(present.name).locator('input[type="password"]').fill(present.pin)
+        await block(present.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
+        await page.locator('[data-participant="'+present.name+'"][data-status="Signed by PIN"]').waitFor()
+        await page.getByText(/^Result frozen/).waitFor()
+        assert.equal(await page.getByRole('button',{name:'Cancel signature collection',exact:true}).count(),0,'no cancel after first confirmation')
+        stage='formal absence of a revoked counter (block 11)'
+        await block(gone.name).getByRole('button',{name:'Absent',exact:true}).click()
+        await block(gone.name).getByLabel('Reason').fill('Left before signing')
+        await block(gone.name).locator('input[type="password"]').fill(lead.pin)
+        await block(gone.name).getByRole('button',{name:'Record absence',exact:true}).click()
+        await page.locator('[data-participant="'+gone.name+'"][data-status="Absent: Left before signing"]').waitFor()
+        stage='last signature closes the team (block 11)'
+        await block(lead.name).getByRole('button',{name:'SIGN BY PIN CODE',exact:true}).click()
+        await block(lead.name).locator('input[type="password"]').fill(lead.pin)
+        await block(lead.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
+        await page.getByText('Connection or access unavailable. Counts are blocked until refreshed.',{exact:true}).waitFor()
+        const closed=checked(await db.from('team_flows').select('phase,closed_at').eq('team_id',stored.id).single())
+        assert.equal(closed.phase,'closed')
+        assert.equal(checked(await db.from('team_memberships').select('id').eq('team_id',stored.id).is('access_revoked_at',null)).length,0,
+          'closing revokes every access')
+        assert.deepEqual(checked(await db.from('team_confirmations').select('kind').eq('team_id',stored.id)).map(r=>r.kind).sort(),
+          ['absence','pin','pin'])
+        assert.ok((await independent.client.rpc('read_team_count',{p_team:stored.id})).error,'Independent session revoked after closing')
       }
       console.log('PASS: new '+(index+3)+'-person team UI/Auth, blind counts, WHS, inactive/zero, weight, receipts/history, dynamic Realtime monitor')
       for(const context of contexts)await context.close()

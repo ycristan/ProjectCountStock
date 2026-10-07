@@ -104,3 +104,9 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Admin aceita o resultado selado (a equipe passa à coleta de assinaturas, R11) ou devolve produtos que a equipe contou; cada decisão guarda o admin, a versão e a hora, só de acréscimo. Dois admins ao mesmo tempo: vale o primeiro, o segundo recebe "a equipe mudou".
 - Na rodada de recontagem só os produtos devolvidos aceitam novo valor; os demais mantêm o resultado e ficam sem nova escolha de tolerância. O valor oficial de um produto devolvido é a última recontagem da última rodada que o incluiu. Motivo: R07 ("itens não selecionados permanecem preservados").
 - Cada reenvio gera nova versão selada; as anteriores ficam guardadas para o Audit Count.
+
+## Bloco 11 — assinaturas, ausências e encerramento (2026-10-08)
+- Assinatura por PIN na tela da coleta: o servidor entra com o PIN da própria pessoa e é a sessão dela que grava a assinatura. Motivo: o banco confere quem assinou, sem confiar na tela de quem coleta.
+- Contador que sai durante a contagem (R08): o Independente marca, com motivo; o acesso é revogado e as contagens dele continuam valendo. Na assinatura, o Independente formaliza a ausência com o próprio PIN.
+- Independente ausente: o admin registra o motivo, e a ausência só conta depois que uma testemunha confirma: um contador presente, com o PIN dele, ou um admin (pode ser o mesmo que registrou).
+- Cancelar a coleta antes da primeira confirmação volta à revisão e sela de novo o mesmo resultado; a primeira confirmação congela a equipe; a última encerra e revoga todos os acessos na mesma transação.

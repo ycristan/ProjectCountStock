@@ -6,7 +6,7 @@ export type TeamCountState = {
   teamId: string; teamName: string; warehouseName: string; phase: string; revision: string
   role: 'counter' | 'independent' | 'admin'; membershipId: string | null
   finishState: string | null
-  members: { id: string; name: string; role: string; order: number; finishState: string }[]
+  members: { id: string; name: string; role: string; order: number; finishState: string; departed: boolean }[]
   records: TeamCountRecord[]
 }
 export type TeamComparisonItem = {
@@ -21,5 +21,10 @@ export type TeamComparisonItem = {
   selected: boolean
 }
 export type TeamReview = {
-  id: string; decision: 'accept' | 'return'; decidedAt: string; round: number | null; brands: string[]
+  id: string; decision: 'accept' | 'return' | 'cancel_signing'; decidedAt: string; round: number | null; brands: string[]
+}
+export type TeamSigning = {
+  versionId: string; frozen: boolean
+  participants: { membershipId: string; name: string; role: 'counter' | 'independent'; order: number; departed: boolean
+    confirmation: { kind: 'pin' | 'absence'; reason: string | null; recordedAt: string; witnessed: boolean } | null }[]
 }

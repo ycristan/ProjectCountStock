@@ -47,7 +47,7 @@ export function TeamSetupForm({ sessionId, numberOfTeams, savedDraft, credential
         <div className="grid gap-3 sm:grid-cols-3">
           {team.members.map((member, j) => <label key={j}>
             {member.role === 'independent' ? 'Independent' : 'Counter ' + (j + 1)}
-            <input name={'team_' + i + '_member_' + j} value={member.name} required className="block border rounded p-2 w-full"
+            <input name={'team_' + i + '_member_' + j} value={member.name} required placeholder="Full name" className="block border rounded p-2 w-full"
               onChange={e => edit(i, { ...team, members: team.members.map((m, k) => k === j ? { ...m, name: e.target.value } : m) })} />
           </label>)}
         </div>

@@ -4,15 +4,18 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { decideTeamFinish, decideTeamItem, readTeamComparison, readTeamCount, readTeamInventory, readTeamReviews, requestTeamFinish, reviewTeamResult, saveTeamCount, saveTeamReconciliation, startTeamCount, submitTeamReconciliation } from '@/actions/team-count'
 import { createClient } from '@/lib/supabase-client'
 import type { ItemBusca, LancarContagemPayload } from '@/actions/contagem'
-import type { TeamComparisonItem, TeamCountState, TeamReview } from '@/lib/team-count-types'
+import type { TeamComparisonItem, TeamCountState, TeamReview, TeamSigning } from '@/lib/team-count-types'
 import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
 import { CountForm } from '@/app/(counter)/busca/_components/CountForm'
+import { markCounterAbsent, readTeamSigning } from '@/actions/team-signing'
+import { SigningPanel } from './SigningPanel'
 
 export function TeamCountClient({ initial, inventory }: { initial: TeamCountState; inventory: ItemBusca[] }) {
   const [state, setState] = useState(initial)
   const [catalog, setCatalog] = useState(inventory)
   const [comparison, setComparison] = useState<TeamComparisonItem[]>([])
   const [reviews, setReviews] = useState<TeamReview[]>([])
+  const [signing, setSigning] = useState<TeamSigning | null>(null)
   const [selection, setSelection] = useState<Set<string>>(new Set())
   const [unavailable, setUnavailable] = useState(false)
   const [notice, setNotice] = useState('')
@@ -35,10 +38,13 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       const compares = next.role !== 'counter' && !['setup', 'counting'].includes(next.phase)
       const [compared, history] = compares
         ? await Promise.all([readTeamComparison(teamId), readTeamReviews(teamId)]) : [[], []]
+      // Signature collection is visible to everyone in the team, including counters.
+      const collection = next.phase === 'signing' ? await readTeamSigning(teamId) : null
       if (sequence !== readSequence.current) return
-      if (!compared || !history) { setUnavailable(true); return }
+      if (!compared || !history || (next.phase === 'signing' && !collection)) { setUnavailable(true); return }
       setComparison(compared)
       setReviews(history)
+      setSigning(collection)
       setState(next)
       setUnavailable(false)
     } catch { if (sequence === readSequence.current) setUnavailable(true) }
@@ -65,7 +71,7 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       running = false
     }
     const channel = db.channel('team-count-' + teamId)
-    for (const table of ['team_count_records', 'team_flows', 'team_memberships', 'team_item_decisions', 'team_reconciliations', 'team_admin_reviews'])
+    for (const table of ['team_count_records', 'team_flows', 'team_memberships', 'team_item_decisions', 'team_reconciliations', 'team_admin_reviews', 'team_confirmations'])
       channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: 'team_id=eq.' + teamId }, reload)
     void db.auth.getSession().then(({ data }) => {
       if (disposed) return
@@ -241,7 +247,14 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       <h2 className="font-semibold">Counters</h2>
       {counters.map(m => <div key={m.id} data-member={m.order}
         className="flex items-center justify-between border rounded-xl px-3 py-2">
-        <span>Counter {m.order} — {m.name}: {statusLabel[m.finishState] ?? m.finishState}</span>
+        <span>Counter {m.order} — {m.name}: {m.departed ? 'Absent' : statusLabel[m.finishState] ?? m.finishState}</span>
+        {state.role === 'independent' && !m.departed && m.finishState !== 'accepted' && <button disabled={pending}
+          className="border rounded px-3 py-2" onClick={() => {
+            // R08: a counter who left and will not return; their counts stay valid.
+            const reason = window.prompt('Mark ' + m.name + ' as absent? They will lose access. Reason:')?.trim()
+            if (reason) finish(() => markCounterAbsent(teamId, m.id, reason, state.revision, crypto.randomUUID()),
+              m.name + ' marked absent.')
+          }}>Mark absent</button>}
         {state.role === 'independent' && m.finishState === 'requested' && <span className="flex gap-2">
           <button disabled={pending} className="bg-slate-900 text-white rounded px-3 py-2"
             onClick={() => finish(() => decideTeamFinish(teamId, m.id, true, state.revision, crypto.randomUUID()),
@@ -324,11 +337,12 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
         <button disabled={pending || selection.size === 0} className="w-full bg-white border border-slate-300 rounded-xl py-3 font-semibold disabled:opacity-40"
           onClick={() => decide(false)}>{'Return ' + (selection.size ? selection.size + ' ' : '') + 'selected for recount'}</button>
       </div>}
-      {state.phase === 'signing' && <p className="mt-3">Result accepted by the admin. Signature collection is next.</p>}
+      {state.phase === 'signing' && !signing && <p className="mt-3">Result accepted by the admin. Signature collection is next.</p>}
       {reviews.length > 0 && <div className="mt-3">
         <h2 className="font-semibold mb-1">Admin review history</h2>
         <ul className="text-sm space-y-1">{reviews.map(r => <li key={r.id}>
           {new Date(r.decidedAt).toLocaleString()} — {r.decision === 'accept' ? 'Result accepted'
+            : r.decision === 'cancel_signing' ? 'Signature collection cancelled'
             : 'Round ' + r.round + ': returned ' + r.brands.join(', ')}
         </li>)}</ul>
       </div>}
@@ -352,5 +366,7 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
         })}</tbody>
       </table>
     </div>}
+    {state.phase === 'signing' && signing && !unavailable && <SigningPanel teamId={teamId} signing={signing}
+      isAdmin={state.role === 'admin'} pending={pending} run={finish} />}
   </section>
 }
