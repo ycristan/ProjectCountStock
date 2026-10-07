@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import type { ItemBusca, LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
 import { lancarContagem } from '@/actions/contagem'
+import { weightUnits } from '@/lib/weight-count'
 
 type SucessoResult = {
   final_cases: number
@@ -87,9 +88,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
   const totalPeso = rodadas.reduce((s, r) => s + parseGrams(r.pesoFmt), 0)
   const liquido = totalPeso - totalTara
   const raw = liquido > 0 && item.weight_avg > 0 ? liquido / item.weight_avg : 0
-  // Rounded to 6 places so an exact .7 (e.g. 10.7) is not read as 0.69999… (same rule in the database)
-  const decimal = Math.round((raw - Math.floor(raw)) * 1e6) / 1e6
-  const weightQty = raw > 0 ? (decimal >= 0.7 ? Math.ceil(raw) : Math.floor(raw)) : 0
+  const weightQty = weightUnits(raw)
   const hasWeightData = totalPeso > 0
 
   // weight + visual cases preview

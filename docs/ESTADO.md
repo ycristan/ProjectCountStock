@@ -1,4 +1,4 @@
-# Estado — 2026-10-05
+# Estado — 2026-10-07
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -10,7 +10,7 @@ Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar ant
 Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independente no legado e contar 02/01 no fluxo antigo.
 
 ## Em produção
-`main` com inventário por warehouse, ZIP e recuperação BDS aplicada. Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo).
+`main` com inventário por warehouse, ZIP, recuperação BDS e correção do arredondamento por peso (Solo e reconciliação legada). Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo). Solo é usado quase todo dia.
 
 ## Em andamento
 - Fluxo novo de equipes nesta PR (#79): blocos 1–7 prontos, não publicados. Bloco 7: o Independente registra a contagem conciliada (mesmo formulário, originais visíveis) e envia a equipe ao admin, gerando o resultado selado. Contagens por peso guardam rodadas, caixas e peso bruto. Próximo: bloco 8 (revisão do admin e recontagens).
@@ -27,9 +27,10 @@ Regressão do Independente (vinda da PR #63): contas de equipe criadas depois da
 ## A verificar
 - Limite de tentativas de login do Supabase (PIN de 4 dígitos).
 - Inventário BDS: 2.301 produtos (460 ativos / 1.841 inativos) contra 2.295 (446 / 1.849) logo após a recuperação. Sem registro da mudança.
-- Backup de 2026-09-18 nunca foi restaurado em teste. Sentry hospedado sem leitura pelo agente.
-- Arredondamento do peso: o formulário arredondava para baixo alguns casos de 0,7 exato (Solo e legado também); corrigido na #79, não publicado.
+- Backup de 2026-09-18 nunca foi restaurado em teste.
+- Sentry lido pelo agente desde 06/10: sem dado pessoal; só capta falhas não tratadas. Erros que as telas mostram ao usuário (ex.: falha ao salvar) não chegam lá.
 - Contagem por peso no legado: "adicionar rodada" e reconciliação por peso quebradas em agosto; sem registro de correção.
+- Migrations desta PR com data anterior à última aplicada em produção (21/09 e 22/09): renomear antes de aplicar.
 
 ## Backlog aprovado, não iniciado
 - Aprovação dupla de BPU; itens desconhecidos com foto; Inventory manual/toggle/filtros; código de barras; padronização visual; assinatura desenhada; ajuste pós-assinatura; substituição e Independente compartilhado.
