@@ -1,4 +1,4 @@
-# Estado — 2026-10-06
+# Estado — 2026-10-07
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -10,22 +10,21 @@ Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar ant
 Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independente no legado e contar 02/01 no fluxo antigo.
 
 ## Em produção
-`main` com inventário por warehouse, ZIP e recuperação BDS aplicada. Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo). Solo é usado quase todo dia.
+`main` com inventário por warehouse, ZIP, recuperação BDS e correção do arredondamento por peso (Solo e reconciliação legada). Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo). Solo é usado quase todo dia.
 
 ## Em andamento
-- Correção do arredondamento por peso (Solo e reconciliação legada): fração exata de 0,7 caía para baixo (1.070 g / 100 g = 10, não 11). PR própria, publicada antes do fluxo novo por causa do uso diário do Solo.
-- Fluxo novo de equipes na PR #79: blocos 1–7 prontos, não publicados. Próximo: bloco 8 (revisão do admin e recontagens). Depois desta correção, trazer a `main` para a #79.
-- Restam para 02/01: blocos 8, 11, 12. Menu "Audit Count" no bloco 12.
-- Regras e decisões de 05/10 (auditoria, pesagem com peso bruto e caixas, bloco 7) estão no `docs/DECISOES.md` da #79, ainda não na `main`.
+- Fluxo novo de equipes na PR #79: blocos 1–8 e 11 prontos, não publicados. Bloco 11: contador ausente durante a contagem; assinatura por PIN na tela da coleta; ausências formalizadas (Independente ausente exige testemunha); primeira confirmação congela; última encerra a equipe, revoga acessos e desativa os logins. Próximo: bloco 12 (lista de ativos não contados, consolidado, Excel, Audit Count).
+- Correções da auditoria feitas: inventário carregado uma vez; mesma busca/"Add to Count"/"Edit Count" das telas atuais; monitor em `cases+units`.
+- Regras revisadas com Yuri em 2026-10-05: substituição e Independente compartilhado adiados; contador ausente simples; assinatura por PIN + nome completo; lista de ativos não contados antes do zero.
+- Bloco restante para 02/01: 12. Menu "Audit Count" no bloco 12.
 
 ## Decisões pendentes de Yuri
-Nenhuma no momento.
+1. Proteção própria contra tentativas erradas de PIN (o limite do Supabase não basta; ver DECISOES, 2026-10-07).
 
 ## Problema conhecido em produção
 Regressão do Independente (vinda da PR #63): contas de equipe criadas depois da #63 caem na tela de lançamento e o Independente vê "Finalise". Correção na #79, não publicada. Nenhuma contagem de equipe programada antes de 02/01/2027.
 
 ## A verificar
-- Limite de tentativas de login do Supabase (PIN de 4 dígitos).
 - Inventário BDS: 2.301 produtos (460 ativos / 1.841 inativos) contra 2.295 (446 / 1.849) logo após a recuperação. Sem registro da mudança.
 - Backup de 2026-09-18 nunca foi restaurado em teste.
 - Sentry lido pelo agente desde 06/10: sem dado pessoal; só capta falhas não tratadas. Erros que as telas mostram ao usuário (ex.: falha ao salvar) não chegam lá.
