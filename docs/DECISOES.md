@@ -110,3 +110,9 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Contador que sai durante a contagem (R08): o Independente marca, com motivo; o acesso é revogado e as contagens dele continuam valendo. Na assinatura, o Independente formaliza a ausência com o próprio PIN.
 - Independente ausente: o admin registra o motivo, e a ausência só conta depois que uma testemunha confirma: um contador presente, com o PIN dele, ou um admin (pode ser o mesmo que registrou).
 - Cancelar a coleta antes da primeira confirmação volta à revisão e sela de novo o mesmo resultado; a primeira confirmação congela a equipe; a última encerra e revoga todos os acessos na mesma transação.
+
+## Credenciais por PIN (2026-10-07)
+- O admin vê os PINs de propósito: precisa imprimir os cartões. Não é falha; o cuidado é não copiar PINs em documentos, commits, logs, PRs ou Sentry.
+- Formato do PIN mantido até 02/01 (código de equipe com letras e teclado de 8 letras rejeitados: o teclado reduz as combinações e a troca mexe em login, cadastro e cartões perto do prazo).
+- Ao encerrar a equipe, os logins dela são desativados, não só o acesso aos dados.
+- Limite de tentativas do Supabase para login por senha: 1.800 por hora por endereço, não ajustável; como o login passa pelo servidor, todos contam como um endereço. Proteção própria do sistema contra tentativas erradas fica proposta para decisão de Yuri.
