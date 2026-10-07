@@ -53,7 +53,7 @@ Cada evidência futura deve conter ID, commit, execução, camada, resultado e l
 | T43 | R12 | 8 | Todas confirmações/ausências válidas | Encerrar equipe e revogar somente seus vínculos; outras equipes continuam |
 | T44 | R12 | 2,8 | Editar/excluir histórico após encerramento por qualquer caminho | Negado em ações/RPC/banco, inclusive admin e operações de limpeza |
 | T45 | R12 | 8 | Sessão de acesso antiga e tela aberta após encerramento | Novas leituras/ações da equipe não autorizadas; interface atualiza sem alterar histórico |
-| T46 | R13 | 9 | Ativo nunca contado, inativo nunca contado, inativo contado | Lista de ativos não contados exige confirmação do admin antes do zero; inativo sem linha; contado com quantidade oficial |
+| T46 | R13 | 9 | Ativo nunca contado, inativo nunca contado, inativo contado | Ativos não contados listados por BIN; fechamento exige a ciência do admin (quem e quando); saem com 0 e "não contado"; inativo sem linha; contado com quantidade oficial |
 | T47 | R13 | 9 | Status muda antes/depois do fechamento geral | Usar Status ao fechar; nenhuma alteração posterior no consolidado |
 | T48 | R13 | 9 | Equipes contam mesma marca | Somar oficiais das equipes, nunca todos contadores ou versões antigas |
 | T49 | R12,R13 | 8,9 | BPU/cadastro muda depois de equipe assinada | Não recalcular nem modificar resultado assinado/relatório fechado |

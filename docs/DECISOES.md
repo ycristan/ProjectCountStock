@@ -116,3 +116,9 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Formato do PIN mantido até 02/01 (código de equipe com letras e teclado de 8 letras rejeitados: o teclado reduz as combinações e a troca mexe em login, cadastro e cartões perto do prazo).
 - Ao encerrar a equipe, os logins dela são desativados, não só o acesso aos dados.
 - Limite de tentativas do Supabase para login por senha: 1.800 por hora por endereço, não ajustável; como o login passa pelo servidor, todos contam como um endereço. Proteção própria do sistema contra tentativas erradas fica proposta para decisão de Yuri.
+
+## Ativos não contados (2026-10-07)
+- Ativo que nenhuma equipe contou significa não encontrado na warehouse. O admin só precisa dar ciência: um clique para a lista inteira, com registro de quem e quando. Sai o "mandar contar" (não havia quem contasse depois de todas as equipes encerradas).
+- No Excel saem com 0 e a marcação "não contado" (opção A). Motivo: sem a linha, o estoque antigo do item continuaria no sistema da empresa.
+- A lista vem ordenada por BIN para deixar visível um corredor inteiro esquecido, já que a divisão de corredores entre equipes não fica no sistema.
+- Bloqueio do login após PINs errados: adiado por Yuri, não urgente; fica no backlog.

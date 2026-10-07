@@ -1,6 +1,6 @@
 # Contagem por equipes — contrato aprovado
 
-Aprovado por Yuri em 2026-09-21; revisado com Yuri em 2026-10-05 (R05, R08–R13; motivos em DECISOES.md).
+Aprovado por Yuri em 2026-09-21; revisado com Yuri em 2026-10-05 (R05, R08–R13) e 2026-10-07 (R13); motivos em DECISOES.md.
 Status: especificação; NÃO significa implementado, testado ou publicado.
 Fonte normativa para o novo fluxo; prevalece sobre descrições antigas de contagem tripla, tolerância em gramas e encerramento conjunto.
 Ver [matriz de verificação](./TEAM_COUNT_TEST_MATRIX.md) e [plano](./TEAM_COUNT_PLAN.md).
@@ -87,7 +87,7 @@ Correção posterior (revisado em 2026-10-05): o resultado assinado nunca é edi
 ## R13 — Consolidado final por WHS
 Depois de todas as equipes encerradas, somar resultados oficiais preservados. Nunca somar contadores da mesma equipe.
 No fechamento geral, considerar Status do inventário naquele momento:
-- ativo não contado por NENHUMA equipe: listar para o admin antes do fechamento ("ativos não contados"); zero só depois de o admin confirmar, em lote ou item a item, ou mandar contar;
+- ativo não contado por NENHUMA equipe (revisado em 2026-10-07): significa não encontrado na warehouse. O sistema lista esses itens ao admin antes do fechamento, ordenados por BIN; o admin dá ciência uma vez para a lista inteira (registra quem e quando). No consolidado e no Excel saem com quantidade 0 e a marcação "não contado". Não existe "mandar contar";
 - inativo não contado por nenhuma: não gerar registro, nem zero;
 - item contado, inclusive inativo: incluir resultado oficial, inclusive zero explícito.
 Congelar consolidado. Mudança posterior de Status, BPU, nome ou cadastro não altera resultado/relatório fechado; fechamento geral não recalcula contagem assinada de equipe.
