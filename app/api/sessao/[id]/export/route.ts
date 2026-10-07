@@ -59,7 +59,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     contador_2_units: number | null
   }
 
-  const [reconcItems, { data: { users } }] = await Promise.all([
+  const admin = createAdminClient()
+  const [reconcItems, { data: { users } }, { data: accounts }] = await Promise.all([
     teamIds.length === 0
       ? Promise.resolve([] as ReconcFullRow[])
       : fetchAllRows<ReconcFullRow>((from, to) =>
@@ -69,7 +70,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             .in('team_id', teamIds)
             .range(from, to)
         ),
-    createAdminClient().auth.admin.listUsers({ perPage: 1000 }),
+    admin.auth.admin.listUsers({ perPage: 1000 }),
+    teamIds.length === 0
+      ? Promise.resolve({ data: [] as { auth_user_id: string | null; team_id: string; role: string }[] })
+      : admin.from('counter_accounts').select('auth_user_id, team_id, role').in('team_id', teamIds),
   ])
 
   const inventory = session.status === 'fechada'
@@ -78,16 +82,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const invMap = Object.fromEntries(inventory.map((i) => [i.brand_code, i]))
 
-  // countersMap[teamId][role] = full_name (from auth.users metadata)
+  // countersMap[teamId][role] = full_name. Papel e equipe vêm de counter_accounts (protegido);
+  // metadata só fornece o nome exibido.
+  const userNames = new Map((users ?? []).map((u) => [u.id, u.user_metadata?.full_name as string | undefined]))
   const countersMap: Record<string, Record<string, string>> = {}
-  for (const u of users ?? []) {
-    const tid = u.user_metadata?.team_id as string
-    const role = u.user_metadata?.counter_role as string
-    const name = u.user_metadata?.full_name as string
-    if (tid && role && teamIds.includes(tid)) {
-      if (!countersMap[tid]) countersMap[tid] = {}
-      countersMap[tid][role] = name ?? ''
-    }
+  for (const a of accounts ?? []) {
+    if (!countersMap[a.team_id]) countersMap[a.team_id] = {}
+    countersMap[a.team_id][a.role] = (a.auth_user_id && userNames.get(a.auth_user_id)) || ''
   }
 
   function roleLabel(teamId: string, role: 'independente' | 'contador_1' | 'contador_2', fallback: string) {

@@ -52,22 +52,23 @@ export default async function ReconciliacaoPage({
     brandNameMap[inv.brand_code] = inv.brand_name
   }
 
-  const { data: { users: authUsers } = { users: [] } } = await admin.auth.admin.listUsers({
-    perPage: 1000,
-  })
+  const [{ data: accounts }, { data: { users: authUsers } = { users: [] } }] = await Promise.all([
+    admin.from('counter_accounts').select('auth_user_id, role').eq('team_id', teamId),
+    admin.auth.admin.listUsers({ perPage: 1000 }),
+  ])
 
+  // Papel e equipe vêm de counter_accounts (protegido); metadata só fornece o nome exibido.
+  const userNames = new Map(authUsers.map((u) => [u.id, u.user_metadata?.full_name as string | undefined]))
   const nameMap: Record<string, string> = {}
-  for (const u of authUsers) {
-    const tid = u.user_metadata?.team_id
-    const role = u.user_metadata?.counter_role
-    const name = u.user_metadata?.full_name
-    if (tid && role && name) nameMap[`${tid}:${role}`] = name
+  for (const a of accounts ?? []) {
+    const name = a.auth_user_id ? userNames.get(a.auth_user_id) : undefined
+    if (name) nameMap[a.role] = name
   }
 
   const counterNames = {
-    contador_1: nameMap[`${teamId}:contador_1`] ?? 'C1',
-    contador_2: nameMap[`${teamId}:contador_2`] ?? 'C2',
-    independente: nameMap[`${teamId}:independente`] ?? 'Independente',
+    contador_1: nameMap.contador_1 ?? 'C1',
+    contador_2: nameMap.contador_2 ?? 'C2',
+    independente: nameMap.independente ?? 'Independente',
   }
 
   const items: ReconcItem[] = (rawItems ?? []).map((i) => ({
