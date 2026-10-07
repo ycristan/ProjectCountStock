@@ -52,6 +52,25 @@ async function asMember<T>(teamId: string, membershipId: string, pin: string, ro
   }
 }
 
+// R12: once a team closes, its logins are disabled, not only its data access.
+// A person with another open team, or with admin/solo access, keeps the login.
+async function disableClosedTeamLogins(teamId: string) {
+  const admin = createAdminClient()
+  const { data: flow } = await admin.from('team_flows').select('phase').eq('team_id', teamId).single()
+  if (flow?.phase !== 'closed') return
+  const { data: members } = await admin.from('team_memberships').select('user_id').eq('team_id', teamId)
+  for (const { user_id } of members ?? []) {
+    const [{ data: others }, { data: access }] = await Promise.all([
+      admin.from('team_memberships').select('team_id, team_flows!inner(phase)').eq('user_id', user_id)
+        .neq('team_id', teamId).neq('team_flows.phase', 'closed'),
+      admin.from('app_user_access').select('access_kind').eq('user_id', user_id),
+    ])
+    if (others?.length || access?.length) continue
+    const { error } = await admin.auth.admin.updateUserById(user_id, { ban_duration: '876000h' })
+    if (error) await reportTeamContextError('team.count')
+  }
+}
+
 export async function readTeamSigning(teamId: string): Promise<TeamSigning | null> {
   if (!enabled()) return null
   const db = await createClient()
@@ -69,6 +88,7 @@ export async function signWithPin(teamId: string, membershipId: string, pin: str
     db => db.rpc('sign_team_result', { p_team: teamId, p_version: version, p_command: command }))
   if (r.denied) return { error: r.denied }
   if (r.error) return failure(r.error, 'Signature not saved. Refresh and try again.')
+  if (r.data?.phase === 'closed') await disableClosedTeamLogins(teamId)
   return { phase: r.data?.phase }
 }
 
@@ -81,6 +101,7 @@ export async function formalizeCounterAbsence(teamId: string, membershipId: stri
       p_reason: reason, p_command: command }))
   if (r.denied) return { error: r.denied === 'PIN does not match this person.' ? 'Independent PIN does not match.' : r.denied }
   if (r.error) return failure(r.error, 'Absence not saved. Refresh and try again.')
+  if (r.data?.phase === 'closed') await disableClosedTeamLogins(teamId)
   return { phase: r.data?.phase }
 }
 
@@ -102,11 +123,15 @@ export async function witnessIndependentAbsence(teamId: string, version: string,
       db => db.rpc('witness_independent_absence', args))
     if (r.denied) return { error: r.denied }
     if (r.error) return failure(r.error, 'Witness not saved. Refresh and try again.')
+    if (r.data?.phase === 'closed') await disableClosedTeamLogins(teamId)
     return { phase: r.data?.phase }
   }
   const db = await createClient()
   const { data, error } = await db.rpc('witness_independent_absence', args)
-  return error ? failure(error, 'Witness not saved. Refresh and try again.') : { phase: (data as { phase: string }).phase }
+  if (error) return failure(error, 'Witness not saved. Refresh and try again.')
+  const phase = (data as { phase: string }).phase
+  if (phase === 'closed') await disableClosedTeamLogins(teamId)
+  return { phase }
 }
 
 export async function cancelTeamSigning(teamId: string, version: string, command: string): Promise<Result> {

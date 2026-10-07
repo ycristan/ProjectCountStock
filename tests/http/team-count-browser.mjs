@@ -303,6 +303,9 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         assert.deepEqual(checked(await db.from('team_confirmations').select('kind').eq('team_id',stored.id)).map(r=>r.kind).sort(),
           ['absence','pin','pin'])
         assert.ok((await independent.client.rpc('read_team_count',{p_team:stored.id})).error,'Independent session revoked after closing')
+        const relogin=createClient(status.API_URL,status.ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}})
+        assert.ok((await relogin.auth.signInWithPassword({email:team.pin+lead.pin+'@count.local',
+          password:pinPassword(team.pin,lead.pin)})).error,'closing disables the team logins')
       }
       console.log('PASS: new '+(index+3)+'-person team UI/Auth, blind counts, WHS, inactive/zero, weight, receipts/history, dynamic Realtime monitor')
       for(const context of contexts)await context.close()
