@@ -13,10 +13,9 @@ Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independen
 `main` com inventário por warehouse, ZIP, recuperação BDS e correção do arredondamento por peso (Solo e reconciliação legada). Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo). Solo é usado quase todo dia.
 
 ## Em andamento
-- Fluxo novo de equipes na PR #79: blocos 1–8 e 11 prontos, não publicados. Bloco 11: contador ausente durante a contagem; assinatura por PIN na tela da coleta; ausências formalizadas (Independente ausente exige testemunha); primeira confirmação congela; última encerra a equipe, revoga acessos e desativa os logins. Próximo: bloco 12 (ciência dos ativos não contados, consolidado, Excel, Audit Count).
+- Fluxo novo de equipes nesta PR (#79): blocos 1–8, 11 e 12 prontos, não publicados. O fluxo de equipes está completo: cadastro, contagem cega, finalização, comparação, conciliação, revisão do admin, assinaturas, encerramento, ciência dos não contados, Excel final e Audit Count. Próximo: plano de ativação em produção (renomear migrations, cópia de teste do banco, janela) e contagem simulada até 11/12.
 - Correções da auditoria feitas: inventário carregado uma vez; mesma busca/"Add to Count"/"Edit Count" das telas atuais; monitor em `cases+units`.
 - Regras revisadas com Yuri em 2026-10-05: substituição e Independente compartilhado adiados; contador ausente simples; assinatura por PIN + nome completo; ativos não contados viram 0 após ciência do admin (revisado em 07/10).
-- Bloco restante para 02/01: 12. Menu "Audit Count" no bloco 12.
 
 ## Decisões pendentes de Yuri
 Nenhuma no momento.
@@ -29,7 +28,7 @@ Regressão do Independente (vinda da PR #63): contas de equipe criadas depois da
 - Backup de 2026-09-18 nunca foi restaurado em teste.
 - Sentry lido pelo agente desde 06/10: sem dado pessoal; só capta falhas não tratadas. Erros que as telas mostram ao usuário (ex.: falha ao salvar) não chegam lá.
 - Contagem por peso no legado: "adicionar rodada" e reconciliação por peso quebradas em agosto; sem registro de correção.
-- Migrations da #79 com data anterior à última aplicada em produção (21/09 e 22/09): renomear antes de aplicar.
+- Migrations desta PR com data anterior à última aplicada em produção (21/09 e 22/09): renomear antes de aplicar.
 
 ## Backlog aprovado, não iniciado
 - Bloqueio do login após PINs errados (ver DECISOES, 07/10); aprovação dupla de BPU; itens desconhecidos com foto; Inventory manual/toggle/filtros; código de barras; padronização visual; assinatura desenhada; ajuste pós-assinatura; substituição e Independente compartilhado.

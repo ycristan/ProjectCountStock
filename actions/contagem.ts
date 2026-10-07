@@ -32,6 +32,8 @@ export type LancarContagemPayload = {
   cases: number
   units: number
   is_weight_count?: boolean
+  // Raw weighing (rounds of boxes + gross grams); stored by the new team flow only.
+  weighing?: { rounds: { boxes: number; grams: number }[]; visualCases: number }
 }
 
 export type LancarContagemResult = {
@@ -125,6 +127,7 @@ export async function lancarContagem(
   const supabase = await createClient()
   const access = await getTeamCounterAccess()
   if (!access) return { error: 'Not authenticated.' }
+  if (access.counterRole === 'independente') return { error: 'Independent monitors counts; initial counting is not permitted.' }
 
   const { teamId, counterRole } = access
 

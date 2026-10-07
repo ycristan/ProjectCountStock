@@ -42,6 +42,7 @@ export function MonitorClient({
   const [countersState, setCountersState] = useState(initCounters)
   const [indConfirmed, setIndConfirmed] = useState(initialIndConfirmed)
   const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -96,10 +97,18 @@ export function MonitorClient({
   }, [teamId, router])
 
   async function handleConfirm() {
+    if (confirming) return
     setConfirming(true)
-    await confirmarIndependente(teamId)
-    setIndConfirmed(true)
-    setConfirming(false)
+    setConfirmError(false)
+    try {
+      const result = await confirmarIndependente(teamId)
+      if (result.success === true) setIndConfirmed(true)
+      else setConfirmError(true)
+    } catch {
+      setConfirmError(true)
+    } finally {
+      setConfirming(false)
+    }
   }
 
   const invMap = Object.fromEntries(inventory.map((i) => [i.brand_code, i.brand_name]))
@@ -148,6 +157,7 @@ export function MonitorClient({
           <p className="text-amber-700 text-sm mb-4">
             Review the results below, then confirm the count is complete.
           </p>
+          {confirmError && <p role="alert" className="text-red-700 text-sm mb-3">Could not confirm the count. Please try again.</p>}
           <button
             onClick={handleConfirm}
             disabled={confirming}
