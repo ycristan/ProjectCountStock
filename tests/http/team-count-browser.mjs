@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { setTimeout as delay } from 'node:timers/promises'
 import { createClient } from '@supabase/supabase-js'
+import * as XLSX from 'xlsx'
 import { pinPassword } from '../../lib/pin-credentials.ts'
 
 export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,page,plan,session,wh}) {
@@ -306,6 +307,28 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         const relogin=createClient(status.API_URL,status.ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}})
         assert.ok((await relogin.auth.signInWithPassword({email:team.pin+lead.pin+'@count.local',
           password:pinPassword(team.pin,lead.pin)})).error,'closing disables the team logins')
+        stage='session closing waits for every team; Audit Count download (block 12)'
+        await page.goto(base+'/admin/sessao/'+session.id+'/equipes?flow=2')
+        await page.locator('[data-closing="waiting"]').waitFor()
+        assert.equal(await page.getByRole('button',{name:'Acknowledge and close the count'}).count(),0,'no closing while teams are open')
+        assert.equal((await page.request.get(base+'/api/sessao/'+session.id+'/team-export')).status(),409,'no final Excel before closing')
+        const audit=await page.request.get(base+'/api/sessao/'+session.id+'/audit-export')
+        assert.equal(audit.status(),200)
+        const book=XLSX.read(Buffer.from(await audit.body()),{type:'buffer'})
+        assert.deepEqual(book.SheetNames,['Counts','Reconciliations','Decisions and signatures'])
+        const auditCounts=XLSX.utils.sheet_to_json(book.Sheets.Counts,{header:1})
+        assert.ok(auditCounts.some(r=>r[0]===team.name&&r[2]===codes[2]&&r[9]===4900),'Audit Count keeps the gross weight')
+        assert.ok(auditCounts.some(r=>r[0]===team.name&&r[15]),'Audit Count keeps replaced count versions')
+        const auditEvents=XLSX.utils.sheet_to_json(book.Sheets['Decisions and signatures'],{header:1}).map(r=>r[3])
+        for(const action of ['Returned for recount','Result accepted','Signed by PIN','Absence formalized'])
+          assert.ok(auditEvents.includes(action),'Audit Count records: '+action)
+        const anon=await fetch(base+'/api/sessao/'+session.id+'/audit-export',{redirect:'manual'})
+        assert.ok([302,303,307,401].includes(anon.status),'Audit Count requires an admin')
+        assert.ok(!(anon.headers.get('content-type')??'').includes('spreadsheet'),'no workbook without login')
+        // This team's logins are disabled after closing; use a counter of a team still open.
+        const counter=await person(plan[1],plan[1].members[0])
+        const memberAudit=await counter.p.request.get(base+'/api/sessao/'+session.id+'/audit-export',{maxRedirects:0})
+        assert.ok(!(memberAudit.headers()['content-type']??'').includes('spreadsheet'),'a team member cannot download the Audit Count')
       }
       console.log('PASS: new '+(index+3)+'-person team UI/Auth, blind counts, WHS, inactive/zero, weight, receipts/history, dynamic Realtime monitor')
       for(const context of contexts)await context.close()

@@ -13,10 +13,9 @@ Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independen
 `main` com inventário por warehouse, ZIP, recuperação BDS e correção do arredondamento por peso (Solo e reconciliação legada). Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo). Solo é usado quase todo dia.
 
 ## Em andamento
-- Fluxo novo de equipes nesta PR (#79): blocos 1–8 e 11 prontos, não publicados. Bloco 11: contador ausente durante a contagem; assinatura por PIN na tela da coleta; ausências formalizadas (Independente ausente exige testemunha); primeira confirmação congela; última encerra a equipe, revoga acessos e desativa os logins. Próximo: bloco 12 (ciência dos ativos não contados, consolidado, Excel, Audit Count).
+- Fluxo novo de equipes nesta PR (#79): blocos 1–8, 11 e 12 prontos, não publicados. O fluxo de equipes está completo: cadastro, contagem cega, finalização, comparação, conciliação, revisão do admin, assinaturas, encerramento, ciência dos não contados, Excel final e Audit Count. Próximo: plano de ativação em produção (renomear migrations, cópia de teste do banco, janela) e contagem simulada até 11/12.
 - Correções da auditoria feitas: inventário carregado uma vez; mesma busca/"Add to Count"/"Edit Count" das telas atuais; monitor em `cases+units`.
 - Regras revisadas com Yuri em 2026-10-05: substituição e Independente compartilhado adiados; contador ausente simples; assinatura por PIN + nome completo; ativos não contados viram 0 após ciência do admin (revisado em 07/10).
-- Bloco restante para 02/01: 12. Menu "Audit Count" no bloco 12.
 
 ## Decisões pendentes de Yuri
 Nenhuma no momento.
