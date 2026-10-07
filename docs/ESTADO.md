@@ -13,10 +13,10 @@ Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independen
 `main` com inventário por warehouse, ZIP, recuperação BDS e correção do arredondamento por peso (Solo e reconciliação legada). Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo). Solo é usado quase todo dia.
 
 ## Em andamento
-- Fluxo novo de equipes nesta PR (#79): blocos 1–7 prontos, não publicados. Bloco 7: o Independente registra a contagem conciliada (mesmo formulário, originais visíveis) e envia a equipe ao admin, gerando o resultado selado. Contagens por peso guardam rodadas, caixas e peso bruto. Próximo: bloco 8 (revisão do admin e recontagens).
+- Fluxo novo de equipes nesta PR (#79): blocos 1–8 prontos, não publicados. Bloco 8: o admin aceita o resultado selado ou devolve produtos escolhidos; o Independente reconta só esses e reenvia; rodadas e versões ficam guardadas. Aceite leva a equipe à fase de assinaturas. Próximo: bloco 11 (assinatura por PIN + nome, contador ausente, congelamento).
 - Correções da auditoria feitas: inventário carregado uma vez; mesma busca/"Add to Count"/"Edit Count" das telas atuais; monitor em `cases+units`.
 - Regras revisadas com Yuri em 2026-10-05: substituição e Independente compartilhado adiados; contador ausente simples; assinatura por PIN + nome completo; lista de ativos não contados antes do zero.
-- Blocos restantes para 02/01: 8, 11, 12. Menu "Audit Count" no bloco 12.
+- Blocos restantes para 02/01: 11 e 12. Menu "Audit Count" no bloco 12.
 
 ## Decisões pendentes de Yuri
 Nenhuma no momento.

@@ -1,10 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
-import { decideTeamFinish, decideTeamItem, readTeamComparison, readTeamCount, readTeamInventory, requestTeamFinish, saveTeamCount, saveTeamReconciliation, startTeamCount, submitTeamReconciliation } from '@/actions/team-count'
+import { decideTeamFinish, decideTeamItem, readTeamComparison, readTeamCount, readTeamInventory, readTeamReviews, requestTeamFinish, reviewTeamResult, saveTeamCount, saveTeamReconciliation, startTeamCount, submitTeamReconciliation } from '@/actions/team-count'
 import { createClient } from '@/lib/supabase-client'
 import type { ItemBusca, LancarContagemPayload } from '@/actions/contagem'
-import type { TeamComparisonItem, TeamCountState } from '@/lib/team-count-types'
+import type { TeamComparisonItem, TeamCountState, TeamReview } from '@/lib/team-count-types'
 import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
 import { CountForm } from '@/app/(counter)/busca/_components/CountForm'
 
@@ -12,12 +12,15 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
   const [state, setState] = useState(initial)
   const [catalog, setCatalog] = useState(inventory)
   const [comparison, setComparison] = useState<TeamComparisonItem[]>([])
+  const [reviews, setReviews] = useState<TeamReview[]>([])
+  const [selection, setSelection] = useState<Set<string>>(new Set())
   const [unavailable, setUnavailable] = useState(false)
   const [notice, setNotice] = useState('')
   const [reconciling, setReconciling] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   const command = useRef<{ payload: string; id: string; revision: string | null } | null>(null)
   const submission = useRef<{ revision: string; id: string } | null>(null)
+  const review = useRef<{ key: string; id: string } | null>(null)
   // Revision of each own record saved on this screen; never older than the last read.
   const saved = useRef(new Map<string, string>())
   const readSequence = useRef(0)
@@ -29,11 +32,13 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       if (sequence !== readSequence.current) return
       if (!next) { setUnavailable(true); return }
       // Comparison exists only after every finish is accepted, and only for the monitor.
-      const compared = next.role !== 'counter' && !['setup', 'counting'].includes(next.phase)
-        ? await readTeamComparison(teamId) : []
+      const compares = next.role !== 'counter' && !['setup', 'counting'].includes(next.phase)
+      const [compared, history] = compares
+        ? await Promise.all([readTeamComparison(teamId), readTeamReviews(teamId)]) : [[], []]
       if (sequence !== readSequence.current) return
-      if (!compared) { setUnavailable(true); return }
+      if (!compared || !history) { setUnavailable(true); return }
       setComparison(compared)
+      setReviews(history)
       setState(next)
       setUnavailable(false)
     } catch { if (sequence === readSequence.current) setUnavailable(true) }
@@ -60,7 +65,7 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       running = false
     }
     const channel = db.channel('team-count-' + teamId)
-    for (const table of ['team_count_records', 'team_flows', 'team_memberships', 'team_item_decisions', 'team_reconciliations'])
+    for (const table of ['team_count_records', 'team_flows', 'team_memberships', 'team_item_decisions', 'team_reconciliations', 'team_admin_reviews'])
       channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: 'team_id=eq.' + teamId }, reload)
     void db.auth.getSession().then(({ data }) => {
       if (disposed) return
@@ -156,11 +161,30 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
     counting: 'Counting', requested: 'Waiting for the Independent', accepted: 'Accepted',
   }
 
-  const needsReconciliation = (row: TeamComparisonItem) =>
+  // R07: during a recount round only the products the admin returned take a new value.
+  const openRound = comparison.some(row => row.selected)
+  const reconcilable = (row: TeamComparisonItem) =>
     row.status === 'reconcile' || (row.status === 'tolerance' && row.decision?.decision === 'reconcile')
-  const resolved = (row: TeamComparisonItem) => row.status === 'equal'
-    || (row.status === 'tolerance' && row.decision?.decision === 'accept_value')
-    || (needsReconciliation(row) && !!row.reconciliation)
+  const needsReconciliation = (row: TeamComparisonItem) => openRound ? row.selected : reconcilable(row)
+  const resolved = (row: TeamComparisonItem) => row.recounts > 0 ? !!row.reconciliation
+    : row.status === 'equal' || (row.status === 'tolerance' && row.decision?.decision === 'accept_value')
+    || (reconcilable(row) && !!row.reconciliation)
+  const reviewing = !unavailable && state.role === 'admin' && state.phase === 'admin_review'
+  function decide(accept: boolean) {
+    const brands = accept ? [] : [...selection].sort()
+    const question = accept ? 'Accept this team result? Signature collection starts next.'
+      : 'Return ' + brands.length + ' product(s) to the Independent for recount?'
+    if (!window.confirm(question)) return
+    // A retry of the same decision reuses its command; the database returns the original receipt.
+    const key = state.revision + ':' + accept + ':' + brands.join(',')
+    if (review.current?.key !== key) review.current = { key, id: crypto.randomUUID() }
+    const id = review.current.id
+    finish(async () => {
+      const result = await reviewTeamResult(teamId, state.revision, id, accept, brands)
+      if (!result.error) setSelection(new Set())
+      return result
+    }, accept ? 'Result accepted. Signature collection is next.' : 'Returned for recount: ' + brands.join(', ') + '.')
+  }
   const pendingItems = comparison.filter(row => !resolved(row)).length
   const canReconcile = !unavailable && state.role === 'independent' && state.phase === 'reconciling'
   const reconcilingRow = canReconcile ? comparison.find(row => row.brandCode === reconciling && needsReconciliation(row)) : undefined
@@ -235,16 +259,19 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       <table className="w-full text-sm border-collapse">
         <thead><tr><th className="border p-2">Product</th>
           {counters.map(m => <th key={m.id} className="border p-2">Counter {m.order} — {m.name}</th>)}
-          <th className="border p-2">Result</th></tr></thead>
+          <th className="border p-2">Result</th>
+          {reviewing && <th className="border p-2">Recount</th>}</tr></thead>
         <tbody>{comparison.map(row => {
           const item = catalog.find(i => i.brand_code === row.brandCode)
           const decided = row.decision
-          const result = row.status === 'equal' ? 'Equal'
+          const result = row.recounts > 0
+            ? (row.reconciliation ? 'Recounted ' + format(row.reconciliation.quantity, row.brandCode) : 'Recount requested')
+            : row.status === 'equal' ? 'Equal'
             : row.status === 'tolerance' && decided?.decision === 'accept_value' ? 'Using ' + format(decided.quantity!, row.brandCode)
             : row.status === 'tolerance' && !decided ? 'Within weight tolerance'
             : row.reconciliation ? 'Reconciled ' + format(row.reconciliation.quantity, row.brandCode)
             : 'Needs reconciliation'
-          const choosing = row.status === 'tolerance' && !decided && state.role === 'independent' && state.phase === 'reconciling'
+          const choosing = row.status === 'tolerance' && !decided && !openRound && state.role === 'independent' && state.phase === 'reconciling'
           return <tr key={row.brandCode} data-brand={row.brandCode} data-result={result}>
             <td className="border p-2">{row.brandCode} — {item?.brand_name}</td>
             {row.cells.map(cell => <td key={cell.membershipId} className="border p-2">
@@ -266,6 +293,14 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
                 onClick={() => { setNotice(''); setReconciling(row.brandCode) }}>
                 {row.reconciliation ? 'Edit reconciled count' : 'Enter reconciled count'}</button>}
             </td>
+            {reviewing && <td className="border p-2 text-center">
+              <input type="checkbox" aria-label={'Recount ' + row.brandCode} disabled={pending}
+                checked={selection.has(row.brandCode)} onChange={event => setSelection(current => {
+                  const next = new Set(current)
+                  if (event.target.checked) next.add(row.brandCode); else next.delete(row.brandCode)
+                  return next
+                })} />
+            </td>}
           </tr>
         })}</tbody>
       </table>
@@ -280,7 +315,23 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
             finish(() => submitTeamReconciliation(teamId, revision, id), 'Submitted to the admin for review.')
           }}>Submit to admin</button>
       </div>}
-      {state.phase === 'admin_review' && <p className="mt-3">Waiting for admin review. The submitted result is sealed.</p>}
+      {canReconcile && openRound && <p className="mt-3">Recount round: only the products returned by the admin can be recounted. Other results are kept.</p>}
+      {state.phase === 'admin_review' && state.role !== 'admin' && <p className="mt-3">Waiting for admin review. The submitted result is sealed.</p>}
+      {reviewing && comparison.length > 0 && <div className="mt-3 space-y-2">
+        <p>Accept the sealed result, or select the products the Independent must recount.</p>
+        <button disabled={pending} className="w-full bg-slate-900 text-white rounded-xl py-3 font-semibold disabled:opacity-40"
+          onClick={() => decide(true)}>Accept result</button>
+        <button disabled={pending || selection.size === 0} className="w-full bg-white border border-slate-300 rounded-xl py-3 font-semibold disabled:opacity-40"
+          onClick={() => decide(false)}>{'Return ' + (selection.size ? selection.size + ' ' : '') + 'selected for recount'}</button>
+      </div>}
+      {state.phase === 'signing' && <p className="mt-3">Result accepted by the admin. Signature collection is next.</p>}
+      {reviews.length > 0 && <div className="mt-3">
+        <h2 className="font-semibold mb-1">Admin review history</h2>
+        <ul className="text-sm space-y-1">{reviews.map(r => <li key={r.id}>
+          {new Date(r.decidedAt).toLocaleString()} — {r.decision === 'accept' ? 'Result accepted'
+            : 'Round ' + r.round + ': returned ' + r.brands.join(', ')}
+        </li>)}</ul>
+      </div>}
     </div>}
     {monitor && !unavailable && state.phase === 'counting' && <div className="overflow-x-auto">
       <h2 className="font-semibold mb-2">Provisional counts — not a reconciled result</h2>

@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { reportTeamContextError } from '@/lib/report-team-context-error'
 import type { ItemBusca, LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
-import type { TeamComparisonItem, TeamCountState } from '@/lib/team-count-types'
+import type { TeamComparisonItem, TeamCountState, TeamReview } from '@/lib/team-count-types'
 
 export async function readTeamCount(teamId: string): Promise<TeamCountState | null> {
   if (process.env.TEAM_SETUP_ENABLED !== 'true') return null
@@ -130,4 +130,28 @@ export async function submitTeamReconciliation(teamId: string, revision: string,
   return { error: error.code === '40001' ? 'The team changed. Refresh and try again.'
     : error.message === 'Every item must be resolved before submitting'
       ? 'Every item must be resolved before submitting.' : 'Not submitted. Refresh and try again.' }
+}
+
+// R07: the admin accepts the sealed result or returns selected counted products for recount.
+export async function reviewTeamResult(teamId: string, revision: string, command: string, accept: boolean, brands: string[]) {
+  if (process.env.TEAM_SETUP_ENABLED !== 'true') return { error: 'Team access unavailable.' }
+  const db = await createClient()
+  const { error } = await db.rpc('review_team_result', {
+    p_team: teamId, p_expected_revision: revision, p_command: command, p_accept: accept, p_brands: accept ? null : brands,
+  })
+  if (!error) return {}
+  if (!['40001', '42501', '22023', 'P0001'].includes(error.code)) await reportTeamContextError('team.count')
+  return { error: error.code === '40001' || error.code === 'P0001'
+    ? 'The team changed, possibly by another admin. Refresh and review again.' : 'Not confirmed. Refresh and try again.' }
+}
+
+export async function readTeamReviews(teamId: string): Promise<TeamReview[] | null> {
+  if (process.env.TEAM_SETUP_ENABLED !== 'true') return null
+  const db = await createClient()
+  const { data, error } = await db.rpc('read_team_reviews', { p_team: teamId })
+  if (error) {
+    if (error.code !== '42501') await reportTeamContextError('team.count')
+    return null
+  }
+  return data as TeamReview[]
 }

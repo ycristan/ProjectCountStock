@@ -99,3 +99,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Contagem conciliada do Independente fica em registro próprio, só de acréscimo; as contagens dos contadores nunca mudam. Vale a última por produto e todas ficam guardadas. Motivo: rastreabilidade para o Audit Count.
 - Envio ao admin só com todos os produtos resolvidos (igual, valor escolhido na tolerância ou conciliado); o resultado selado é criado na mesma transação.
 - Pesagem: o banco recalcula a quantidade a partir das rodadas (caixas e peso bruto), da tara e do peso por unidade e recusa divergência. Fração de 0,7 ou mais sobe, calculada com 6 casas: o formulário arredondava para baixo alguns casos de 0,7 exato (1.070 g / 100 g dava 10, não 11), defeito que também atinge Solo e legado.
+
+## Bloco 8 — revisão do admin (2026-10-07)
+- Admin aceita o resultado selado (a equipe passa à coleta de assinaturas, R11) ou devolve produtos que a equipe contou; cada decisão guarda o admin, a versão e a hora, só de acréscimo. Dois admins ao mesmo tempo: vale o primeiro, o segundo recebe "a equipe mudou".
+- Na rodada de recontagem só os produtos devolvidos aceitam novo valor; os demais mantêm o resultado e ficam sem nova escolha de tolerância. O valor oficial de um produto devolvido é a última recontagem da última rodada que o incluiu. Motivo: R07 ("itens não selecionados permanecem preservados").
+- Cada reenvio gera nova versão selada; as anteriores ficam guardadas para o Audit Count.
