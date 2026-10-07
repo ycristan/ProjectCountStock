@@ -8,7 +8,7 @@ import { weightUnits } from '@/lib/weight-count'
 import type { ReconcItemLista } from '@/actions/reconciliacao'
 import { resolverItemReconciliacao, confirmarReconciliacao } from '@/actions/reconciliacao'
 
-type Props = { items: ReconcItemLista[]; readOnly?: boolean }
+type Props = { items: ReconcItemLista[]; teamId: string; readOnly?: boolean }
 
 function formatGrams(raw: string): string {
   const digits = raw.replace(/\D/g, '')
@@ -40,7 +40,7 @@ function calcWeight(
   }
 }
 
-export function ReconciliacaoCounterClient({ items, readOnly = false }: Props) {
+export function ReconciliacaoCounterClient({ items, teamId, readOnly = false }: Props) {
   const router = useRouter()
   const [inputs, setInputs] = useState<Record<string, { pallets: string; cases: string; units: string }>>({})
   const [weightInputs, setWeightInputs] = useState<Record<string, { caixas: string; pesoFmt: string }>>({})
@@ -53,8 +53,7 @@ export function ReconciliacaoCounterClient({ items, readOnly = false }: Props) {
     let channel: ReturnType<typeof supabase.channel> | null = null
     supabase.auth.getSession().then(({ data }) => {
       const token = data.session?.access_token
-      const teamId = data.session?.user?.user_metadata?.team_id as string | undefined
-      if (!token || !teamId) return
+      if (!token) return
       supabase.realtime.setAuth(token)
       channel = supabase
         .channel('reconciliacao-counter')
@@ -62,7 +61,7 @@ export function ReconciliacaoCounterClient({ items, readOnly = false }: Props) {
         .subscribe()
     })
     return () => { if (channel) supabase.removeChannel(channel) }
-  }, [router])
+  }, [router, teamId])
 
   const pendingCount = items.filter((i) => i.status === 'discrepancia').length
   const canConfirm = pendingCount === 0 && items.length > 0
