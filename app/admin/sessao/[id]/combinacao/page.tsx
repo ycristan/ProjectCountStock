@@ -76,7 +76,7 @@ export default async function CombinacaoPage({
   ] = await Promise.all([
     admin
       .from('counter_accounts')
-      .select('id, team_id, role, finalized_at')
+      .select('id, auth_user_id, team_id, role, finalized_at')
       .in('team_id', teamIds),
     fetchAllRows<{
       team_id: string
@@ -135,16 +135,16 @@ export default async function CombinacaoPage({
     ? await loadHistoricalInventory(supabase, [...storedResults, ...entries, ...reconcItems].map(row => row.brand_code))
     : currentInventory
 
+  // Papel e equipe vêm de counter_accounts (protegido); metadata só fornece o nome exibido.
+  const userNames = new Map((users ?? []).map((u) => [u.id, u.user_metadata?.full_name as string | undefined]))
   const nameMap: Record<string, string> = {}
   const counters: Record<string, Record<string, string>> = {}
-  for (const u of users ?? []) {
-    const tid = u.user_metadata?.team_id as string
-    const role = u.user_metadata?.counter_role as string
-    const name = u.user_metadata?.full_name as string
-    if (tid && role && name && teamIds.includes(tid)) {
-      nameMap[`${tid}:${role}`] = name
-      if (!counters[tid]) counters[tid] = {}
-      counters[tid][role] = name
+  for (const a of accounts ?? []) {
+    const name = a.auth_user_id ? userNames.get(a.auth_user_id) : undefined
+    if (name) {
+      nameMap[`${a.team_id}:${a.role}`] = name
+      if (!counters[a.team_id]) counters[a.team_id] = {}
+      counters[a.team_id][a.role] = name
     }
   }
 

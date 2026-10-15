@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getTeamCounterAccess } from '@/lib/authorization'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { logout } from '@/actions/auth'
@@ -9,8 +10,9 @@ export default async function CounterLayout({ children }: { children: React.Reac
     data: { user },
   } = await supabase.auth.getUser()
   const name = user?.user_metadata?.full_name ?? 'Counter'
-  const role = user?.user_metadata?.counter_role as string | undefined
-  const teamId = user?.user_metadata?.team_id as string | undefined
+  const access = await getTeamCounterAccess()
+  const role = access?.counterRole
+  const teamId = access?.teamId
 
   let bannerType: 'pending' | 'confirm' | 'reconciliando' | null = null
   let pendingCount = 0
@@ -57,7 +59,7 @@ export default async function CounterLayout({ children }: { children: React.Reac
         <span className="font-bold text-white text-base">Count Stock</span>
         <div className="flex items-center gap-3">
           <span className="text-sm text-slate-300">Hello, {name}</span>
-          {!sessionClosed && role !== 'independente' && (
+          {!sessionClosed && role && role !== 'independente' && (
             <Link href="/finalizar" className="text-sm text-amber-400 font-medium">
               Finalise
             </Link>

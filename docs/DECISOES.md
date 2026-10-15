@@ -127,3 +127,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Colunas do Excel final aprovadas por Yuri: uma aba por equipe (cada contador, conciliado, final e como resolveu), Consolidado só com o final de cada equipe, total e "Not counted", e Template Import Reconc idêntico ao atual.
 - A ciência da lista de não contados congela o consolidado e fecha a sessão na mesma operação; se a lista mudou desde que o admin a viu, o sistema pede para revisar de novo.
 - Audit Count é um item do menu admin com uma planilha por sessão: todas as contagens e versões substituídas, pesagens, conciliações, recontagens, decisões, ausências e assinaturas. Admins aparecem pelo e-mail; membros de equipe pelo nome (o login deles contém PINs e nunca é exibido).
+
+## Correção do Independente separada da #79 (2026-10-07)
+- Yuri aprovou publicar a correção do Independente no legado sozinha, sem esperar a #79. Motivo: a correção não pode depender da PR grande, e o Plano B precisa dela.
+- A #79 corrigia só busca, layout e finalização; conciliação do contador, telas do admin e Excel final do legado continuavam lendo papel e equipe do `user_metadata`. A correção separada cobre todos esses pontos e repete a trava do banco que impede o Independente de lançar contagem inicial.
+- Ao reabrir a #79 sobre a `main`, tirar dela as políticas `independent_no_initial_*` (já estarão na migration da correção).

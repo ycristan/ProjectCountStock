@@ -12,6 +12,7 @@ export type FinalizacaoResult = {
 export async function finalizarContagem(): Promise<FinalizacaoResult> {
   const access = await getTeamCounterAccess()
   if (!access) return { error: 'Not authenticated.' }
+  if (access.counterRole === 'independente') return { error: 'Independent does not submit an initial count.' }
 
   const admin = createAdminClient()
   const { data: account, error: fetchError } = await admin
