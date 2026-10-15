@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "ask": [
+      "mcp__Supabase__apply_migration",
+      "mcp__Supabase__execute_sql",
+      "mcp__github__merge_pull_request",
+      "Bash(git push origin main*)",
+      "Bash(git push -u origin main*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh\"",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}
