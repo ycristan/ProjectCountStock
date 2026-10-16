@@ -138,3 +138,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - `.claude/settings.json` pede confirmação antes de aplicar migration, rodar SQL no Supabase, fazer merge de PR ou enviar para a `main`. Motivo: essas regras eram só texto e dependiam do agente lembrar.
 - CI passa a rodar typecheck e lint em toda PR. O Next 16 removeu `next lint` e o lint durante o build; desde então nada checava o código além do build da Vercel.
 - CLI do Supabase no CI fixada em 2.120.0 (a usada no último CI verde). Atualizar de propósito, numa PR própria.
+
+## Proteção da `main` (2026-10-16)
+- Ruleset `Main` no GitHub: só entra por PR com squash, sem aprovação obrigatória, checks `Typecheck and lint` e `memory` verdes, sem apagar a branch, lista de exceções vazia. Motivo: a trava local de push só pegava uma forma de escrever o comando; o servidor bloqueia qualquer caminho (git, conector, outro agente).
+- As regras de push para a `main` no `.claude/settings.json` ficam como camada extra, mas a proteção real é o ruleset. Remover exige autorização de Yuri, porque o agente não altera as próprias permissões sozinho.
+- Só são obrigatórios checks que rodam em toda PR: checks com filtro de pasta travariam PRs que não tocam essas pastas. Renomear um check obrigatório exige atualizar o ruleset na mesma hora.
