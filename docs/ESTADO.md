@@ -1,4 +1,4 @@
-# Estado — 2026-10-07
+# Estado — 2026-10-15
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -7,29 +7,29 @@ Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar ant
 - até 27/11: fluxo novo completo, testado e publicado em produção;
 - até 11/12: contagem simulada com pessoas reais em warehouse de teste;
 - 12/12 a 02/01: produção congelada, só correção urgente.
-Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independente no legado e contar 02/01 no fluxo antigo.
+Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a correção do Independente).
 
 ## Em produção
-`main` com inventário por warehouse, ZIP, recuperação BDS e correção do arredondamento por peso (Solo e reconciliação legada). Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo). Solo é usado quase todo dia.
+`main` com inventário por warehouse, ZIP, recuperação BDS, correção do arredondamento por peso (Solo e reconciliação legada) e correção do Independente no legado (#85, migration aplicada em 15/10). Fluxo de equipes publicado ainda é o legado de três pessoas. Solo é usado quase todo dia.
 
 ## Em andamento
-- Correção do Independente no legado em PR própria, separada da #79: aguarda revisão, autorização de merge e aplicação manual da migration em produção.
-- Fluxo novo de equipes na PR #79: blocos 1–8, 11 e 12 prontos, não publicados. O fluxo de equipes está completo: cadastro, contagem cega, finalização, comparação, conciliação, revisão do admin, assinaturas, encerramento, ciência dos não contados, Excel final e Audit Count. Próximo: plano de ativação em produção (renomear migrations, cópia de teste do banco, janela) e contagem simulada até 11/12.
-- Correções da auditoria feitas: inventário carregado uma vez; mesma busca/"Add to Count"/"Edit Count" das telas atuais; monitor em `cases+units`.
-- Regras revisadas com Yuri em 2026-10-05: substituição e Independente compartilhado adiados; contador ausente simples; assinatura por PIN + nome completo; ativos não contados viram 0 após ciência do admin (revisado em 07/10).
+- Fluxo novo de equipes na PR #79 (rascunho, ~7.500 linhas): blocos 1–8, 11 e 12 prontos, não publicados. Próximo: plano de ativação em produção (renomear migrations, cópia de teste do banco, janela) e contagem simulada até 11/12.
+- Ferramentas do agente (esta PR): Ponytail no repositório, confirmação obrigatória para migration/SQL/merge, typecheck e lint no CI, CLI do Supabase fixada.
 
 ## Decisões pendentes de Yuri
-Nenhuma no momento.
+- Liberar `cdn.sheetjs.com` na rede do ambiente de nuvem: sem isso as sessões não instalam o projeto nem rodam testes locais.
+- Desativar a skill de conta `contagem-estoque-cega` (descreve o fluxo antigo de 3 contadores e compete com `docs/`) e o plugin Codex (contraria "agente único").
 
 ## Problema conhecido em produção
-Regressão do Independente (vinda da PR #63): as 6 contas de equipe criadas em 21/09 não têm papel no `user_metadata`; o Independente cai na tela de lançamento, vê "Finalise" e não consegue conciliar, e o admin/Excel não mostram os nomes. Correção na PR própria (acima), não publicada. Nenhuma contagem de equipe programada antes de 02/01/2027.
+Nenhum conhecido no fluxo de equipes. A correção do Independente (#85) não foi testada em tela com sessão real: entra no roteiro da contagem simulada.
 
 ## A verificar
 - Inventário BDS: 2.301 produtos (460 ativos / 1.841 inativos) contra 2.295 (446 / 1.849) logo após a recuperação. Sem registro da mudança.
-- Backup de 2026-09-18 nunca foi restaurado em teste. Ele está só no computador de Yuri; o teste depende de decisão de Yuri sobre onde restaurar.
-- Sentry lido pelo agente desde 06/10: sem dado pessoal; só capta falhas não tratadas. Erros que as telas mostram ao usuário (ex.: falha ao salvar) não chegam lá.
+- Conector do Supabase: leituras funcionam; gravações (apply_migration, execute_sql) travaram por tempo esgotado em 15/10. Resolver antes das migrations da #79.
+- Backup de 2026-09-18 nunca restaurado em teste; está só no computador de Yuri.
+- Sentry só capta falhas não tratadas; erros mostrados na tela (ex.: falha ao salvar) não chegam lá.
 - Contagem por peso no legado: "adicionar rodada" e reconciliação por peso quebradas em agosto; sem registro de correção.
-- Migrations da #79 com data anterior à última aplicada em produção (21/09 e 22/09): renomear antes de aplicar e tirar as políticas do Independente já levadas pela correção separada.
+- Migrations da #79 com data anterior à última aplicada em produção (20261007120000): renomear antes de aplicar e tirar as políticas do Independente já levadas pela #85.
 
 ## Backlog aprovado, não iniciado
-- Bloqueio do login após PINs errados (ver DECISOES, 07/10); aprovação dupla de BPU; itens desconhecidos com foto; Inventory manual/toggle/filtros; código de barras; padronização visual; assinatura desenhada; ajuste pós-assinatura; substituição e Independente compartilhado.
+- Bloqueio do login após PINs errados; aprovação dupla de BPU; itens desconhecidos com foto; Inventory manual/toggle/filtros; código de barras; padronização visual; assinatura desenhada; ajuste pós-assinatura; substituição e Independente compartilhado.

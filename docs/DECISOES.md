@@ -132,3 +132,9 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri aprovou publicar a correção do Independente no legado sozinha, sem esperar a #79. Motivo: a correção não pode depender da PR grande, e o Plano B precisa dela.
 - A #79 corrigia só busca, layout e finalização; conciliação do contador, telas do admin e Excel final do legado continuavam lendo papel e equipe do `user_metadata`. A correção separada cobre todos esses pontos e repete a trava do banco que impede o Independente de lançar contagem inicial.
 - Ao reabrir a #79 sobre a `main`, tirar dela as políticas `independent_no_initial_*` (já estarão na migration da correção).
+
+## Ferramentas do agente (2026-10-15)
+- Ponytail fica copiado no repositório (`.claude/skills/`, commit de origem no LICENSE): plugin instalado no computador de Yuri não carrega em sessão na nuvem.
+- `.claude/settings.json` pede confirmação antes de aplicar migration, rodar SQL no Supabase, fazer merge de PR ou enviar para a `main`. Motivo: essas regras eram só texto e dependiam do agente lembrar.
+- CI passa a rodar typecheck e lint em toda PR. O Next 16 removeu `next lint` e o lint durante o build; desde então nada checava o código além do build da Vercel.
+- CLI do Supabase no CI fixada em 2.120.0 (a usada no último CI verde). Atualizar de propósito, numa PR própria.
