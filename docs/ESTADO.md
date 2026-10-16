@@ -1,4 +1,4 @@
-# Estado — 2026-10-15
+# Estado — 2026-10-16
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -14,7 +14,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Em andamento
 - Fluxo novo de equipes na PR #79 (rascunho, ~7.500 linhas): blocos 1–8, 11 e 12 prontos, não publicados. Próximo: plano de ativação em produção (renomear migrations, cópia de teste do banco, janela) e contagem simulada até 11/12.
-- Ferramentas do agente (esta PR): Ponytail no repositório, confirmação obrigatória para migration/SQL/merge, typecheck e lint no CI, CLI do Supabase fixada.
+- Ferramentas do agente: #87 publicada. Esta PR: `main` protegida por ruleset no GitHub (só PR com squash, typecheck/lint e memória verdes); trava local de push removida.
 
 ## Decisões pendentes de Yuri
 - Liberar `cdn.sheetjs.com` na rede do ambiente de nuvem: sem isso as sessões não instalam o projeto nem rodam testes locais.
