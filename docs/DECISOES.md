@@ -143,3 +143,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Ruleset `Main` no GitHub: só entra por PR com squash, sem aprovação obrigatória, checks `Typecheck and lint` e `memory` verdes, sem apagar a branch, lista de exceções vazia. Motivo: a trava local de push só pegava uma forma de escrever o comando; o servidor bloqueia qualquer caminho (git, conector, outro agente).
 - Saem do `.claude/settings.json` as regras de push para a `main` (autorizado por Yuri); ficam as confirmações de migration, SQL e merge. O agente não altera as próprias permissões sem autorização explícita.
 - Só são obrigatórios checks que rodam em toda PR: checks com filtro de pasta travariam PRs que não tocam essas pastas. Renomear um check obrigatório exige atualizar o ruleset na mesma hora.
+
+## Aviso de lint reprova PR (2026-10-16)
+- `npm run lint` roda com `--max-warnings 0`. Motivo: avisos como `react-hooks/exhaustive-deps` costumam ser bugs reais e passavam despercebidos. Corrigir o aviso; `eslint-disable` só com motivo escrito ao lado.
+- Na data, a `main` e a #79 tinham um único aviso cada, o mesmo (tela de Combinação), corrigido nesta mudança.

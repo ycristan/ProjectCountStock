@@ -14,7 +14,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Em andamento
 - Fluxo novo de equipes na PR #79 (rascunho, ~7.500 linhas): blocos 1–8, 11 e 12 prontos, não publicados. Próximo: plano de ativação em produção (renomear migrations, cópia de teste do banco, janela) e contagem simulada até 11/12.
-- Ferramentas do agente: #87 e #88 publicadas (`main` protegida por ruleset: só PR com squash, typecheck/lint e memória verdes). Esta PR: instalação automática roda também ao retomar sessão; linha repetida do lint removida.
+- Ferramentas do agente: #87, #88 e #89 publicadas (`main` protegida por ruleset: só PR com squash, typecheck/lint e memória verdes). Esta PR: aviso de lint reprova a PR; corrigido o único aviso (tela de Combinação). Ao vivo da Combinação entra no roteiro da contagem simulada.
 
 ## Decisões pendentes de Yuri
 - Liberar `cdn.sheetjs.com` na rede do ambiente de nuvem: sem isso as sessões não instalam o projeto nem rodam testes locais.
