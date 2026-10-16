@@ -141,5 +141,5 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 
 ## Proteção da `main` (2026-10-16)
 - Ruleset `Main` no GitHub: só entra por PR com squash, sem aprovação obrigatória, checks `Typecheck and lint` e `memory` verdes, sem apagar a branch, lista de exceções vazia. Motivo: a trava local de push só pegava uma forma de escrever o comando; o servidor bloqueia qualquer caminho (git, conector, outro agente).
-- As regras de push para a `main` no `.claude/settings.json` ficam como camada extra, mas a proteção real é o ruleset. Remover exige autorização de Yuri, porque o agente não altera as próprias permissões sozinho.
+- Saem do `.claude/settings.json` as regras de push para a `main` (autorizado por Yuri); ficam as confirmações de migration, SQL e merge. O agente não altera as próprias permissões sem autorização explícita.
 - Só são obrigatórios checks que rodam em toda PR: checks com filtro de pasta travariam PRs que não tocam essas pastas. Renomear um check obrigatório exige atualizar o ruleset na mesma hora.
