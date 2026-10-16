@@ -14,8 +14,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Em andamento
 - Fluxo novo de equipes na PR #79 (rascunho, ~7.500 linhas): blocos 1–8, 11 e 12 prontos, não publicados. Próximo: plano de ativação em produção (renomear migrations, cópia de teste do banco, janela) e contagem simulada até 11/12.
-- Ferramentas do agente: #87, #88 e #89 publicadas (`main` protegida por ruleset: só PR com squash, typecheck/lint e memória verdes). Esta PR: aviso de lint reprova a PR; corrigido o único aviso (tela de Combinação). Ao vivo da Combinação entra no roteiro da contagem simulada.
-
+- Ferramentas do agente: #87, #88 e #89 publicadas (`main` protegida por ruleset: só PR com squash, typecheck/lint e memória verdes). Esta PR: aviso de lint reprova a PR; corrigido o único aviso (tela de Combinação).
 ## Decisões pendentes de Yuri
 - Liberar `cdn.sheetjs.com` na rede do ambiente de nuvem: sem isso as sessões não instalam o projeto nem rodam testes locais.
 - Desativar a skill de conta `contagem-estoque-cega` (descreve o fluxo antigo de 3 contadores e compete com `docs/`) e o plugin Codex (contraria "agente único").
@@ -24,6 +23,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 Nenhum conhecido no fluxo de equipes. A correção do Independente (#85) não foi testada em tela com sessão real: entra no roteiro da contagem simulada.
 
 ## A verificar
+- Teste manual de Yuri (#90): admin com a tela de Combinação aberta; contador lança contagem em outro aparelho; o lançamento aparece sem recarregar. Fazer na contagem simulada (cobre também T51).
 - Inventário BDS: 2.301 produtos (460 ativos / 1.841 inativos) contra 2.295 (446 / 1.849) logo após a recuperação. Sem registro da mudança.
 - Conector do Supabase: leituras funcionam; gravações (apply_migration, execute_sql) travaram por tempo esgotado em 15/10. Resolver antes das migrations da #79.
 - Backup de 2026-09-18 nunca restaurado em teste; está só no computador de Yuri.
