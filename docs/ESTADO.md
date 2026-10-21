@@ -14,16 +14,18 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Em andamento
 - Fluxo novo de equipes (blocos 1–8, 11 e 12) atualizado com a `main`: migrations com data nova, políticas do Independente só na #85, testes completos verdes no ambiente do agente. Substitui a #79.
-- Próximo: Yuri aprovar o plano de ativação abaixo e a janela.
+- Estrutura do banco de produção conferida em 21/10 (só leitura): igual à do repositório, exceto duas colunas antigas que só existem lá (`teams.team_pin`, `solo_sessions.access_pin`). Com elas, as 9 migrations aplicam e os testes passam.
+- Próximo: Yuri autorizar a aplicação em produção e a janela.
 
 ## Plano de ativação (proposto, não aprovado)
-1. Cópia do banco de produção num banco descartável; aplicar as 9 migrations nela e rodar os testes.
+1. Feito: teste com a estrutura de produção (sem dados pessoais) num banco descartável.
 2. Janela sem sessão de equipes aberta: aplicar as 9 migrations em produção (com autorização de Yuri).
 3. Merge da PR com `TEAM_SETUP_ENABLED` desligado: legado continua igual.
 4. Ligar `TEAM_SETUP_ENABLED` na Vercel e fazer a contagem simulada em warehouse de teste.
 
 ## Decisões pendentes de Yuri
-- Aprovar o plano de ativação e a janela.
+- Autorizar a aplicação das 9 migrations em produção e a janela.
+- `solo_sessions.access_pin` não é usado pelo código: decidir depois se sai (não bloqueia).
 
 ## A verificar
 - Teste manual (#90): Combinação atualiza sem recarregar. Fazer na contagem simulada (cobre também T51).
