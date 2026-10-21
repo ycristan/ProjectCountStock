@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { ItemBusca } from '@/actions/contagem'
+import { ResultList } from '@/app/(counter)/busca/_components/ResultList'
 
 type Item = { brand_code: string; brand_name: string }
 
@@ -22,7 +23,6 @@ export function SoloItemListStep({ inventory, items, onChange }: Props) {
             !listedCodes.has(i.brand_code) &&
             (i.brand_code.toLowerCase().includes(ql) || i.brand_name.toLowerCase().includes(ql))
         )
-        .slice(0, 8)
     : []
 
   function addItem(item: ItemBusca) {
@@ -42,24 +42,14 @@ export function SoloItemListStep({ inventory, items, onChange }: Props) {
         placeholder="Search item to add to the list..."
         className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-slate-900"
       />
-      {matches.length > 0 && (
-        <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden">
-          {matches.map((item) => (
-            <button
-              key={item.brand_code}
-              onClick={() => addItem(item)}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
-            >
-              <span className="font-semibold">{item.brand_code}</span> — {item.brand_name}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="max-h-80 overflow-y-auto">
+        <ResultList items={matches} onSelect={addItem} />
+      </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {items.map((i) => (
           <span key={i.brand_code} className="inline-flex items-center gap-1.5 bg-slate-100 rounded-full px-3 py-1 text-xs">
             {i.brand_code}
-            <button onClick={() => removeItem(i.brand_code)} className="text-slate-400 hover:text-red-500">
+            <button aria-label={`Remove ${i.brand_code}`} onClick={() => removeItem(i.brand_code)} className="text-slate-400 hover:text-red-500">
               ✕
             </button>
           </span>

@@ -147,3 +147,14 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Aviso de lint reprova PR (2026-10-16)
 - `npm run lint` roda com `--max-warnings 0`. Motivo: avisos como `react-hooks/exhaustive-deps` costumam ser bugs reais e passavam despercebidos. Corrigir o aviso; `eslint-disable` só com motivo escrito ao lado.
 - Na data, a `main` e a #79 tinham um único aviso cada, o mesmo (tela de Combinação), corrigido nesta mudança.
+
+## Migrations da #79 com data nova (2026-10-21)
+- As 9 migrations do fluxo novo passam a ter data 20261021 (mesma ordem de antes), depois da última aplicada em produção (20261007120000). Motivo: com data antiga, a ferramenta do Supabase as trataria como fora de ordem.
+- Saem da `reconcile_legacy_team_pin` as políticas `independent_no_initial_*`; ficam só na migration da #85, já aplicada.
+- O teste de atualização do fluxo de equipes no CI parte do estado real de produção (20261007120000), e não mais de 20260917073526.
+- Job do banco no CI fixado em `ubuntu-24.04`: o `ubuntu-latest` passou a ser 26.04, onde o Playwright 1.58.2 não instala o navegador. Atualizar Playwright e sistema juntos, numa PR própria.
+
+## Migrations do fluxo novo aplicadas em produção (2026-10-21)
+- Yuri autorizou aplicar as 9 migrations. Estrutura de produção conferida antes e depois contra o teste local: idêntica, sem nenhum dos 332 itens antigos alterado.
+- O conector do Supabase trava (60 s, sem gravar nada) em qualquer comando com `drop`. Por isso a `team_flow_weighing` e a `team_flow_signatures` entraram em partes, e as remoções (versões antigas de `save_team_count` e troca de `team_admin_reviews_decision_check`) ficaram para o editor SQL do Supabase.
+- Autorização de Yuri vale para a entrega inteira; o agente só para por decisão de negócio nova ou para ligar o fluxo para usuários.

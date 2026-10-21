@@ -19,6 +19,7 @@ Sistema web de contagem física de inventário cega em warehouse. Yuri é gerent
 
 ## Fluxo de mudança
 - Sempre branch + PR. Nunca enviar direto para `main` e nunca fazer merge sem autorização explícita de Yuri naquela vez.
+- Exceção: PR que altera só `docs/` (sem código, workflow, migration ou `CLAUDE.md`) o agente pode mergear sozinho depois do CI verde.
 - Merge com squash.
 - Supabase: toda mudança de schema, RLS ou função vira migration versionada em `supabase/migrations/`. Migration não é aplicada pelo merge; a PR diz se há aplicação manual e ela só ocorre com autorização.
 - Preview da Vercel usa o MESMO banco da produção: nunca criar sessões, equipes, contagens ou alterar cadastro ali para teste.

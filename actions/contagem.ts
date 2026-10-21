@@ -32,6 +32,8 @@ export type LancarContagemPayload = {
   cases: number
   units: number
   is_weight_count?: boolean
+  // Raw weighing (rounds of boxes + gross grams); stored by the new team flow only.
+  weighing?: { rounds: { boxes: number; grams: number }[]; visualCases: number }
 }
 
 export type LancarContagemResult = {
