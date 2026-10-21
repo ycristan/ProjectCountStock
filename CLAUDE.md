@@ -40,7 +40,7 @@ Sistema web de contagem física de inventário cega em warehouse. Yuri é gerent
 - Operações com várias gravações (equipes, sessões, importações) são transacionais.
 
 ## Qualidade
-- Ponytail full antes e durante a escrita de código, e Ponytail Review no diff ao concluir. Menos código nunca justifica remover autorização, histórico, testes ou observabilidade.
+- Skill `ponytail` (nível full) antes e durante a escrita de código, e `ponytail-review` no diff ao concluir. Ambas ficam em `.claude/skills/`, porque plugin não carrega em sessão na nuvem. Menos código nunca justifica remover autorização, histórico, testes ou observabilidade.
 - Reutilizar componentes existentes (`CountForm`, `SearchInput`, `ResultList` etc.); divergência visual entre telas é inaceitável.
 - Nunca pular, desativar ou inverter teste para ficar verde. Build verde não prova fluxo de negócio.
 - Não afirmar que algo foi validado sem evidência. Separar sempre: especificado, implementado, testado, publicado.

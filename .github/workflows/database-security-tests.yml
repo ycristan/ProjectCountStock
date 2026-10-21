@@ -37,7 +37,7 @@ jobs:
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: '2.117.0'
+          version: 2.120.0
 
       - name: Initialize disposable local Supabase project
         run: |
@@ -73,7 +73,7 @@ jobs:
           PGDATABASE: postgres
         run: |
           test "$GITHUB_ACTIONS" = "true"
-          supabase db reset --local --version 20260917073526 --no-seed
+          supabase db reset --local --version 20261007120000 --no-seed
           psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/warehouse-before.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/migrations/team-foundation-before.sql
           supabase migration up --local

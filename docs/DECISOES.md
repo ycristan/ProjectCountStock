@@ -127,3 +127,28 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Colunas do Excel final aprovadas por Yuri: uma aba por equipe (cada contador, conciliado, final e como resolveu), Consolidado só com o final de cada equipe, total e "Not counted", e Template Import Reconc idêntico ao atual.
 - A ciência da lista de não contados congela o consolidado e fecha a sessão na mesma operação; se a lista mudou desde que o admin a viu, o sistema pede para revisar de novo.
 - Audit Count é um item do menu admin com uma planilha por sessão: todas as contagens e versões substituídas, pesagens, conciliações, recontagens, decisões, ausências e assinaturas. Admins aparecem pelo e-mail; membros de equipe pelo nome (o login deles contém PINs e nunca é exibido).
+
+## Correção do Independente separada da #79 (2026-10-07)
+- Yuri aprovou publicar a correção do Independente no legado sozinha, sem esperar a #79. Motivo: a correção não pode depender da PR grande, e o Plano B precisa dela.
+- A #79 corrigia só busca, layout e finalização; conciliação do contador, telas do admin e Excel final do legado continuavam lendo papel e equipe do `user_metadata`. A correção separada cobre todos esses pontos e repete a trava do banco que impede o Independente de lançar contagem inicial.
+- Ao reabrir a #79 sobre a `main`, tirar dela as políticas `independent_no_initial_*` (já estarão na migration da correção).
+
+## Ferramentas do agente (2026-10-15)
+- Ponytail fica copiado no repositório (`.claude/skills/`, commit de origem no LICENSE): plugin instalado no computador de Yuri não carrega em sessão na nuvem.
+- `.claude/settings.json` pede confirmação antes de aplicar migration, rodar SQL no Supabase, fazer merge de PR ou enviar para a `main`. Motivo: essas regras eram só texto e dependiam do agente lembrar.
+- CI passa a rodar typecheck e lint em toda PR. O Next 16 removeu `next lint` e o lint durante o build; desde então nada checava o código além do build da Vercel.
+- CLI do Supabase no CI fixada em 2.120.0 (a usada no último CI verde). Atualizar de propósito, numa PR própria.
+
+## Proteção da `main` (2026-10-16)
+- Ruleset `Main` no GitHub: só entra por PR com squash, sem aprovação obrigatória, checks `Typecheck and lint` e `memory` verdes, sem apagar a branch, lista de exceções vazia. Motivo: a trava local de push só pegava uma forma de escrever o comando; o servidor bloqueia qualquer caminho (git, conector, outro agente).
+- Saem do `.claude/settings.json` as regras de push para a `main` (autorizado por Yuri); ficam as confirmações de migration, SQL e merge. O agente não altera as próprias permissões sem autorização explícita.
+- Só são obrigatórios checks que rodam em toda PR: checks com filtro de pasta travariam PRs que não tocam essas pastas. Renomear um check obrigatório exige atualizar o ruleset na mesma hora.
+
+## Aviso de lint reprova PR (2026-10-16)
+- `npm run lint` roda com `--max-warnings 0`. Motivo: avisos como `react-hooks/exhaustive-deps` costumam ser bugs reais e passavam despercebidos. Corrigir o aviso; `eslint-disable` só com motivo escrito ao lado.
+- Na data, a `main` e a #79 tinham um único aviso cada, o mesmo (tela de Combinação), corrigido nesta mudança.
+
+## Migrations da #79 com data nova (2026-10-21)
+- As 9 migrations do fluxo novo passam a ter data 20261021 (mesma ordem de antes), depois da última aplicada em produção (20261007120000). Motivo: com data antiga, a ferramenta do Supabase as trataria como fora de ordem.
+- Saem da `reconcile_legacy_team_pin` as políticas `independent_no_initial_*`; ficam só na migration da #85, já aplicada.
+- O teste de atualização do fluxo de equipes no CI parte do estado real de produção (20261007120000), e não mais de 20260917073526.

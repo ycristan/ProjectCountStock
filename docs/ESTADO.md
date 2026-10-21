@@ -1,4 +1,4 @@
-# Estado — 2026-10-07
+# Estado — 2026-10-21
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -7,28 +7,32 @@ Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar ant
 - até 27/11: fluxo novo completo, testado e publicado em produção;
 - até 11/12: contagem simulada com pessoas reais em warehouse de teste;
 - 12/12 a 02/01: produção congelada, só correção urgente.
-Plano B: sem fluxo novo pronto em 27/11, publicar só a correção do Independente no legado e contar 02/01 no fluxo antigo.
+Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a correção do Independente).
 
 ## Em produção
-`main` com inventário por warehouse, ZIP, recuperação BDS e correção do arredondamento por peso (Solo e reconciliação legada). Fluxo de equipes publicado ainda é o legado de três pessoas, com a regressão do Independente (abaixo). Solo é usado quase todo dia.
+`main` com inventário por warehouse, ZIP, recuperação BDS, correção do arredondamento por peso e correção do Independente no legado (#85). Fluxo de equipes publicado ainda é o legado de três pessoas. Solo é usado quase todo dia. Nenhuma sessão de equipes aberta em produção (consulta de 21/10).
 
 ## Em andamento
-- Fluxo novo de equipes nesta PR (#79): blocos 1–8, 11 e 12 prontos, não publicados. O fluxo de equipes está completo: cadastro, contagem cega, finalização, comparação, conciliação, revisão do admin, assinaturas, encerramento, ciência dos não contados, Excel final e Audit Count. Próximo: plano de ativação em produção (renomear migrations, cópia de teste do banco, janela) e contagem simulada até 11/12.
-- Correções da auditoria feitas: inventário carregado uma vez; mesma busca/"Add to Count"/"Edit Count" das telas atuais; monitor em `cases+units`.
-- Regras revisadas com Yuri em 2026-10-05: substituição e Independente compartilhado adiados; contador ausente simples; assinatura por PIN + nome completo; ativos não contados viram 0 após ciência do admin (revisado em 07/10).
+- Fluxo novo de equipes (blocos 1–8, 11 e 12) atualizado com a `main`: migrations com data nova, políticas do Independente só na #85, testes completos verdes no ambiente do agente. Substitui a #79.
+- Próximo: Yuri aprovar o plano de ativação abaixo e a janela.
+
+## Plano de ativação (proposto, não aprovado)
+1. Cópia do banco de produção num banco descartável; aplicar as 9 migrations nela e rodar os testes.
+2. Janela sem sessão de equipes aberta: aplicar as 9 migrations em produção (com autorização de Yuri).
+3. Merge da PR com `TEAM_SETUP_ENABLED` desligado: legado continua igual.
+4. Ligar `TEAM_SETUP_ENABLED` na Vercel e fazer a contagem simulada em warehouse de teste.
 
 ## Decisões pendentes de Yuri
-Nenhuma no momento.
-
-## Problema conhecido em produção
-Regressão do Independente (vinda da PR #63): contas de equipe criadas depois da #63 caem na tela de lançamento e o Independente vê "Finalise". Correção na #79, não publicada. Nenhuma contagem de equipe programada antes de 02/01/2027.
+- Aprovar o plano de ativação e a janela.
 
 ## A verificar
+- Teste manual (#90): Combinação atualiza sem recarregar. Fazer na contagem simulada (cobre também T51).
+- Correção do Independente (#85) não testada em tela com sessão real: entra na contagem simulada.
 - Inventário BDS: 2.301 produtos (460 ativos / 1.841 inativos) contra 2.295 (446 / 1.849) logo após a recuperação. Sem registro da mudança.
-- Backup de 2026-09-18 nunca foi restaurado em teste.
-- Sentry lido pelo agente desde 06/10: sem dado pessoal; só capta falhas não tratadas. Erros que as telas mostram ao usuário (ex.: falha ao salvar) não chegam lá.
+- Conector do Supabase: leitura por SQL voltou a funcionar em 21/10; gravação ainda não testada.
+- Backup de 2026-09-18 nunca restaurado em teste; está só no computador de Yuri.
+- Sentry só capta falhas não tratadas; erros mostrados na tela não chegam lá.
 - Contagem por peso no legado: "adicionar rodada" e reconciliação por peso quebradas em agosto; sem registro de correção.
-- Migrations desta PR com data anterior à última aplicada em produção (21/09 e 22/09): renomear antes de aplicar.
 
 ## Backlog aprovado, não iniciado
-- Bloqueio do login após PINs errados (ver DECISOES, 07/10); aprovação dupla de BPU; itens desconhecidos com foto; Inventory manual/toggle/filtros; código de barras; padronização visual; assinatura desenhada; ajuste pós-assinatura; substituição e Independente compartilhado.
+- Bloqueio do login após PINs errados; aprovação dupla de BPU; itens desconhecidos com foto; Inventory manual/toggle/filtros; código de barras; padronização visual; assinatura desenhada; ajuste pós-assinatura; substituição e Independente compartilhado.

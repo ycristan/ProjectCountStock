@@ -115,10 +115,12 @@ export function CombinacaoClient({
   const [erro, setErro] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  // Chave estável: o servidor manda um array novo a cada refresh, mesmo com as mesmas equipes.
+  const teamIdsKey = initTeams.map((t) => t.id).join(',')
 
   useEffect(() => {
     const supabase = createClient()
-    const tids = new Set(initTeams.map((t) => t.id))
+    const tids = new Set(teamIdsKey.split(','))
     let mounted = true
     let channel: ReturnType<typeof supabase.channel>
 
@@ -213,7 +215,7 @@ export function CombinacaoClient({
       mounted = false
       if (channel) supabase.removeChannel(channel)
     }
-  }, [sessionId])
+  }, [sessionId, teamIdsKey])
 
   const invMap = Object.fromEntries(inventory.map((i) => [i.brand_code, i]))
 
