@@ -14,17 +14,17 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Em andamento
 - Fluxo novo de equipes (blocos 1–8, 11 e 12) atualizado com a `main`: migrations com data nova, políticas do Independente só na #85, testes completos verdes no ambiente do agente. Substitui a #79.
-- 21/10: as 9 migrations foram aplicadas em produção; estrutura idêntica à testada. Falta só o passo das remoções (abaixo).
-- Próximo: remoções no editor SQL; depois merge com `TEAM_SETUP_ENABLED` desligado.
+- 21/10: as 9 migrations estão em produção (remoções rodadas por Yuri no editor SQL); estrutura idêntica à testada. Código do fluxo novo na `main` pela #91.
+- Próximo: ligar `TEAM_SETUP_ENABLED` na Vercel e fazer a contagem simulada.
 
-## Plano de ativação (proposto, não aprovado)
+## Plano de ativação
 1. Feito: teste com a estrutura de produção (sem dados pessoais) num banco descartável.
-2. Feito em 21/10, exceto as remoções: o conector trava com `drop`; rodar no editor SQL o bloco da PR #91.
-3. Merge da PR com `TEAM_SETUP_ENABLED` desligado: legado continua igual.
+2. Feito em 21/10 (remoções pelo editor SQL: o conector trava com `drop`).
+3. Feito: merge da #91 com `TEAM_SETUP_ENABLED` desligado.
 4. Ligar `TEAM_SETUP_ENABLED` na Vercel e fazer a contagem simulada em warehouse de teste.
 
 ## Decisões pendentes de Yuri
-- Rodar no editor SQL do Supabase o bloco de remoções da PR #91 (5 linhas).
+- Confirmar na Vercel que `TEAM_SETUP_ENABLED` não existe ou está diferente de `true` (o conector não tem permissão de ler variáveis).
 - `solo_sessions.access_pin` não é usado pelo código: decidir depois se sai (não bloqueia).
 
 ## A verificar
