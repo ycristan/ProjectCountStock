@@ -152,3 +152,4 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - As 9 migrations do fluxo novo passam a ter data 20261021 (mesma ordem de antes), depois da última aplicada em produção (20261007120000). Motivo: com data antiga, a ferramenta do Supabase as trataria como fora de ordem.
 - Saem da `reconcile_legacy_team_pin` as políticas `independent_no_initial_*`; ficam só na migration da #85, já aplicada.
 - O teste de atualização do fluxo de equipes no CI parte do estado real de produção (20261007120000), e não mais de 20260917073526.
+- Job do banco no CI fixado em `ubuntu-24.04`: o `ubuntu-latest` passou a ser 26.04, onde o Playwright 1.58.2 não instala o navegador. Atualizar Playwright e sistema juntos, numa PR própria.

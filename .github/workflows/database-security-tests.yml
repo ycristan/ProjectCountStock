@@ -28,7 +28,7 @@ permissions:
 jobs:
   database-security:
     name: Apply migrations and verify authorization
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright 1.58.2 não instala navegador no ubuntu-latest (26.04)
     timeout-minutes: 20
 
     steps:
