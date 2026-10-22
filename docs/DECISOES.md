@@ -158,3 +158,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri autorizou aplicar as 9 migrations. Estrutura de produção conferida antes e depois contra o teste local: idêntica, sem nenhum dos 332 itens antigos alterado.
 - O conector do Supabase trava (60 s, sem gravar nada) em qualquer comando com `drop`. Por isso a `team_flow_weighing` e a `team_flow_signatures` entraram em partes, e as remoções (versões antigas de `save_team_count` e troca de `team_admin_reviews_decision_check`) ficaram para o editor SQL do Supabase.
 - Autorização de Yuri vale para a entrega inteira; o agente só para por decisão de negócio nova ou para ligar o fluxo para usuários.
+
+## Sessões novas só no fluxo novo (2026-10-22)
+- Yuri decidiu: com `TEAM_SETUP_ENABLED` ligado, toda sessão nova de equipes usa só o fluxo novo. Sessão que já tem equipe do legado continua no legado. Motivo: evitar escolher a tela errada no dia; o Plano B é desligar a variável.
+- `?flow=1` na tela de equipes mantém o formulário legado alcançável para o teste de navegador dele; não aparece em nenhum menu.

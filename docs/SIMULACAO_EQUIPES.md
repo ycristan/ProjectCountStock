@@ -3,11 +3,10 @@
 Objetivo: provar o fluxo novo de ponta a ponta com pessoas reais, em produção, num warehouse de teste, antes de 11/12. Regras: [contrato](./TEAM_COUNT_FLOW.md). Cenários de referência: [matriz](./TEAM_COUNT_TEST_MATRIX.md).
 
 ## O que muda quando o botão `TEAM_SETUP_ENABLED` é ligado (Vercel)
-- **Admin:** aparece o item "Audit Count" no menu. A tela de equipes de uma sessão passa a aceitar o fluxo novo.
+- **Admin:** aparece o item "Audit Count" no menu. Toda sessão nova de equipes usa só o fluxo novo (decisão de 22/10); a lista de sessões leva cada sessão à tela certa.
 - **Pessoas de equipes do fluxo novo:** depois do login com PIN, vão para a tela "Your team access" e dali para a equipe.
 - **Continua igual:** contagem Solo, inventário, importação e sessões antigas de equipes. As equipes antigas seguem no fluxo de 3 pessoas.
-- **Lacuna atual:** criar uma sessão ainda leva para a tela antiga de equipes. Para usar o fluxo novo, é preciso abrir a tela de equipes com `&flow=2` no fim do endereço. Também não há caminho pelo menu para voltar ao monitor. Correção proposta em "Pendências".
-- **Desligar o botão** esconde o fluxo novo de novo. Os dados gravados continuam no banco.
+- **Desligar o botão** volta ao fluxo antigo para sessões novas (Plano B). Os dados gravados continuam no banco.
 
 ## Antes do dia
 1. Warehouse de teste com inventário importado: produtos ativos e inativos, alguns com peso médio (contagem por peso) e alguns com BPU 1.
@@ -18,7 +17,7 @@ Objetivo: provar o fluxo novo de ponta a ponta com pessoas reais, em produção,
 
 ## Roteiro (marcar ✔ ou anotar o problema)
 **1. Montagem (admin)**
-- [ ] Criar sessão de equipes no warehouse de teste com 2 equipes e abrir a tela de equipes com `&flow=2`.
+- [ ] Criar sessão de equipes no warehouse de teste com 2 equipes; o sistema abre a montagem do fluxo novo.
 - [ ] Preencher a equipe A (3 pessoas) e a equipe B (botão "Add counter" para 4 pessoas). Clicar em "Create Teams and Generate Logins" e imprimir os cartões.
 - [ ] Em cada equipe, clicar em "Open monitor" e depois em "Start team counting".
 
@@ -54,7 +53,3 @@ Objetivo: provar o fluxo novo de ponta a ponta com pessoas reais, em produção,
 - [ ] Baixar "Download final Excel": uma aba por equipe; o produto contado pelas duas equipes aparece somado no Consolidado; não contados com 0 e "Not counted"; inativos não contados sem linha.
 - [ ] Baixar "Download Audit Count" e conferir contagens, pesagens, conciliações, decisões, ausências e assinaturas.
 - [ ] Tentar alterar qualquer coisa depois do fechamento: nada pode mudar.
-
-## Pendências antes do dia (agente)
-- Navegação: com o botão ligado, criar sessão de equipes leva direto ao fluxo novo. Hoje a lista de sessões leva sempre à tela antiga (Combinação), que não serve para sessão do fluxo novo; ela deve levar à tela de equipes do fluxo novo, com os monitores e o fechamento. Depende de Yuri decidir se o fluxo novo substitui o antigo nas sessões novas.
-- Tirar da tela de montagem o aviso "Isolated development setup. Counting is not activated."
