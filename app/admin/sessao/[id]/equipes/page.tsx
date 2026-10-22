@@ -19,17 +19,21 @@ export default async function EquipesPage({
   const { n, flow } = await searchParams
   const numEquipes = Math.max(1, parseInt(n ?? '1'))
 
-  if (flow === '2' && process.env.TEAM_SETUP_ENABLED === 'true') {
+  const db = await createClient()
+  const { data: allTeams, error } = await db.from('teams').select('id,team_name,team_flows(team_id)').eq('session_id', id)
+  if (error || !allTeams) return <p role="alert">Teams are unavailable. Please reload.</p>
+  const teams = allTeams.filter(t => t.team_flows)
+  // New sessions use only the new flow while it is enabled; sessions with legacy teams stay legacy.
+  // flow=1 keeps the legacy form reachable for its browser test.
+  if (process.env.TEAM_SETUP_ENABLED === 'true' && flow !== '1' && teams.length === allTeams.length) {
     const saved = await readTeamSetup(id)
     if (saved.error) return <p role="alert">{saved.error}</p>
-    const db = await createClient()
-    const { data: teams } = await db.from('teams').select('id,team_name,team_flows!inner(team_id)').eq('session_id', id)
-    const closing = teams?.length ? await readTeamSessionClosing(id) : null
+    const closing = teams.length ? await readTeamSessionClosing(id) : null
     return <>
       <TeamSetupForm sessionId={id} numberOfTeams={Number.isFinite(numEquipes) ? numEquipes : 1}
         savedDraft={saved.draft} credentials={saved.credenciais} />
       <nav className="mt-4 flex flex-col gap-2" aria-label="Team counting monitors">
-        {teams?.map(team => <Link key={team.id} href={'/team/' + team.id}>Open monitor — {team.team_name}</Link>)}
+        {teams.map(team => <Link key={team.id} href={'/team/' + team.id}>Open monitor — {team.team_name}</Link>)}
       </nav>
       {closing && <TeamSessionClosing sessionId={id} initial={closing} />}
     </>

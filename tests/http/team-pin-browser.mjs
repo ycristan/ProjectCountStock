@@ -56,7 +56,7 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
     await adminPage.waitForURL(base+'/admin')
 
     stage='create legacy team through real form'
-    await adminPage.goto(base+'/admin/sessao/'+session.id+'/equipes?n=1')
+    await adminPage.goto(base+'/admin/sessao/'+session.id+'/equipes?flow=1&n=1')
     await adminPage.locator('[name="team_0_name"]').fill('Browser team')
     for(const role of ['c1','c2','ind'])await adminPage.locator('[name="team_0_'+role+'"]').fill('Synthetic '+role)
     await adminPage.getByRole('button',{name:'Create Teams and Generate Logins',exact:true}).click()

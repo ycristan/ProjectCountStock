@@ -14,7 +14,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Em andamento
 - 21/10: as 9 migrations estão em produção (remoções rodadas por Yuri no editor SQL); estrutura idêntica à testada. Código do fluxo novo na `main` pela #91.
-- Próximo: contagem simulada, provavelmente na semana de 26/10 (roteiro em SIMULACAO_EQUIPES.md). Antes, corrigir a navegação para o fluxo novo.
+- Próximo: contagem simulada, provavelmente na semana de 26/10 (roteiro em SIMULACAO_EQUIPES.md). Esta PR: sessões novas vão direto ao fluxo novo quando ligado.
 
 ## Plano de ativação
 1. Feito: teste com a estrutura de produção (sem dados pessoais) num banco descartável.
@@ -24,7 +24,6 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Decisões pendentes de Yuri
 - Dia da simulação; warehouse de teste; pessoas (2 equipes, 9 pessoas).
-- Fluxo novo substitui o antigo nas sessões novas quando o botão estiver ligado? (define a correção de navegação)
 - `solo_sessions.access_pin` não é usado pelo código: decidir depois se sai (não bloqueia).
 
 ## A verificar

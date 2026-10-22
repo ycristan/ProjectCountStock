@@ -25,7 +25,7 @@ export async function verifyTeamSetupBrowser({base,db,status,sql,login,envelopes
   const submit=()=>page.getByRole('button',{name:/^(Create Teams and Generate Logins|Resume Team Setup)$/})
   try {
     stage='dynamic 3/4/5 form'
-    await page.goto(base+'/admin/sessao/'+session.id+'/equipes?flow=2&n=3')
+    await page.goto(base+'/admin/sessao/'+session.id+'/equipes?n=3')  // no flow param: new sessions default to the new flow
     await page.getByRole('heading',{name:'Configure Variable Teams'}).waitFor()
     for(let i=0;i<3;i++){
       const fieldset=page.locator('fieldset').nth(i)

@@ -35,7 +35,6 @@ export function TeamSetupForm({ sessionId, numberOfTeams, savedDraft, credential
   if (cards) return <LoginCards credentials={cards} sessionId={sessionId} setupOnly />
   return <div>
     <h2 className="text-xl font-semibold mb-4">Configure Variable Teams</h2>
-    <p className="mb-4 text-amber-800">Isolated development setup. Counting is not activated.</p>
     {locked && <p role="status" className="mb-4">Saved setup recovered. Retry resumes the same team codes and personal PINs.</p>}
     <form onSubmit={submit} className="space-y-6">
       {teams.map((team, i) => <fieldset key={i} disabled={busy || locked} className="border border-slate-200 rounded-xl p-4 space-y-3">

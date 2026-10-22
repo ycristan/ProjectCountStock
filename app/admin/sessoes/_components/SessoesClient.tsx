@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { forcarFecharSessao, deletarSessao } from '@/actions/sessao'
 
-type Session = { id: string; created_at: string; status: string }
+type Session = { id: string; created_at: string; status: string; href: string }
 
 export function SessoesClient({ sessoes }: { sessoes: Session[] }) {
   const router = useRouter()
@@ -59,7 +59,7 @@ export function SessoesClient({ sessoes }: { sessoes: Session[] }) {
               </div>
               <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                 <Link
-                  href={`/admin/sessao/${s.id}/combinacao`}
+                  href={s.href}
                   className="text-sm font-medium text-blue-600 hover:text-blue-800 whitespace-nowrap"
                 >
                   Live Count →
