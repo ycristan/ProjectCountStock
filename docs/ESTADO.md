@@ -14,7 +14,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Em andamento
 - 21/10: as 9 migrations estão em produção (remoções rodadas por Yuri no editor SQL); estrutura idêntica à testada. Código do fluxo novo na `main` pela #91.
-- Próximo: contagem simulada, provavelmente na semana de 26/10 (roteiro em SIMULACAO_EQUIPES.md). Esta PR: sessões novas vão direto ao fluxo novo quando ligado.
+- Próximo: contagem simulada, provavelmente na semana de 26/10 (roteiro em SIMULACAO_EQUIPES.md). Sessões novas já vão direto ao fluxo novo quando ligado (#93).
 
 ## Plano de ativação
 1. Feito: teste com a estrutura de produção (sem dados pessoais) num banco descartável.
@@ -36,4 +36,4 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 - Contagem por peso no legado: "adicionar rodada" e reconciliação por peso quebradas em agosto; sem registro de correção.
 
 ## Backlog aprovado, não iniciado
-- Bloqueio do login após PINs errados; aprovação dupla de BPU; itens desconhecidos com foto; Inventory manual/toggle/filtros; código de barras; padronização visual; assinatura desenhada; ajuste pós-assinatura; substituição e Independente compartilhado.
+- Bloqueio do login após PINs errados; aprovação dupla de BPU; itens desconhecidos com foto; Inventory com abas por warehouse, cadastro manual, toggle e filtros (regras fechadas em 22/10; depois da simulação); código de barras; padronização visual; assinatura desenhada; ajuste pós-assinatura; substituição e Independente compartilhado.
