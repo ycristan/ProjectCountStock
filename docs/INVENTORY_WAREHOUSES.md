@@ -8,7 +8,8 @@ As regras abaixo substituem propostas anteriores conflitantes na próxima implem
 
 Unificar Upload Inventory e View Inventory: listar, pesquisar, editar em linha, criar um produto manualmente, importar e baixar a planilha.
 Disponibilizar filtros por Brand Code, nome, categoria, estado e BIN; manter o cabeçalho visível durante a rolagem.
-Ativação/desativação manual por toggle. Download sempre do inventário completo, incluindo ativos e inativos.
+Ativação/desativação manual por toggle. Não há exclusão: produto sai de uso só por desativação.
+Uma aba por warehouse (até cerca de 5 previstas; acima disso, rever para seletor). Lista, filtros, cadastro manual e download valem para a aba ativa: o produto criado manualmente pertence à warehouse da aba, e o download traz o inventário completo dessa warehouse, incluindo ativos e inativos (decisão de 2026-10-22).
 
 ## 2. Cadastro e métodos de contagem
 
