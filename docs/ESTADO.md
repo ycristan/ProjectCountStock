@@ -1,4 +1,4 @@
-# Estado — 2026-10-21
+# Estado — 2026-10-22
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -13,9 +13,8 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 `main` com inventário por warehouse, ZIP, recuperação BDS, correção do arredondamento por peso e correção do Independente no legado (#85). Fluxo de equipes publicado ainda é o legado de três pessoas. Solo é usado quase todo dia. Nenhuma sessão de equipes aberta em produção (consulta de 21/10).
 
 ## Em andamento
-- Fluxo novo de equipes (blocos 1–8, 11 e 12) atualizado com a `main`: migrations com data nova, políticas do Independente só na #85, testes completos verdes no ambiente do agente. Substitui a #79.
 - 21/10: as 9 migrations estão em produção (remoções rodadas por Yuri no editor SQL); estrutura idêntica à testada. Código do fluxo novo na `main` pela #91.
-- Próximo: ligar `TEAM_SETUP_ENABLED` na Vercel e fazer a contagem simulada.
+- Próximo: contagem simulada, provavelmente na semana de 26/10 (roteiro em SIMULACAO_EQUIPES.md). Antes, corrigir a navegação para o fluxo novo.
 
 ## Plano de ativação
 1. Feito: teste com a estrutura de produção (sem dados pessoais) num banco descartável.
@@ -24,7 +23,8 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 4. Ligar `TEAM_SETUP_ENABLED` na Vercel e fazer a contagem simulada em warehouse de teste.
 
 ## Decisões pendentes de Yuri
-- Confirmar na Vercel que `TEAM_SETUP_ENABLED` não existe ou está diferente de `true` (o conector não tem permissão de ler variáveis).
+- Dia da simulação; warehouse de teste; pessoas (2 equipes, 9 pessoas).
+- Fluxo novo substitui o antigo nas sessões novas quando o botão estiver ligado? (define a correção de navegação)
 - `solo_sessions.access_pin` não é usado pelo código: decidir depois se sai (não bloqueia).
 
 ## A verificar
