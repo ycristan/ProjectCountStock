@@ -2,6 +2,21 @@
 
 Objetivo: provar o fluxo novo de ponta a ponta com pessoas reais, em produção, num warehouse de teste, antes de 11/12. Regras: [contrato](./TEAM_COUNT_FLOW.md). Cenários de referência: [matriz](./TEAM_COUNT_TEST_MATRIX.md).
 
+Até 28/10 o fluxo novo nunca foi usado por pessoas: 0 equipes dele em produção. A contagem grande validou só o fluxo antigo.
+
+## Mini-teste (decisão de 28/10)
+Formato: 1 equipe com 2 contadores reais + Independente; Yuri como admin e, se faltar gente, no papel que sobrar. O roteiro completo abaixo segue como referência. O uso simultâneo de 9 pessoas e os dois admins ao mesmo tempo ficam para o teste automático do agente, em banco descartável.
+- [ ] Antes: warehouse de teste com produtos com peso médio e com BPU 1; `TEAM_SETUP_ENABLED` ligado; contagem Solo conferida depois de ligar.
+- [ ] Montagem: sessão com 1 equipe (2 contadores + Independente), cartões impressos, "Start team counting".
+- [ ] Contagem: os dois contam os mesmos produtos, num celular cada: 2 iguais, 1 diferente, 1 por peso (100 e 98), 1 só por um deles. Testar "Add to Count" e "Edit Count", inclusive se a edição oferece peso.
+- [ ] Independente: vê os números mudarem sem recarregar; não consegue lançar contagem.
+- [ ] Finalização: rejeitar 1 pedido, depois aceitar os dois.
+- [ ] Conciliação: escolher um valor no item dentro da tolerância de peso; conciliar o divergente e o não contado, um deles por peso.
+- [ ] Admin: devolver 1 produto para recontagem; depois aceitar o resultado.
+- [ ] Assinaturas: Independente e os dois contadores com PIN; os logins param de funcionar.
+- [ ] Fechamento: "Acknowledge and close the count"; baixar o Excel final e o Audit Count.
+- [ ] Anotar toda dúvida ou erro das pessoas na tela, mesmo pequeno: é o que o mini-teste existe para achar.
+
 ## O que muda quando o botão `TEAM_SETUP_ENABLED` é ligado (Vercel)
 - **Admin:** aparece o item "Audit Count" no menu. Toda sessão nova de equipes usa só o fluxo novo (decisão de 22/10); a lista de sessões leva cada sessão à tela certa.
 - **Pessoas de equipes do fluxo novo:** depois do login com PIN, vão para a tela "Your team access" e dali para a equipe.
