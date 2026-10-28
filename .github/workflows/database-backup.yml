@@ -1,0 +1,111 @@
+name: Database backup
+
+# Toda noite: exporta produção (só leitura), criptografa, restaura o arquivo criptografado
+# num banco descartável e confere as contagens; só então guarda o arquivo por 30 dias.
+# Em PR: o mesmo caminho com dados sintéticos, sem tocar em produção.
+# Recuperação: docs/ARQUITETURA.md, seção "Backup do banco".
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/database-backup.yml'
+      - 'supabase/maintenance/backup-dump.sh'
+      - 'supabase/maintenance/restore-check.sh'
+      - 'supabase/tests/backup/**'
+      - 'supabase/migrations/**'
+
+permissions:
+  contents: read
+
+env:
+  PGHOST: 127.0.0.1
+  PGPORT: '54322'
+  PGUSER: postgres
+  PGPASSWORD: postgres
+  PGDATABASE: postgres
+
+jobs:
+  backup:
+    name: Back up production and verify restore
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    concurrency:
+      group: database-backup
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+      - name: Check secrets
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          [ -n "$SUPABASE_DB_URL" ] && [ -n "$BACKUP_PASSPHRASE" ] || {
+            echo "::error::Faltam os segredos SUPABASE_DB_URL e/ou BACKUP_PASSPHRASE (Settings > Secrets and variables > Actions)."; exit 1; }
+      - name: Start empty disposable database
+        working-directory: ${{ runner.temp }}
+        run: mkdir restore && cd restore && supabase init >/dev/null && supabase db start
+      - name: Dump production and encrypt
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: supabase/maintenance/backup-dump.sh "$RUNNER_TEMP/out"
+      - name: Restore the encrypted file and compare row counts
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          PGUSER: supabase_admin # roles.sql altera parâmetros que só superusuário aplica
+        run: supabase/maintenance/restore-check.sh "$RUNNER_TEMP/out/backup.tar.gz.gpg"
+      - name: Name artifact by date
+        run: echo "BACKUP_NAME=db-backup-$(date -u +%Y-%m-%d)-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BACKUP_NAME }}
+          path: ${{ runner.temp }}/out/backup.tar.gz.gpg
+          retention-days: 30
+          if-no-files-found: error
+
+  self-test:
+    name: Backup self-test (synthetic data)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      BACKUP_PASSPHRASE: ci-only-synthetic
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+      - name: Source database with all migrations and synthetic rows
+        run: |
+          test "$GITHUB_ACTIONS" = "true"
+          [ -f supabase/config.toml ] || supabase init >/dev/null
+          supabase db start
+          supabase migration up --local
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/backup/seed.sql
+      - name: Dump and encrypt (same script as production)
+        env:
+          SUPABASE_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: supabase/maintenance/backup-dump.sh "$RUNNER_TEMP/out"
+      - name: Replace source with an empty database
+        run: |
+          supabase stop --no-backup
+          mkdir "$RUNNER_TEMP/restore" && cd "$RUNNER_TEMP/restore" && supabase init >/dev/null && supabase db start
+      - name: Restore and compare row counts (same script as production)
+        env:
+          PGUSER: supabase_admin # roles.sql altera parâmetros que só superusuário aplica
+        run: |
+          supabase/maintenance/restore-check.sh "$RUNNER_TEMP/out/backup.tar.gz.gpg" | tee "$RUNNER_TEMP/check.txt"
+          grep -q '"public"."inventory_items" *dump=2 *restaurado=2' "$RUNNER_TEMP/check.txt"
+          grep -q '"auth"."users" *dump=1 *restaurado=1' "$RUNNER_TEMP/check.txt"
+          [ "$(psql -X -At -c "select brand_name from public.inventory_items where brand_code='backup-probe-b'")" = "$(printf 'Probe "quoted"\nsecond line \\ tab')" ]

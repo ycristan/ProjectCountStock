@@ -163,6 +163,11 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri decidiu: com `TEAM_SETUP_ENABLED` ligado, toda sessão nova de equipes usa só o fluxo novo. Sessão que já tem equipe do legado continua no legado. Motivo: evitar escolher a tela errada no dia; o Plano B é desligar a variável.
 - `?flow=1` na tela de equipes mantém o formulário legado alcançável para o teste de navegador dele; não aparece em nenhum menu.
 
+## Backup automático e histórico do inventário (2026-10-28)
+- Yuri confirmou: backup diário pelo GitHub Actions, criptografado, restaurado e conferido num banco descartável a cada execução, guardado 30 dias como artefato. Substitui o "nunca enviar backup ao repositório ou a Actions" de 2026-09-18. Motivo: o Supabase gratuito não tem backup acessível e o backup local nunca foi testado.
+- Quem tiver a senha do backup e acesso ao repositório lê os dados, inclusive os logins de PIN de 4 dígitos: a senha vale tanto quanto a do banco.
+- Yuri aprovou histórico de alterações do inventário (quem, quando, antes e depois, inclusive importações), visível no Audit Count. Motivo: a mudança de 2.295 para 2.301 produtos no BDS é inexplicável, porque `inventory_items` não guarda data nem autor.
+
 ## Inventory com abas por warehouse (2026-10-22)
 - Yuri decidiu: a tela Inventory terá uma aba por warehouse (até cerca de 5 previstas). Cadastro manual entra na warehouse da aba ativa; o download traz só a warehouse da aba (ativos e inativos), no lugar de "sempre o inventário completo". Motivo: deixar claro o que pertence a cada warehouse e evitar cadastro na warehouse errada.
 - Sem exclusão de produto: desativar pelo toggle preserva o histórico das contagens.

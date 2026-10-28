@@ -41,7 +41,13 @@
 10. **Login solo por cookie/PIN foi abandonado** (redirect 307 sem causa encontrada). O solo usa conta fixa com login 2-PIN; não reabrir o caminho do cookie.
 11. **Warehouse nova ≠ renomear warehouse.** Upload com nome diferente criava outra identidade e deixava os produtos ausentes para trás (incidente de 2026-09-24). Hoje a criação de WHS nova é rejeitada se a planilha tiver Brand Code já cadastrado.
 
-## Novo fluxo de equipes — modelo técnico (branch da PR #74, não está na main)
+## Backup do banco
+- O Supabase está no plano gratuito, sem backup acessível. O workflow `Database backup` roda toda noite (03:17 UTC): `supabase/maintenance/backup-dump.sh` exporta roles, schema, dados e histórico de migrations num único arquivo criptografado (AES-256, senha no segredo `BACKUP_PASSPHRASE`); `restore-check.sh` restaura esse mesmo arquivo num banco descartável e compara as contagens tabela a tabela. Só então o arquivo vira artefato, guardado 30 dias.
+- Em PR que mexe em migrations ou nesses scripts, o mesmo caminho roda com dados sintéticos (`supabase/tests/backup/seed.sql`).
+- Recuperar (feito pelo agente, nunca no computador de Yuri): baixar o artefato, `gpg -d backup.tar.gz.gpg | tar -xzf -` e restaurar num projeto novo como no guia oficial da Supabase: `psql --single-transaction -v ON_ERROR_STOP=1 -f roles.sql -f schema.sql -c 'SET session_replication_role = replica' -f data.sql`, depois `history_schema.sql` e `history_data.sql`. Como `postgres`, linhas de `roles.sql` que alteram parâmetros de roles reservadas (ex.: `log_min_messages`) falham: comentá-las; o teste noturno restaura como `supabase_admin`. Restaurar sobre a produção só com autorização de Yuri.
+- O GitHub não deixa ler um segredo de volta: sem a cópia da senha no gerenciador de senhas de Yuri, os arquivos não abrem fora do Actions.
+
+## Novo fluxo de equipes — modelo técnico (na main desde a #91; ligado por `TEAM_SETUP_ENABLED`)
 - `team_flows` marca equipes do novo fluxo; ausência = legado, sem conversão implícita.
 - `team_memberships` separa identidade Auth de participação/papel (uma pessoa pode estar em várias equipes). `team_count_slots` e `team_slot_assignments` guardam posição lógica e autoria em substituições. Sem colunas `contador_3`, `contador_4`.
 - `team_count_records` guarda componentes físicos, BPU e método usados; total canônico calculado pelo banco.
