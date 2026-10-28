@@ -1,11 +1,11 @@
-# Estado — 2026-10-28 (tarde)
+# Estado — 2026-10-28 (noite)
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
 ## Prazo
 Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar antes se possível):
 - até 27/11: fluxo novo completo, testado e publicado em produção;
-- até 11/12: contagem simulada com pessoas reais em warehouse de teste;
+- até 11/12: mini-teste com 1 equipe real e teste automático com 9 usuários em paralelo (decisão de 28/10);
 - 12/12 a 02/01: produção congelada, só correção urgente.
 Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a correção do Independente).
 
@@ -14,16 +14,17 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Em andamento
 - Backup diário em produção desde 28/10 (#95; ARQUITETURA, "Backup do banco"): primeira execução restaurada e conferida tabela a tabela. Senha do banco redefinida por Yuri em 28/10; sistema testado depois.
-- Próximos, antes da simulação: Sentry nos erros mostrados nas telas de equipe; teste em navegador da contagem por peso (Solo, legado e fluxo novo).
+- 29/10: mini-teste do fluxo novo com 1 equipe real (roteiro curto em SIMULACAO_EQUIPES.md). É o primeiro uso do fluxo novo por pessoas.
+- Agente: teste automático com 9 usuários em paralelo; Sentry nos erros mostrados nas telas de equipe; teste em navegador da contagem por peso.
 - Depois da simulação: histórico de alterações do inventário (aprovado em 28/10) e Inventory com abas.
 - Limpeza pequena: remover a prévia da recuperação de warehouses (link, página, código e testes).
 
 ## Plano de ativação
 1–3. Feito: teste com a estrutura de produção, migrations aplicadas (21/10), merge da #91 com a variável desligada.
-4. Ligar `TEAM_SETUP_ENABLED` na Vercel e fazer a contagem simulada em warehouse de teste.
+4. Ligar `TEAM_SETUP_ENABLED` na Vercel (autorização de Yuri) e fazer o mini-teste em warehouse de teste.
 
 ## Decisões pendentes de Yuri
-- Dia da simulação; warehouse de teste; pessoas (2 equipes, 9 pessoas).
+- Warehouse de teste do mini-teste; autorização para ligar `TEAM_SETUP_ENABLED`.
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 
 ## A verificar

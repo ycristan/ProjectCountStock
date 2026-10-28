@@ -166,6 +166,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Backup automático e histórico do inventário (2026-10-28)
 - Yuri confirmou: backup diário pelo GitHub Actions, criptografado, restaurado e conferido num banco descartável a cada execução, guardado 30 dias como artefato. Substitui o "nunca enviar backup ao repositório ou a Actions" de 2026-09-18. Motivo: o Supabase gratuito não tem backup acessível e o backup local nunca foi testado.
 - Quem tiver a senha do backup e acesso ao repositório lê os dados, inclusive os logins de PIN de 4 dígitos: a senha vale tanto quanto a do banco.
+- Contagem simulada com 9 pessoas trocada por: mini-teste com 1 equipe real (2 contadores + Independente) e teste automático do agente com 9 usuários em paralelo num banco descartável. Motivo: Yuri não consegue reunir 9 pessoas. O fluxo novo nunca foi usado por pessoas; a contagem grande validou só o fluxo antigo.
 - Yuri aprovou histórico de alterações do inventário (quem, quando, antes e depois, inclusive importações), visível no Audit Count. Motivo: a mudança de 2.295 para 2.301 produtos no BDS é inexplicável, porque `inventory_items` não guarda data nem autor.
 
 ## Inventory com abas por warehouse (2026-10-22)
