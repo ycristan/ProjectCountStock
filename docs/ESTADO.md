@@ -1,4 +1,4 @@
-# Estado — 2026-10-28
+# Estado — 2026-10-28 (tarde)
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -13,7 +13,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 `main` com inventário por warehouse, ZIP, recuperação BDS, arredondamento por peso corrigido e correção do Independente no legado (#85). Código do fluxo novo na `main` (#91, #93) com `TEAM_SETUP_ENABLED` desligado; as 9 migrations aplicadas em 21/10. Solo é usado quase todo dia.
 
 ## Em andamento
-- Esta PR: backup diário criptografado com teste de restauração (ARQUITETURA, "Backup do banco"). Depois do merge, Yuri cadastra os segredos `SUPABASE_DB_URL` e `BACKUP_PASSPHRASE` e o agente roda o primeiro backup.
+- Backup diário em produção desde 28/10 (#95; ARQUITETURA, "Backup do banco"): primeira execução restaurada e conferida tabela a tabela. Senha do banco redefinida por Yuri em 28/10; sistema testado depois.
 - Próximos, antes da simulação: Sentry nos erros mostrados nas telas de equipe; teste em navegador da contagem por peso (Solo, legado e fluxo novo).
 - Depois da simulação: histórico de alterações do inventário (aprovado em 28/10) e Inventory com abas.
 - Limpeza pequena: remover a prévia da recuperação de warehouses (link, página, código e testes).
