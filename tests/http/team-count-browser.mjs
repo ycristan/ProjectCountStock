@@ -178,9 +178,13 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         stage='independent rejects, counter counts again'
         await counterRow.getByRole('button',{name:'Reject',exact:true}).click()
         await first.p.getByText('Your count status: Counting',{exact:true}).waitFor()
+        await first.p.getByRole('alert').filter({hasText:'Your finish was rejected by the Independent.'}).waitFor()
+        await first.p.reload()
+        await first.p.getByRole('alert').filter({hasText:'Your finish was rejected by the Independent.'}).waitFor()
         stage='second request and acceptance'
         await requestFinish()
         assert.equal(await page.getByRole('button',{name:/^(Accept|Reject)$/}).count(),0)
+        assert.equal(await first.p.getByText('Your finish was rejected by the Independent.',{exact:false}).count(),0,'warning ends with the new request')
         await counterRow.getByRole('button',{name:'Accept',exact:true}).click()
         await first.p.getByText('Your count status: Accepted',{exact:true}).waitFor()
         await counterRow.getByText(/Accepted$/).waitFor()
@@ -296,7 +300,9 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await block(lead.name).getByRole('button',{name:'SIGN BY PIN CODE',exact:true}).click()
         await block(lead.name).locator('input[type="password"]').fill(lead.pin)
         await block(lead.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
-        await page.getByText('Connection or access unavailable. Counts are blocked until refreshed.',{exact:true}).waitFor()
+        // The admin is taken to the session closing screen, not asked to sign in again.
+        await page.waitForURL(base+'/admin/sessao/'+session.id+'/equipes')
+        await page.locator('[data-closing]').waitFor()
         const closed=checked(await db.from('team_flows').select('phase,closed_at').eq('team_id',stored.id).single())
         assert.equal(closed.phase,'closed')
         assert.equal(checked(await db.from('team_memberships').select('id').eq('team_id',stored.id).is('access_revoked_at',null)).length,0,

@@ -1,10 +1,12 @@
 import { listarEquipes } from '@/actions/sessao'
+import { readTeamSetup } from '@/actions/team-setup'
 import { headers } from 'next/headers'
 import qrcode from 'qrcode'
 import Link from 'next/link'
 import { PrintButton } from './_components/PrintButton'
 
-const ROLE_ORDER = ['contador_1', 'contador_2', 'independente']
+type Card = { key: string; team: string; role: string; name: string; team_pin: string; user_pin: string }
+
 const ROLE_LABEL: Record<string, string> = {
   contador_1: 'Counter 1',
   contador_2: 'Counter 2',
@@ -17,7 +19,13 @@ export default async function ImprimirPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const contadores = await listarEquipes(id)
+  // New-flow sessions keep their credentials in the setup job; legacy ones in counter_accounts.
+  const setup = process.env.TEAM_SETUP_ENABLED === 'true' ? await readTeamSetup(id) : null
+  const contadores: Card[] = setup?.credenciais
+    ? setup.credenciais.map(c => ({ key: c.team + ':' + c.role, team: c.team, role: c.role, name: c.name,
+      team_pin: c.team_pin, user_pin: c.user_pin }))
+    : (await listarEquipes(id)).map(c => ({ key: c.auth_user_id, team: c.team_name, role: ROLE_LABEL[c.role] ?? c.role,
+      name: c.full_name, team_pin: c.team_pin, user_pin: c.user_pin }))
 
   const h = await headers()
   const host = h.get('host') ?? 'localhost:3000'
@@ -28,14 +36,12 @@ export default async function ImprimirPage({
   // strip XML declaration so SVG embeds cleanly inline
   const qrSvg = qrRaw.replace(/^<\?xml[^>]*\?>\s*/, '')
 
-  const teamMap = new Map<string, typeof contadores>()
+  const teamMap = new Map<string, Card[]>()
   for (const c of contadores) {
-    if (!teamMap.has(c.team_id)) teamMap.set(c.team_id, [])
-    teamMap.get(c.team_id)!.push(c)
+    if (!teamMap.has(c.team)) teamMap.set(c.team, [])
+    teamMap.get(c.team)!.push(c)
   }
-  const teams = [...teamMap.values()].sort((a, b) =>
-    a[0].team_name.localeCompare(b[0].team_name)
-  )
+  const teams = [...teamMap.values()].sort((a, b) => a[0].team.localeCompare(b[0].team))
 
   return (
     <>
@@ -63,31 +69,31 @@ export default async function ImprimirPage({
       <div className="px-6 py-8 space-y-12 bg-white min-h-screen">
         {teams.map((grupo, ti) => {
           const first = grupo[0]
-          const sorted = [...grupo].sort(
-            (a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role)
-          )
+          // Counters in order, Independent last.
+          const sorted = [...grupo].sort((a, b) =>
+            Number(a.role === 'Independent') - Number(b.role === 'Independent') || a.role.localeCompare(b.role, undefined, { numeric: true }))
           return (
-            <div key={first.team_id} className={ti < teams.length - 1 ? 'page-break' : ''}>
+            <div key={first.team} className={ti < teams.length - 1 ? 'page-break' : ''}>
               <h1
                 className="text-center mb-5 font-black uppercase tracking-widest"
                 style={{ fontSize: '2.4rem', letterSpacing: '0.12em' }}
               >
-                {first.team_name}
+                {first.team}
               </h1>
 
               <div className="border-[3px] border-black">
                 {sorted.map((c, ci) => (
                   <div
-                    key={c.auth_user_id}
+                    key={c.key}
                     className={`flex${ci < sorted.length - 1 ? ' border-b-[3px] border-black' : ''}`}
                   >
                     {/* Credentials */}
                     <div className="flex-1 p-5 border-r-[3px] border-black">
                       <div className="font-black uppercase tracking-wide" style={{ fontSize: '1.1rem' }}>
-                        {ROLE_LABEL[c.role] ?? c.role}
+                        {c.role}
                       </div>
                       <div className="font-bold mt-1" style={{ fontSize: '1.2rem' }}>
-                        {c.full_name || '—'}
+                        {c.name || '—'}
                       </div>
                       <div className="flex gap-4 mt-4">
                         <div className="border-2 border-slate-400 rounded-lg px-4 py-2 bg-slate-50">

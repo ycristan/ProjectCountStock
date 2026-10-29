@@ -28,6 +28,16 @@ export async function readTeamInventory(teamId: string): Promise<ItemBusca[] | n
     .map(item => ({ ...item, jaContado: false, entryExistente: null }))
 }
 
+// Last finish event of the signed-in counter; RLS shows a counter only their own events.
+export async function readLastFinishAction(teamId: string, membershipId: string): Promise<string | null> {
+  if (process.env.TEAM_SETUP_ENABLED !== 'true') return null
+  const db = await createClient()
+  const { data } = await db.from('team_finish_events').select('action')
+    .eq('team_id', teamId).eq('subject_membership_id', membershipId)
+    .order('resulting_revision', { ascending: false }).limit(1).maybeSingle()
+  return data?.action ?? null
+}
+
 // Individual finish (R03): the database checks identity, role, phase and revision.
 async function finishCommand(rpc: 'request_team_finish' | 'decide_team_finish', args: Record<string, unknown>) {
   if (process.env.TEAM_SETUP_ENABLED !== 'true') return { error: 'Team access unavailable.' }

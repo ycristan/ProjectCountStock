@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
-import { decideTeamFinish, decideTeamItem, readTeamComparison, readTeamCount, readTeamInventory, readTeamReviews, requestTeamFinish, reviewTeamResult, saveTeamCount, saveTeamReconciliation, startTeamCount, submitTeamReconciliation } from '@/actions/team-count'
+import { useRouter } from 'next/navigation'
+import { decideTeamFinish, decideTeamItem, readLastFinishAction, readTeamComparison, readTeamCount, readTeamInventory, readTeamReviews, requestTeamFinish, reviewTeamResult, saveTeamCount, saveTeamReconciliation, startTeamCount, submitTeamReconciliation } from '@/actions/team-count'
 import { createClient } from '@/lib/supabase-client'
 import type { ItemBusca, LancarContagemPayload } from '@/actions/contagem'
 import type { TeamComparisonItem, TeamCountState, TeamReview, TeamSigning } from '@/lib/team-count-types'
@@ -28,18 +29,25 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
   const saved = useRef(new Map<string, string>())
   const readSequence = useRef(0)
   const teamId = initial.teamId
+  const router = useRouter()
+  const phase = useRef(initial.phase)
+  // The Independent sent this counter back to counting: their last finish event is a reject.
+  const [rejected, setRejected] = useState(false)
   const refresh = useCallback(async () => {
     const sequence = ++readSequence.current
     try {
       const next = await readTeamCount(teamId)
       if (sequence !== readSequence.current) return
-      if (!next) { setUnavailable(true); return }
+      // The last signature closes the team: the server page then shows what comes next.
+      if (!next) { setUnavailable(true); if (phase.current === 'signing') router.refresh(); return }
       // Comparison exists only after every finish is accepted, and only for the monitor.
       const compares = next.role !== 'counter' && !['setup', 'counting'].includes(next.phase)
       const [compared, history] = compares
         ? await Promise.all([readTeamComparison(teamId), readTeamReviews(teamId)]) : [[], []]
       // Signature collection is visible to everyone in the team, including counters.
       const collection = next.phase === 'signing' ? await readTeamSigning(teamId) : null
+      const lastFinish = next.role === 'counter' && next.phase === 'counting' && next.finishState === 'counting' && next.membershipId
+        ? await readLastFinishAction(teamId, next.membershipId) : null
       if (sequence !== readSequence.current) return
       if (!compared || !history || (next.phase === 'signing' && !collection)) { setUnavailable(true); return }
       setComparison(compared)
@@ -47,8 +55,10 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       setSigning(collection)
       setState(next)
       setUnavailable(false)
+      setRejected(lastFinish === 'reject')
+      phase.current = next.phase
     } catch { if (sequence === readSequence.current) setUnavailable(true) }
-  }, [teamId])
+  }, [teamId, router])
   // Inventory is loaded once; reload it only on demand or after a product-changed error.
   const reloadCatalog = useCallback(async () => {
     const next = await readTeamInventory(teamId).catch(() => null)
@@ -223,9 +233,16 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
 
   return <section className="mt-4 space-y-4">
     <h1 className="text-xl font-semibold">{state.teamName} — {state.warehouseName}</h1>
+    <p className="font-semibold">You: {state.role === 'admin' ? 'Admin' : (() => {
+      const m = state.members.find(x => x.id === state.membershipId)
+      return (state.role === 'independent' ? 'Independent' : 'Counter ' + m?.order) + (m ? ' — ' + m.name : '')
+    })()}</p>
     <p>{state.role === 'counter' ? 'Blind count — only your quantities are shown.' : 'Team monitor — product consultation only.'}</p>
     <p>Phase: {state.phase}</p>
     {state.role === 'counter' && <p>Your count status: {statusLabel[state.finishState ?? ''] ?? state.finishState}</p>}
+    {state.role === 'counter' && rejected && state.finishState === 'counting' && <p role="alert"
+      className="rounded-xl border-2 border-red-600 bg-red-50 p-4 font-semibold text-red-800">
+      Your finish was rejected by the Independent. Check your counts, continue counting and tap &quot;Finish my count&quot; again.</p>}
     {unavailable && <p role="alert">Connection or access unavailable. Counts are blocked until refreshed.</p>}
     {notice && <p role="status">{notice}</p>}
     <button className="border rounded px-3 py-2" onClick={() => { void refresh(); void reloadCatalog() }}>Refresh team</button>

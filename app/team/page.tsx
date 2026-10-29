@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTeamFlowContexts } from '@/lib/team-flow-context'
-import { logout } from '@/actions/auth'
 
 export default async function TeamPage() {
   if (process.env.TEAM_SETUP_ENABLED !== 'true') notFound()
@@ -16,6 +15,5 @@ export default async function TeamPage() {
         <p>{team.phase === 'setup' ? 'Setup saved. Counting has not started.' : 'Phase: ' + team.phase}</p>
         <Link href={'/team/' + team.teamId}>Open team</Link>
       </section>)}
-    <form action={logout}><button className="border rounded p-2">Log out</button></form>
   </main>
 }

@@ -173,3 +173,9 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri decidiu: a tela Inventory terá uma aba por warehouse (até cerca de 5 previstas). Cadastro manual entra na warehouse da aba ativa; o download traz só a warehouse da aba (ativos e inativos), no lugar de "sempre o inventário completo". Motivo: deixar claro o que pertence a cada warehouse e evitar cadastro na warehouse errada.
 - Sem exclusão de produto: desativar pelo toggle preserva o histórico das contagens.
 - Implementação depois da contagem simulada, para não disputar atenção com o prazo de 27/11.
+
+## Resultado do mini-teste do fluxo novo (2026-10-29)
+- Yuri decidiu a ordem de fechamento da equipe: contadores assinam primeiro, o Independente por último, o admin confirma a finalização e só então os acessos de contadores e Independente são revogados. Substitui "Independente primeiro" (R11) e o encerramento automático na última assinatura (R12). Motivo: no teste o admin ficou sem tela ao fechar e o fluxo pareceu invertido.
+- Cartões impressos com QR e PINs (um por pessoa, guardado até o fim) voltam a ser o "Print" das sessões novas: no fluxo novo tinham virado só a tabela. Cabeçalho com o nome de quem está logado volta em todas as telas de equipe.
+- Yuri reprovou o visual: botões que parecem texto, telas genéricas, sem padrão, não pensadas para celular; o monitor perdeu as cores e o "flash" da tela do legado. O escopo e a data dessa padronização visual são decisão pendente de Yuri (prazo de 27/11).
+

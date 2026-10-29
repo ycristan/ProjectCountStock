@@ -21,12 +21,12 @@ export function LoginCards({ credentials, sessionId, setupOnly = false }: { cred
             >
               Manage Teams
             </Link>}
-            <button
-              onClick={() => window.print()}
-              className="px-4 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl hover:bg-slate-50 text-sm"
+            <Link
+              href={`/admin/sessao/${sessionId}/imprimir`}
+              className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-sm font-semibold"
             >
-              Print
-            </button>
+              Print login cards
+            </Link>
             {!setupOnly && <Link
               href={`/admin/sessao/${sessionId}/combinacao`}
               className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-sm font-semibold"

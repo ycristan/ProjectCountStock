@@ -1,6 +1,6 @@
 # Contagem por equipes — contrato aprovado
 
-Aprovado por Yuri em 2026-09-21; revisado com Yuri em 2026-10-05 (R05, R08–R13) e 2026-10-07 (R13); motivos em DECISOES.md.
+Aprovado por Yuri em 2026-09-21; revisado com Yuri em 2026-10-05 (R05, R08–R13), 2026-10-07 (R13) e 2026-10-29 (R11, R12); motivos em DECISOES.md.
 Status: especificação; NÃO significa implementado, testado ou publicado.
 Fonte normativa para o novo fluxo; prevalece sobre descrições antigas de contagem tripla, tolerância em gramas e encerramento conjunto.
 Ver [matriz de verificação](./TEAM_COUNT_TEST_MATRIX.md) e [plano](./TEAM_COUNT_PLAN.md).
@@ -67,7 +67,7 @@ Fora do primeiro lançamento. Cada equipe tem seu próprio Independente.
 
 ## R11 — Assinaturas e ausências
 Admin aceita resultados e inicia coleta, sem lançamento de quantidades.
-Exibir independente primeiro, depois contadores em ordem crescente. Cada bloco: nome completo e botão SIGN BY PIN CODE. Assinatura desenhada (dedo/caneta) é melhoria futura, fora do primeiro lançamento. Não adicionar seleção prévia obrigatória de pessoa pelo admin.
+Revisado em 2026-10-29: contadores assinam primeiro, em ordem crescente; o independente assina por último. Cada bloco: nome completo e botão SIGN BY PIN CODE. Assinatura desenhada (dedo/caneta) é melhoria futura, fora do primeiro lançamento. Não adicionar seleção prévia obrigatória de pessoa pelo admin.
 Confirmar por PIN; registrar modalidade, pessoa, equipe, momento e versão dos resultados. Não criar imagem de assinatura genérica.
 Contador ausente: independente registra motivo e confirma formalmente, SEM testemunha.
 Independente ausente: admin formaliza motivo e testemunha identificada (outro contador ou admin) assina.
@@ -77,7 +77,7 @@ Falha de salvamento não equivale a confirmação recebida. Todos confirmam a me
 Distinguir papéis/participações originais e substitutos; preservar quem contou, quem substituiu e quem confirmou sem inventar assinatura do ausente.
 
 ## R12 — Encerramento por equipe
-Todas as confirmações exigidas recebidas, incluindo ausências formalizadas: encerrar equipe, fixar resultados e revogar seus acessos como uma conclusão consistente.
+Todas as confirmações exigidas recebidas, incluindo ausências formalizadas: o admin confirma a finalização (revisado em 2026-10-29); só então encerrar equipe, fixar resultados e revogar seus acessos como uma conclusão consistente.
 Equipes encerram em momentos diferentes. Não aguardar as demais para proteger os resultados da equipe encerrada.
 Após encerramento, dados TOTALMENTE IMUTÁVEIS: contagens, versões, conciliações, assinaturas e histórico. Nem admin altera/exclui/reabre.
 Proteger servidor, banco, chamadas diretas, credenciais já emitidas e telas antigas. Logout/ocultar botão não é proteção suficiente.
