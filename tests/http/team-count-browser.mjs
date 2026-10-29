@@ -279,7 +279,9 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         const lead=team.members.find(m=>m.role==='independent'), present=team.members[1], gone=team.members[0]
         const block=name=>page.locator('[data-participant="'+name+'"]')
         await page.locator('[data-signing]').waitFor()
-        assert.equal(await page.locator('[data-participant]').first().getAttribute('data-participant'),lead.name,'Independent first')
+        assert.equal(await page.locator('[data-participant]').last().getAttribute('data-participant'),lead.name,'Independent last')
+        await block(lead.name).getByText('Signs after every counter.',{exact:true}).waitFor()
+        assert.equal(await block(lead.name).getByRole('button').count(),0,'Independent cannot sign before the counters')
         await block(present.name).getByRole('button',{name:'SIGN BY PIN CODE',exact:true}).click()
         await block(present.name).locator('input[type="password"]').fill(lead.pin)
         await block(present.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
@@ -296,10 +298,16 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await block(gone.name).locator('input[type="password"]').fill(lead.pin)
         await block(gone.name).getByRole('button',{name:'Record absence',exact:true}).click()
         await page.locator('[data-participant="'+gone.name+'"][data-status="Absent: Left before signing"]').waitFor()
-        stage='last signature closes the team (block 11)'
+        stage='Independent signs last; the admin closes the team (decision of 2026-10-29)'
         await block(lead.name).getByRole('button',{name:'SIGN BY PIN CODE',exact:true}).click()
         await block(lead.name).locator('input[type="password"]').fill(lead.pin)
         await block(lead.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
+        await page.locator('[data-participant="'+lead.name+'"][data-status="Signed by PIN"]').waitFor()
+        await independent.p.getByText('All signatures received. Waiting for the admin to close the team.',{exact:true}).waitFor()
+        assert.equal(checked(await db.from('team_flows').select('phase').eq('team_id',stored.id).single()).phase,'signing','last signature does not close')
+        checked(await independent.client.rpc('read_team_count',{p_team:stored.id}))
+        page.once('dialog',dialog=>dialog.accept())
+        await page.getByRole('button',{name:'Confirm and close team',exact:true}).click()
         // The admin is taken to the session closing screen, not asked to sign in again.
         await page.waitForURL(base+'/admin/sessao/'+session.id+'/equipes')
         await page.locator('[data-closing]').waitFor()
@@ -326,7 +334,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         assert.ok(auditCounts.some(r=>r[0]===team.name&&r[2]===codes[2]&&r[9]===4900),'Audit Count keeps the gross weight')
         assert.ok(auditCounts.some(r=>r[0]===team.name&&r[15]),'Audit Count keeps replaced count versions')
         const auditEvents=XLSX.utils.sheet_to_json(book.Sheets['Decisions and signatures'],{header:1}).map(r=>r[3])
-        for(const action of ['Returned for recount','Result accepted','Signed by PIN','Absence formalized'])
+        for(const action of ['Returned for recount','Result accepted','Signed by PIN','Absence formalized','Team closed by admin'])
           assert.ok(auditEvents.includes(action),'Audit Count records: '+action)
         const anon=await fetch(base+'/api/sessao/'+session.id+'/audit-export',{redirect:'manual'})
         assert.ok([302,303,307,401].includes(anon.status),'Audit Count requires an admin')

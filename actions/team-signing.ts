@@ -16,6 +16,7 @@ async function failure(error: { code?: string; message?: string }, fallback: str
   if (error.code === '40001') return { error: 'The team changed. Refresh and try again.' }
   if (error.message === 'Already confirmed') return { error: 'Already confirmed.' }
   if (error.message === 'Absence needs a reason') return { error: 'Write the reason.' }
+  if (error.message === 'Counters sign first') return { error: 'The Independent signs after every counter.' }
   return { error: fallback }
 }
 
@@ -88,7 +89,6 @@ export async function signWithPin(teamId: string, membershipId: string, pin: str
     db => db.rpc('sign_team_result', { p_team: teamId, p_version: version, p_command: command }))
   if (r.denied) return { error: r.denied }
   if (r.error) return failure(r.error, 'Signature not saved. Refresh and try again.')
-  if (r.data?.phase === 'closed') await disableClosedTeamLogins(teamId)
   return { phase: r.data?.phase }
 }
 
@@ -101,7 +101,6 @@ export async function formalizeCounterAbsence(teamId: string, membershipId: stri
       p_reason: reason, p_command: command }))
   if (r.denied) return { error: r.denied === 'PIN does not match this person.' ? 'Independent PIN does not match.' : r.denied }
   if (r.error) return failure(r.error, 'Absence not saved. Refresh and try again.')
-  if (r.data?.phase === 'closed') await disableClosedTeamLogins(teamId)
   return { phase: r.data?.phase }
 }
 
@@ -123,15 +122,23 @@ export async function witnessIndependentAbsence(teamId: string, version: string,
       db => db.rpc('witness_independent_absence', args))
     if (r.denied) return { error: r.denied }
     if (r.error) return failure(r.error, 'Witness not saved. Refresh and try again.')
-    if (r.data?.phase === 'closed') await disableClosedTeamLogins(teamId)
     return { phase: r.data?.phase }
   }
   const db = await createClient()
   const { data, error } = await db.rpc('witness_independent_absence', args)
-  if (error) return failure(error, 'Witness not saved. Refresh and try again.')
-  const phase = (data as { phase: string }).phase
-  if (phase === 'closed') await disableClosedTeamLogins(teamId)
-  return { phase }
+  return error ? failure(error, 'Witness not saved. Refresh and try again.') : { phase: (data as { phase: string }).phase }
+}
+
+// R12 (revised 2026-10-29): with every confirmation in, the admin closes the team.
+// The database checks the admin and the confirmations; then the team logins stop.
+export async function confirmTeamClose(teamId: string, version: string, command: string): Promise<Result> {
+  if (!enabled()) return { error: 'Team access unavailable.' }
+  const db = await createClient()
+  const { error } = await db.rpc('confirm_team_close', { p_team: teamId, p_version: version, p_command: command })
+  if (error?.message === 'Every confirmation is needed before closing') return { error: 'Every signature is needed before closing.' }
+  if (error) return failure(error, 'Team not closed. Refresh and try again.')
+  await disableClosedTeamLogins(teamId)
+  return { phase: 'closed' }
 }
 
 export async function cancelTeamSigning(teamId: string, version: string, command: string): Promise<Result> {

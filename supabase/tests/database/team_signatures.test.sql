@@ -123,6 +123,14 @@ select pg_temp.as_user(4);
 select is(public.formalize_counter_absence('70000000-0000-0000-0000-000000000200',(pg_temp.flow()).result_version_id,
   pg_temp.member(3),'Left during counting',gen_random_uuid())->>'phase','signing','Independent formalizes Carl absence');
 
+-- Decision of 2026-10-29: the Independent confirms only after every counter.
+select throws_ok($q$select pg_temp.sign()$q$,'P0001','Counters sign first','Independent cannot sign before every counter');
+select pg_temp.as_user(5);
+select throws_ok($q$select public.record_independent_absence('70000000-0000-0000-0000-000000000200',(pg_temp.flow()).result_version_id,
+  'Called away',gen_random_uuid())$q$,'P0001','Counters sign first','Independent absence waits for every counter');
+select pg_temp.as_user(2);
+select is(pg_temp.sign()->>'phase','signing','Ben signs: every counter is in');
+
 -- T40: Independent absent: admin records the reason; it counts only after a witness.
 select pg_temp.as_user(5);
 select is(public.record_independent_absence('70000000-0000-0000-0000-000000000200',(pg_temp.flow()).result_version_id,
@@ -136,17 +144,27 @@ select throws_ok($q$select public.witness_independent_absence('70000000-0000-000
 select pg_temp.as_user(3);
 select throws_ok($q$select public.witness_independent_absence('70000000-0000-0000-0000-000000000200',(pg_temp.flow()).result_version_id,
   gen_random_uuid())$q$,'42501',null,'Absent counter cannot witness');
-select pg_temp.as_user(2);
-select is(pg_temp.sign()->>'phase','signing','T40: every other confirmation in, but the unwitnessed absence keeps the team open');
+select pg_temp.as_user(5);
+select throws_ok($q$select public.confirm_team_close('70000000-0000-0000-0000-000000000200',(pg_temp.flow()).result_version_id,
+  gen_random_uuid())$q$,'P0001','Every confirmation is needed before closing','T40: the unwitnessed absence keeps the team open');
 select pg_temp.as_user(1);
--- R12: the witness completes the last confirmation; the team closes and every access is revoked at once.
 select is(public.witness_independent_absence('70000000-0000-0000-0000-000000000200',(pg_temp.flow()).result_version_id,
-  gen_random_uuid())->>'phase','closed','Present counter witnesses the absence; R12: last confirmation closes the team');
+  gen_random_uuid())->>'phase','signed','Present counter witnesses the absence: every confirmation is in');
+-- R12 (revised 2026-10-29): the last confirmation does not close; the admin does, and access ends then.
+select is((pg_temp.flow()).phase,'signing','Team stays open until the admin closes it');
+select ok(public.read_team_count('70000000-0000-0000-0000-000000000200') is not null,'Members keep access until the admin closes');
+select throws_ok($q$select public.confirm_team_close('70000000-0000-0000-0000-000000000200',(pg_temp.flow()).result_version_id,
+  gen_random_uuid())$q$,'42501',null,'Only an admin closes the team');
+select pg_temp.as_user(5);
+select is(public.confirm_team_close('70000000-0000-0000-0000-000000000200',(pg_temp.flow()).result_version_id,
+  '70000000-0000-0000-0000-000000000703')->>'phase','closed','Admin confirms: the team closes');
+select pg_temp.as_user(1);
 select throws_ok($q$select public.read_team_count('70000000-0000-0000-0000-000000000200')$q$,'42501',null,'Closed team: access revoked');
 reset role;
 select is((select count(*) from public.team_memberships where team_id='70000000-0000-0000-0000-000000000200'
   and access_revoked_at is null),0::bigint,'R12: every membership revoked');
 select isnt((pg_temp.flow()).closed_at,null,'R12: closing time recorded');
+select is((pg_temp.flow()).closed_by,'70000000-0000-0000-0000-000000000005'::uuid,'R12: the closing admin is recorded');
 select results_eq($q$select m.display_name,c.kind,c.witness_user_id is not null from public.team_confirmations c
     join public.team_memberships m on m.id=c.membership_id join public.team_flows f on f.result_version_id=c.version_id
     order by m.display_order$q$,

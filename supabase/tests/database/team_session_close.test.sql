@@ -72,13 +72,16 @@ select throws_ok($q$select public.close_team_session('80000000-0000-0000-0000-00
 select pg_temp.as_user(1); select public.sign_team_result(pg_temp.team('a'),pg_temp.version('a'),gen_random_uuid());
 select pg_temp.as_user(2); select public.sign_team_result(pg_temp.team('a'),pg_temp.version('a'),gen_random_uuid());
 select pg_temp.as_user(3);
-select is(public.sign_team_result(pg_temp.team('a'),pg_temp.version('a'),gen_random_uuid())->>'phase','closed','Team A closed');
+select is(public.sign_team_result(pg_temp.team('a'),pg_temp.version('a'),gen_random_uuid())->>'phase','signed','Team A signed');
 select pg_temp.as_user(7);
+select is(public.read_team_session_closing('80000000-0000-0000-0000-000000000100')->>'ready','false','Signed is not closed');
+select is(public.confirm_team_close(pg_temp.team('a'),pg_temp.version('a'),gen_random_uuid())->>'phase','closed','Team A closed by the admin');
 select is(public.read_team_session_closing('80000000-0000-0000-0000-000000000100')->'uncounted','[]'::jsonb,
   'No uncounted list until every team is closed');
 select pg_temp.as_user(4); select public.sign_team_result(pg_temp.team('b'),pg_temp.version('b'),gen_random_uuid());
 select pg_temp.as_user(5); select public.sign_team_result(pg_temp.team('b'),pg_temp.version('b'),gen_random_uuid());
 select pg_temp.as_user(6); select public.sign_team_result(pg_temp.team('b'),pg_temp.version('b'),gen_random_uuid());
+select pg_temp.as_user(7); select public.confirm_team_close(pg_temp.team('b'),pg_temp.version('b'),gen_random_uuid());
 
 -- R13: only active products nobody counted, ordered by their first BIN.
 select pg_temp.as_user(3);

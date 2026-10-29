@@ -15,9 +15,9 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 ## Mini-teste de 29/10 (warehouse TESTE, 1 equipe real)
 Fluxo completo rodou até o Excel final e o Audit Count. Achados de Yuri:
 - Corrigido nesta PR: cartões com QR de volta no "Print"; nome de quem está logado no topo das telas de equipe; admin vai à tela de fechamento quando a equipe fecha (antes via "Team access unavailable... sign in again" e precisou relogar); aviso vermelho ao contador quando o Independente rejeita a finalização.
-- Próximo (precisa de migration e autorização para aplicar): nova ordem de assinatura (contadores, Independente por último, admin confirma, depois acessos revogados) — DECISOES 29/10.
+- Nesta PR também: nova ordem de assinatura (contadores, Independente por último, admin clica "Confirm and close team", só então acessos revogados) — DECISOES 29/10. Migration `20261029100000_team_flow_admin_close` a aplicar com autorização de Yuri, no mesmo momento do merge.
 - Peso: 320 g e 350 g num produto de 300 g deram 1 unidade, correto pela regra (≥ 0,7 sobe). Teste de 100/98 precisa de produto com peso médio pequeno (ex.: 10 g).
-- Visual reprovado (botões que parecem texto, sem padrão, não mobile; monitor sem cores/flash do legado). Escopo e data: decisão de Yuri.
+- Visual reprovado (genérico, botões que parecem texto, não mobile; monitor sem cores/flash do legado). Próximo: proposta visual das telas de equipe para Yuri aprovar antes do código.
 
 ## Em andamento
 - O conector da Vercel não grava variáveis (403): produção é republicada por merge na `main`.
@@ -26,7 +26,7 @@ Fluxo completo rodou até o Excel final e o Audit Count. Achados de Yuri:
 - Limpeza pequena: remover a prévia da recuperação de warehouses.
 
 ## Decisões pendentes de Yuri
-- Padronização visual: só telas de equipe antes de 27/11, ou redesenho completo depois de 02/01.
+- Aprovar a proposta visual (quando entregue).
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 
 ## A verificar
