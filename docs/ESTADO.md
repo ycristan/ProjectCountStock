@@ -1,4 +1,4 @@
-# Estado — 2026-10-28 (fim do dia)
+# Estado — 2026-10-29
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -10,19 +10,19 @@ Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar ant
 Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a correção do Independente).
 
 ## Em produção
-`main` com inventário por warehouse, ZIP, recuperação BDS, arredondamento por peso corrigido e correção do Independente no legado (#85). Código do fluxo novo na `main` (#91, #93) com `TEAM_SETUP_ENABLED` desligado; as 9 migrations aplicadas em 21/10. Solo é usado quase todo dia.
+`main` com inventário por warehouse, ZIP, recuperação BDS, arredondamento por peso corrigido e correção do Independente no legado (#85). Código do fluxo novo na `main` (#91, #93); `TEAM_SETUP_ENABLED=true` gravado por Yuri na Vercel em 29/10 (Production e Preview), para o mini-teste; as 9 migrations aplicadas em 21/10. Solo é usado quase todo dia.
 
 ## Em andamento
 - Backup diário em produção desde 28/10 (#95; ARQUITETURA, "Backup do banco"): primeira execução restaurada e conferida tabela a tabela. Senha do banco redefinida por Yuri em 28/10; sistema testado depois.
 - 29/10: mini-teste do fluxo novo com 1 equipe real, no warehouse **TESTE** (12 produtos fictícios `TESTE-*`, importados por Yuri em 28/10; nunca usar o BDS real para teste). Roteiro curto em SIMULACAO_EQUIPES.md. É o primeiro uso do fluxo novo por pessoas.
-- No dia: Yuri avisa antes de começar; o agente liga `TEAM_SETUP_ENABLED` (autorizado por Yuri em 28/10) e republica a produção; Yuri confere o Solo; se der problema grave, desligar a variável.
+- O conector da Vercel não grava variáveis (403) e o Redeploy pela tela pede código por e-mail: a produção é republicada por merge na `main`. Se der problema grave, desligar a variável e fazer novo merge.
 - Agente: teste automático com 9 usuários em paralelo; Sentry nos erros mostrados nas telas de equipe; teste em navegador da contagem por peso.
 - Depois da simulação: histórico de alterações do inventário (aprovado em 28/10) e Inventory com abas.
 - Limpeza pequena: remover a prévia da recuperação de warehouses (link, página, código e testes).
 
 ## Plano de ativação
 1–3. Feito: teste com a estrutura de produção, migrations aplicadas (21/10), merge da #91 com a variável desligada.
-4. Ligar `TEAM_SETUP_ENABLED` na Vercel no dia do mini-teste (autorizado) e fazer o mini-teste no warehouse TESTE.
+4. `TEAM_SETUP_ENABLED` ligado em 29/10; mini-teste no warehouse TESTE.
 
 ## Decisões pendentes de Yuri
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
