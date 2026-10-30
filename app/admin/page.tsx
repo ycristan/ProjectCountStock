@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-server'
-import { sessionHref } from '@/lib/session-href'
+import { liveHref } from '@/lib/session-href'
 import { buttonClass } from '@/components/ui'
 import { Icon, type IconName } from '@/components/icons'
 import { LocalTime } from '@/components/local-time'
@@ -55,7 +55,7 @@ export default async function AdminPage() {
           <span className="font-display text-4xl leading-none font-bold">{liveTeams}</span>
           <span className="text-[13px] text-ink-2">team{liveTeams === 1 ? '' : 's'}</span>
         </div>
-        <Link href={sessionHref(live.id, live.teams)} className={buttonClass('primary', 'md') + ' no-underline'}><Icon name="live" size={20} />Open live count</Link>
+        <Link href={liveHref(live.id, live.teams)} className={buttonClass('primary', 'md') + ' no-underline'}><Icon name="live" size={20} />Open live count</Link>
       </div>
     </section> : <section aria-label="No count in progress" className="flex flex-wrap items-center gap-4 rounded-md border border-line bg-surface p-5">
       <span className="flex-grow text-[15px] text-ink-2">No team count in progress.</span>

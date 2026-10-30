@@ -15,7 +15,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 ## Em andamento: visual "Chão de armazém" (DECISOES 30/10)
 Yuri aprovou o plano completo: mesmo padrão em todas as telas e para todos os usuários (cantos 4px, ícones com texto, 5 botões, amarelo = uma ação principal). Quadro: artefato "Count Stock — identidade visual".
 - A (esta PR): base visual, cabeçalho único (Log out visível, quem está logado embaixo no celular, nunca o login com PINs), login, telas de equipe e Independente, busca com ajuda por ícones, Solo aprovado (nome digitado no cabeçalho, "Finish count" amarelo embaixo com confirmação).
-- B (PR empilhada sobre a A): painel do admin com contagem em andamento no topo e placas com números reais; menu novo (Home, Sessions, Inventory, Audit Count, Settings) que destaca a tela atual.
+- B (PR empilhada sobre a A): painel do admin com contagem em andamento no topo e placas com números reais; menu novo que destaca a tela atual; contagem ao vivo consolidada de todas as equipes (tela 5b, `/admin/sessao/<id>/ao-vivo`), aberta pelo painel e pela tela de equipes.
 - C: Inventory no visual novo (download como hoje); D: Sessões e Ajustes. Abas por warehouse ficam para depois (mudam o download).
 - Depois do merge desta PR: Yuri gera novo PIN do Solo (o atual apareceu na tela no teste de 30/10).
 

@@ -160,6 +160,14 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await row.getByText('1+4',{exact:true}).waitFor()
         await shot(independent.p,'05-independent-monitor')
         await shot(page,'06-admin-live',false)
+        stage='consolidated live view'
+        const all=await page.context().newPage()
+        await all.goto(base+'/admin/sessao/'+session.id+'/ao-vivo')
+        const allRow=all.locator('tr',{hasText:'Count Active '+suffix})
+        await allRow.getByText('1+4',{exact:true}).first().waitFor()
+        await allRow.getByText(team.name,{exact:true}).waitFor()
+        await shot(all,'06d-admin-all-teams',false)
+        await all.close()
         if(process.env.SCREENSHOT_DIR){ // admin home while the count runs, in its own tab
           const home=await page.context().newPage()
           await home.goto(base+'/admin').then(()=>shot(home,'06b-admin-home',false)).then(()=>shot(home,'06c-admin-home-phone')).catch(()=>{})

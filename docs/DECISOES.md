@@ -195,3 +195,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Padronização visual de todo o app (2026-10-30)
 - Yuri aprovou o plano completo: cantos de 4px em tudo (também nas telas de equipe), ícone sempre com texto, 5 tipos de botão, amarelo só para a ação principal, cabeçalho único para todos os usuários. Admin em partes: painel e menu novo; Inventory; Sessões e Ajustes. Abas por warehouse ficam para depois porque mudam o download.
 - Tela do Solo aprovada após o teste de Yuri: o cabeçalho mostrava o login (os dois PINs) no lugar do nome. Regra: o cabeçalho nunca mostra login; o Solo mostra o nome digitado. "Finish count" pede confirmação.
+
+## Contagem ao vivo consolidada no fluxo novo (2026-10-30)
+- O fluxo novo trocou, sem decisão registrada, a tela única do admin do fluxo antigo (todas as equipes, colunas por pessoa, linha piscando) por um monitor por equipe. Yuri apontou a regressão e aprovou a tela 5b: todas as equipes numa tabela ao vivo, com placas por equipe, totais e filtros por equipe, status e produto. Prioridade antes do Inventory.
+- Sem coluna de hora da última entrada: a leitura das contagens não traz a hora; incluir exigiria mudar função do banco. As contagens que chegam com a tela aberta sobem para o topo e piscam.
