@@ -9,6 +9,10 @@ const PATHS = {
   newSession: <><rect x="3" y="3" width="18" height="18" /><path d="M12 8v8M8 12h8" /></>,
   teams: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.2.6 3.5 2.8 3.5 6" /></>,
   solo: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></>,
+  download: <><path d="M12 3v12M7 10l5 5 5-5" /><path d="M4 15v5h16v-5" /></>,
+  upload: <><path d="M12 15V3M7 8l5-5 5 5" /><path d="M4 15v5h16v-5" /></>,
+  edit: <path d="M4 20h4L19 9l-4-4L4 16z" />,
+  check: <path d="M5 12l5 5 9-10" />,
   spreadsheet: <><path d="M6 2h9l5 5v15H6z" /><path d="M14 2v6h6M9 12l5 5M14 12l-5 5" /></>,
 }
 

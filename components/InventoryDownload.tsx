@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { buttonClass } from '@/components/ui'
+import { Icon } from '@/components/icons'
 
 export function InventoryDownload() {
   const [pending, setPending] = useState(false)
@@ -27,10 +29,10 @@ export function InventoryDownload() {
     } catch { setError('Unable to reach the download service. Check your connection and try again.') }
     finally { setPending(false) }
   }
-  return <div className="mb-4">
-    <button type="button" onClick={download} disabled={pending} className="rounded-xl border px-4 py-2 text-sm disabled:opacity-50">
-      {pending ? 'Preparing download...' : 'Download full inventory (ZIP)'}
+  return <div className="flex flex-col gap-2">
+    <button type="button" onClick={download} disabled={pending} className={buttonClass('outline', 'md')}>
+      <Icon name="download" size={20} />{pending ? 'Preparing download...' : 'Download full inventory (ZIP)'}
     </button>
-    {error && <p role="alert" className="mt-2 text-sm text-red-700">{error}</p>}
+    {error && <p role="alert" className="m-0 max-w-sm rounded-md bg-alert px-3 py-2 text-sm font-medium text-white">{error}</p>}
   </div>
 }
