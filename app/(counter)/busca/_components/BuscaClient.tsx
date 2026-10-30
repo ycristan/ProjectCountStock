@@ -186,7 +186,7 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
                 <Button variant="primary" size="lg" full onClick={() => abrirForm(modalItem, true)}>Add to Count</Button>
                 <Button variant="outline" size="md" full onClick={() => abrirForm(modalItem, false)}>Edit Count</Button>
               </>}
-              <Button variant="quiet" size="md" full onClick={() => setModalItem(null)}>{readOnly ? 'Close' : 'Cancel'}</Button>
+              <Button variant="quiet" size="md" full onClick={() => setModalItem(null)}>Cancel</Button>
             </div>
           </div>
         </div>

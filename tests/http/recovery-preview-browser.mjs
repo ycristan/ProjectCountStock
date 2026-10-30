@@ -50,7 +50,7 @@ export async function verifyRecoveryPreview({db,base,headers,cookies}) {
     await inactive.getByRole('button').filter({hasText:'preview-1213'}).click()
     await page.getByRole('complementary',{name:'Product details'}).waitFor()
     assert.equal(await page.getByRole('button',{name:/Confirm Count/}).count(),0)
-    const search=page.getByPlaceholder('Brand Code (e.g. 6323), Name or BIN (e.g. 40A02)')
+    const search=page.getByRole('textbox',{name:'Find product'})
     await search.fill('40B')
     assert.equal(await inactive.getByRole('button').count(),1)
     await search.fill('Previously active omitted')

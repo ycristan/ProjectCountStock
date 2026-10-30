@@ -22,6 +22,7 @@ export function ResultList({ items, onSelect }: Props) {
             <button
               key={item.brand_code}
               onClick={() => onSelect(item)}
+              data-active={active}
               // ponytail: content-visibility:auto skips off-screen paint — handles 500+ rows without a JS virtualiser
               style={{ contentVisibility: 'auto', containIntrinsicSize: '0 72px' }}
               className={'flex min-h-16 w-full items-center gap-3 rounded-[10px] p-3 text-left '

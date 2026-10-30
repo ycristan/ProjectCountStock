@@ -47,7 +47,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
     p_pallets:0,p_cases:0,p_units:units,p_weight:false,p_bpu:10,p_pallet_size:5,p_weight_avg:100,p_tare:300,
   })
   const weighing=grams=>({rounds:[{boxes:0,grams}],visualCases:0})
-  const search=async(p,name)=>p.getByPlaceholder('Brand Code (e.g. 6323), Name or BIN (e.g. 40A02)').fill(name)
+  const search=async(p,name)=>p.getByRole('textbox',{name:'Find product'}).fill(name)
   try {
     for(const [index,team] of plan.entries()){
       stage='start and monitor '+index
