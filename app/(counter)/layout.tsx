@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
-import { logout } from '@/actions/auth'
+import { AppHeader, NavLink } from '@/components/ui'
 
 export default async function CounterLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -56,29 +56,13 @@ export default async function CounterLayout({ children }: { children: React.Reac
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="bg-slate-900 px-4 py-3 flex items-center justify-between">
-        <span className="font-bold text-white text-base">Count Stock</span>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-slate-300">Hello, {name}</span>
-          {!sessionClosed && role === 'independente' && (
-            <>
-              <Link href="/monitor" className="text-sm text-blue-300">Monitor</Link>
-              <Link href="/busca" className="text-sm text-blue-300">Products</Link>
-            </>
-          )}
-          {!sessionClosed && role && role !== 'independente' && (
-            <Link href="/finalizar" className="text-sm text-amber-400 font-medium">
-              Finalise
-            </Link>
-          )}
-          <form action={logout}>
-            <button type="submit" className="text-sm text-slate-400 hover:text-white">
-              Log out
-            </button>
-          </form>
-        </div>
-      </header>
+    <div className="min-h-screen bg-ground">
+      <AppHeader name={name} detail={role === 'independente' ? 'Independent' : role ? 'Counter' : undefined} nav={!sessionClosed && role ? <>
+        {role === 'independente' ? <>
+          <NavLink href="/monitor">Monitor</NavLink>
+          <NavLink href="/busca">Products</NavLink>
+        </> : <NavLink href="/finalizar">Finalise</NavLink>}
+      </> : undefined} />
       {sessionClosed ? (
         <main className="px-4 py-6 max-w-lg mx-auto">
           <div className="bg-white rounded-lg shadow p-6 text-center">

@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import type { ItemBusca, LancarContagemPayload, LancarContagemResult } from '@/actions/contagem'
 import { lancarContagem } from '@/actions/contagem'
 import { weightUnits } from '@/lib/weight-count'
+import { Button, Label, Tag } from '@/components/ui'
 
 type SucessoResult = {
   final_cases: number
@@ -177,48 +178,44 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
     ? 'Save Edit'
     : 'Confirm Count'
 
+  const fieldBox = 'flex flex-col gap-1.5 rounded-[10px] border border-line bg-surface p-3'
+  const bigInput = 'w-full rounded-lg border-2 px-1 py-2.5 text-center font-display text-[28px] font-bold outline-none focus:outline-3 focus:outline-info'
+
   return (
-    <div>
-      <div className="rounded-xl p-4 mb-4 bg-slate-900 text-white">
-        <div className="flex items-start justify-between">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            Selected Item
-          </div>
-          {isAdditive && (
-            <span className="text-[11px] font-semibold bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wide">
-              Adding
-            </span>
-          )}
-          {isEdit && (
-            <span className="text-[11px] font-semibold bg-amber-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wide">
-              Editable
-            </span>
-          )}
+    <div className="flex flex-col gap-4">
+      <button type="button" onClick={onVoltar}
+        className="inline-flex min-h-11 w-fit items-center gap-1 text-[15px] font-medium text-ink">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M15 5l-7 7 7 7" /></svg>
+        Back to search
+      </button>
+
+      <div className="flex flex-col gap-1 rounded-xl border border-line bg-surface p-4">
+        <div className="flex items-start justify-between gap-2">
+          <span className="font-mono text-[13px] font-semibold text-ink-2">
+            {item.brand_code}{item.bins.length > 0 ? ' · BIN ' + item.bins.join(', ') : ''}
+          </span>
+          {isAdditive && <Tag tone="info">Adding</Tag>}
+          {isEdit && <Tag tone="safety">Editing</Tag>}
         </div>
-        <div className="text-xl font-bold mt-1">{item.brand_code}</div>
-        <div className="text-sm text-slate-300">{item.brand_name}</div>
-        <div className="text-xs text-slate-400 mt-1">
-          {item.bins.length > 0 ? `BIN: ${item.bins.join(', ')} · ` : ''}
-          BPU: {item.bpu} · Pallet: {item.pallet_size}
-          {item.weight_avg > 0 && ` · ⚖️ ${item.weight_avg}g/unit`}
-        </div>
+        <span className="text-lg font-semibold">{item.brand_name}</span>
+        <span className="text-[13px] text-ink-2">
+          BPU {item.bpu} · Pallet {item.pallet_size}{item.weight_avg > 0 && ` · ${item.weight_avg} g per unit`}
+        </span>
       </div>
 
       {/* Readonly card of existing count — additive mode only */}
       {isAdditive && entry && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 mb-4">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-3">
-            Registered Count
-          </div>
+        <div className="flex flex-col gap-2">
+          <Label>Registered Count</Label>
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: 'Pallets', value: entry.pallets },
               { label: 'Cases', value: entry.cases },
               { label: 'Units', value: entry.units },
             ].map(({ label, value }) => (
-              <div key={label} className="text-center bg-white border border-slate-200 rounded-xl py-3">
-                <div className="text-2xl font-bold text-slate-900">{value}</div>
-                <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide mt-1">{label}</div>
+              <div key={label} className="rounded-[10px] border border-line bg-[#ECE9E1] py-2 text-center">
+                <div className="font-display text-[26px] font-bold">{value}</div>
+                <div className="text-xs font-semibold text-ink-2">{label}</div>
               </div>
             ))}
           </div>
@@ -227,33 +224,18 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
 
       {/* Weight mode toggle — hidden in additive mode */}
       {!isAdditive && item.weight_avg > 0 && (
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          <button
-            onClick={() => switchModo('normal')}
-            className={`rounded-xl py-3 text-sm font-semibold border-2 transition-colors ${
-              modo === 'normal'
-                ? 'border-slate-900 bg-slate-900 text-white'
-                : 'border-slate-200 text-slate-600 bg-white'
-            }`}
-          >
-            🔢 Normal Count
-          </button>
-          <button
-            onClick={() => switchModo('peso')}
-            className={`rounded-xl py-3 text-sm font-semibold border-2 transition-colors ${
-              modo === 'peso'
-                ? 'border-slate-900 bg-slate-900 text-white'
-                : 'border-slate-200 text-slate-600 bg-white'
-            }`}
-          >
-            ⚖️ Count by Weight
-          </button>
+        <div role="group" aria-label="Count method" className="grid grid-cols-2 gap-1 rounded-[10px] bg-ground-2 p-1">
+          {([['normal', 'Count by Quantity'], ['peso', 'Count by Weight']] as const).map(([m, label]) =>
+            <button key={m} type="button" aria-pressed={modo === m} onClick={() => switchModo(m)}
+              className={'min-h-11 rounded-lg text-[15px] font-semibold ' + (modo === m ? 'bg-ink text-white' : 'bg-transparent text-ink-2')}>
+              {label}
+            </button>)}
         </div>
       )}
 
       {modo === 'normal' && (
         <>
-          <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="grid grid-cols-3 gap-2">
             {[
               { label: isAdditive ? '+ Pallets' : 'Pallets', value: pallets, set: setPallets, disabled: noPallets || noBpu },
               { label: isAdditive ? '+ Cases' : 'Cases', value: cases, set: setCases, disabled: noBpu },
@@ -261,12 +243,8 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
             ].map(({ label, value, set, disabled }) => {
               const negative = !disabled && isNeg(value)
               return (
-                <div key={label} className="text-center">
-                  <div className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${
-                    disabled ? 'text-slate-300' : negative ? 'text-red-500' : 'text-slate-500'
-                  }`}>
-                    {label}
-                  </div>
+                <label key={label} className="flex flex-col items-center gap-1">
+                  <span className={'text-[13px] font-semibold ' + (disabled ? 'text-ink-3' : negative ? 'text-alert' : 'text-ink')}>{label}</span>
                   <input
                     type="number"
                     inputMode="numeric"
@@ -274,177 +252,98 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
                     onChange={(e) => { set(e.target.value); setErro(null) }}
                     placeholder="0"
                     disabled={disabled}
-                    className={`w-full text-center text-2xl font-bold px-1 py-3 rounded-xl border-[1.5px] focus:outline-none transition-colors ${
-                      disabled
-                        ? 'border-slate-100 bg-slate-100 text-slate-300 cursor-not-allowed'
-                        : negative
-                        ? 'border-red-400 bg-red-50 text-red-600 focus:border-red-500'
-                        : 'border-slate-200 bg-white focus:border-blue-500'
-                    }`}
+                    className={bigInput + ' ' + (disabled
+                      ? 'cursor-not-allowed border-ground-2 bg-ground-2 text-ink-3'
+                      : negative ? 'border-alert bg-[#FDECEA] text-alert' : 'border-ink bg-surface')}
                   />
-                </div>
+                </label>
               )
             })}
           </div>
 
           {/* Total preview — additive mode only */}
           {isAdditive && entry && (
-            <div className="rounded-xl bg-slate-900 p-4 mb-4 text-white">
-              <div className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide mb-3">
-                Total After Addition
-              </div>
-              <div className="space-y-1.5 text-sm mb-3">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Registered</span>
-                  <span className="text-slate-300 font-semibold">
-                    {entry.pallets}p · {entry.cases}c · {entry.units}u
-                  </span>
-                </div>
-                <div className="flex justify-between text-blue-400">
-                  <span>+ Adding</span>
-                  <span className="font-semibold">{addP}p · {addC}c · {addU}u</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center pt-3 border-t border-slate-700">
-                <span className="text-sm font-bold text-slate-200">New Total</span>
-                <span className="text-2xl font-bold">{previewAddCases}+{previewAddUnits}</span>
+            <div className="rounded-xl bg-ink p-4 text-ground">
+              <div className="flex justify-between text-sm"><span className="text-[#C9C6BE]">Registered</span>
+                <span className="font-semibold">{entry.pallets}p · {entry.cases}c · {entry.units}u</span></div>
+              <div className="mt-1 flex justify-between text-sm"><span className="text-[#C9C6BE]">+ Adding</span>
+                <span className="font-semibold">{addP}p · {addC}c · {addU}u</span></div>
+              <div className="mt-3 flex items-center justify-between border-t border-ink-2 pt-3">
+                <Label className="text-[#C9C6BE]">New total</Label>
+                <span className="font-display text-[34px] font-bold text-safety">{previewAddCases}+{previewAddUnits}</span>
               </div>
             </div>
           )}
 
           {!isEdit && !isAdditive && (
-            <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 mb-3">
-              ℹ️ Zeroes are valid — confirms the item was counted and was empty.
-            </div>
+            <p className="m-0 text-[13px] text-ink-2">Zero is valid: it confirms the product was checked and the place was empty.</p>
           )}
         </>
       )}
 
       {modo === 'peso' && (
-        <div className="mb-4 space-y-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-            📦 Tare: <strong className="text-slate-700">{item.box_tare_g.toLocaleString('en-GB')} g/box</strong>
-            <span className="text-slate-300">·</span>
-            ⚖️ Weight/unit: <strong className="text-slate-700">{item.weight_avg} g</strong>
-          </div>
+        <div className="flex flex-col gap-3">
+          <p className="m-0 text-[13px] text-ink-2">
+            Box tare <strong className="text-ink">{item.box_tare_g.toLocaleString('en-GB')} g</strong> · Weight per unit <strong className="text-ink">{item.weight_avg} g</strong>
+          </p>
 
           {rodadas.map((r, i) => (
-            <div key={r.id} className="border border-slate-200 rounded-xl p-3 bg-white">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Round {i + 1}
-                </span>
+            <div key={r.id} className={fieldBox}>
+              <div className="flex items-center justify-between">
+                <Label>Weighing {i + 1}</Label>
                 {rodadas.length > 1 && (
-                  <button
-                    onClick={() => removeRodada(r.id)}
-                    className="text-slate-300 hover:text-red-500 text-lg leading-none"
-                  >
-                    ✕
+                  <button type="button" onClick={() => removeRodada(r.id)} aria-label={'Remove weighing ' + (i + 1)}
+                    className="flex size-11 items-center justify-center text-ink-2">
+                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M6 6l12 12M18 6L6 18" /></svg>
                   </button>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                    No. of Boxes
-                  </div>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    value={r.caixas}
-                    onChange={(e) => updateRodada(r.id, 'caixas', e.target.value)}
-                    placeholder="0"
-                    className="w-full text-center text-xl font-bold px-2 py-2.5 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                    Weight (g)
-                  </div>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={r.pesoFmt}
-                    onChange={(e) => updateRodada(r.id, 'pesoFmt', e.target.value)}
-                    placeholder="0"
-                    className="w-full text-center text-xl font-bold px-2 py-2.5 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[13px] font-semibold">Boxes on scale</span>
+                  <input type="number" inputMode="numeric" min="0" value={r.caixas}
+                    onChange={(e) => updateRodada(r.id, 'caixas', e.target.value)} placeholder="0"
+                    className={bigInput + ' border-ink bg-surface'} />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[13px] font-semibold">Gross weight (g)</span>
+                  <input type="text" inputMode="numeric" value={r.pesoFmt}
+                    onChange={(e) => updateRodada(r.id, 'pesoFmt', e.target.value)} placeholder="0"
+                    className={bigInput + ' border-ink bg-surface'} />
+                </label>
               </div>
             </div>
           ))}
 
-          <button
-            onClick={addRodada}
-            className="w-full border-2 border-dashed border-slate-200 rounded-xl py-2.5 text-sm font-semibold text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-          >
-            + New Weighing Round
-          </button>
+          <Button type="button" variant="quiet" size="md" full onClick={addRodada} className="border-dashed">+ Add another weighing</Button>
 
           {/* Visual cases — added to weighing result */}
-          {!noBpu && <div className="border-2 border-amber-300 rounded-xl overflow-hidden">
-            <div className="bg-amber-50 border-b border-amber-200 px-3 py-2 text-xs font-semibold text-amber-800">
-              📦 Full Cases (visually confirmed)
+          {!noBpu && <div className={fieldBox}>
+            <span className="text-[15px] font-semibold">Full Cases (visually confirmed)</span>
+            <div className="flex items-center justify-between gap-2">
+              <button type="button" aria-label="One case less" onClick={() => setExtraCases((v) => Math.max(0, v - 1))}
+                className="flex size-12 items-center justify-center rounded-lg border-2 border-ink bg-surface font-display text-2xl font-bold">−</button>
+              <span className="font-display text-3xl font-bold">{extraCases}</span>
+              <button type="button" aria-label="One case more" onClick={() => setExtraCases((v) => v + 1)}
+                className="flex size-12 items-center justify-center rounded-lg border-2 border-ink bg-surface font-display text-2xl font-bold">+</button>
             </div>
-            <div className="p-3 bg-white">
-              <div className="flex items-center rounded-xl border border-amber-300 overflow-hidden">
-                <button
-                  onClick={() => setExtraCases((v) => Math.max(0, v - 1))}
-                  className="w-12 h-12 bg-amber-50 text-amber-700 text-2xl font-bold flex items-center justify-center hover:bg-amber-100 transition-colors"
-                >
-                  −
-                </button>
-                <div className="flex-1 text-center text-2xl font-bold text-amber-800 h-12 flex items-center justify-center">
-                  {extraCases}
-                </div>
-                <button
-                  onClick={() => setExtraCases((v) => v + 1)}
-                  className="w-12 h-12 bg-amber-50 text-amber-700 text-2xl font-bold flex items-center justify-center hover:bg-amber-100 transition-colors"
-                >
-                  +
-                </button>
-              </div>
-              {extraCases > 0 && (
-                <p className="text-xs text-amber-700 text-center mt-2">
-                  {extraCases} case{extraCases > 1 ? 's' : ''} × {item.bpu} units = +{extraCases * item.bpu} additional units
-                </p>
-              )}
-            </div>
+            {extraCases > 0 && (
+              <span className="text-center text-[13px] text-ink-2">
+                {extraCases} case{extraCases > 1 ? 's' : ''} × {item.bpu} units = +{extraCases * item.bpu} units
+              </span>
+            )}
           </div>}
 
-          <div className={`rounded-xl p-4 border ${
-            hasWeightData && weightQty > 0 ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'
-          }`}>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between text-slate-500">
-                <span>Total Tare</span>
-                <span>{hasWeightData ? `${totalTara.toLocaleString('en-GB')} g` : '— g'}</span>
-              </div>
-              <div className="flex justify-between text-slate-500">
-                <span>Net Weight</span>
-                <span>{hasWeightData ? `${Math.max(0, liquido).toLocaleString('en-GB')} g` : '— g'}</span>
-              </div>
-              <div className="flex justify-between text-slate-500">
-                <span>Weighing Result</span>
-                <span>{hasWeightData ? `${weightQty} units` : '— units'}</span>
-              </div>
-              {extraCases > 0 && (
-                <div className="flex justify-between text-amber-600 font-semibold">
-                  <span>Visual Cases ({extraCases} × {item.bpu})</span>
-                  <span>+{extraCases * item.bpu} units</span>
-                </div>
-              )}
+          <div className="rounded-xl bg-ink p-4 text-ground">
+            <div className="flex flex-col gap-1 text-sm text-[#C9C6BE]">
+              <div className="flex justify-between"><span>Total tare</span><span>{hasWeightData ? `${totalTara.toLocaleString('en-GB')} g` : '—'}</span></div>
+              <div className="flex justify-between"><span>Net weight</span><span>{hasWeightData ? `${Math.max(0, liquido).toLocaleString('en-GB')} g` : '—'}</span></div>
+              <div className="flex justify-between"><span>From the scale</span><span>{hasWeightData ? `${weightQty} units` : '—'}</span></div>
+              {extraCases > 0 && <div className="flex justify-between"><span>Full cases ({extraCases} × {item.bpu})</span><span>+{extraCases * item.bpu} units</span></div>}
             </div>
-            <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200">
-              <span className={`text-sm font-bold ${
-                hasWeightData && weightQty > 0 ? 'text-green-700' : 'text-slate-400'
-              }`}>
-                Final Total
-              </span>
-              <span className={`text-2xl font-bold ${
-                hasWeightData && weightQty > 0 ? 'text-green-700' : 'text-slate-300'
-              }`}>
+            <div className="mt-3 flex items-center justify-between border-t border-ink-2 pt-3">
+              <Label className="text-[#C9C6BE]">Result</Label>
+              <span className="font-display text-[34px] font-bold text-safety">
                 {hasWeightData && weightQty > 0 ? `${previewCases}+${previewUnits}` : '—'}
               </span>
             </div>
@@ -453,24 +352,15 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
       )}
 
       {erro && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700 mb-3">
-          {erro}
-        </div>
+        <p role="alert" className="m-0 rounded-[10px] bg-alert px-3 py-2 text-sm font-medium text-white">{erro}</p>
       )}
 
-      <button
-        onClick={handleSubmit}
-        disabled={isPending || (modo === 'peso' && weightQty <= 0)}
-        className="w-full bg-slate-900 text-white font-semibold py-4 rounded-xl text-base transition-opacity disabled:opacity-40"
-      >
-        {btnLabel}
-      </button>
-      <button
-        onClick={onVoltar}
-        className="w-full mt-2 text-slate-500 text-sm py-3 rounded-xl border border-slate-200 bg-white"
-      >
-        ← Back to Search
-      </button>
+      <div className="sticky bottom-0 -mx-4 border-t border-line bg-ground px-4 py-3">
+        <Button variant="primary" size="lg" full onClick={handleSubmit}
+          disabled={isPending || (modo === 'peso' && weightQty <= 0)}>
+          {btnLabel}
+        </Button>
+      </div>
     </div>
   )
 }

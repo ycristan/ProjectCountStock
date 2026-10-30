@@ -28,3 +28,11 @@ export type TeamSigning = {
   participants: { membershipId: string; name: string; role: 'counter' | 'independent'; order: number; departed: boolean
     confirmation: { kind: 'pin' | 'absence'; reason: string | null; recordedAt: string; witnessed: boolean } | null }[]
 }
+
+// Plain words for each phase, as the people on the floor see it.
+export const PHASE_LABEL: Record<string, string> = {
+  setup: 'Not started', counting: 'Counting', reconciling: 'Checking differences',
+  admin_review: 'Admin review', signing: 'Signatures', closed: 'Closed',
+}
+// Steps shown at the top of the team screen, in order.
+export const PHASE_STEPS = ['counting', 'reconciling', 'admin_review', 'signing'] as const

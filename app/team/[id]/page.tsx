@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
+import { PageTop } from '@/components/ui'
 import { readTeamCount, readTeamInventory } from '@/actions/team-count'
 import { isAdmin } from '@/lib/authorization'
 import { createClient } from '@/lib/supabase-server'
@@ -25,10 +25,14 @@ export default async function TeamCountPage({ params }: { params: Promise<{ id: 
   const { id } = await params
   const [state, items] = await Promise.all([readTeamCount(id), readTeamInventory(id)])
   const closed = state && items ? null : await closedTeam(id)
-  return <main className="max-w-5xl mx-auto p-6">
-    <Link href="/team">← Your teams</Link>
-    {state && items ? <TeamCountClient initial={state} inventory={items} />
-      : closed ? <p role="status" className="mt-4">This team is closed: all signatures were received. Your part of the count is finished.</p>
-      : <p role="alert">Team access unavailable. Refresh or sign in again.</p>}
+  // Admins come from the session's team screen; members from their team list.
+  const session = state?.role === 'admin'
+    ? (await createAdminClient().from('teams').select('session_id').eq('id', id).maybeSingle()).data?.session_id : null
+  const back = session ? { href: '/admin/sessao/' + session + '/equipes', label: 'Session teams' } : { href: '/team', label: 'Your team' }
+  return <main className="px-4 py-5">
+    {state && items ? <TeamCountClient initial={state} inventory={items} back={back} />
+      : <div className="mx-auto max-w-lg"><PageTop back={back} title="Team" />
+        {closed ? <p role="status" className="m-0 rounded-xl bg-ok p-4 text-[17px] font-medium text-white">This team is closed: all signatures were received. Your part of the count is finished.</p>
+        : <p role="alert" className="m-0 rounded-[10px] bg-alert px-3 py-2 text-white">Team access unavailable. Refresh or sign in again.</p>}</div>}
   </main>
 }

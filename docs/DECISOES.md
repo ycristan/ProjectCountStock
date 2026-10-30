@@ -179,3 +179,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Cartões impressos com QR e PINs (um por pessoa, guardado até o fim) voltam a ser o "Print" das sessões novas: no fluxo novo tinham virado só a tabela. Cabeçalho com o nome de quem está logado volta em todas as telas de equipe.
 - Yuri reprovou o visual: botões que parecem texto, telas genéricas, sem padrão, não pensadas para celular; o monitor perdeu as cores e o "flash" da tela do legado. O escopo e a data dessa padronização visual são decisão pendente de Yuri (prazo de 27/11).
 
+
+## Visual "Chão de armazém" e padrão de navegação (2026-10-30)
+- Yuri aprovou a proposta visual: sinalização industrial, amarelo de segurança sobre grafite, fundo concreto, números grandes. Contadores e Independentes usam só celular (mobile first, linguagem simples, um botão principal por tela); admins usam iPad e notebook (tabela larga ao vivo, com cores e flash).
+- Padrão obrigatório em todas as telas: voltar sempre no canto superior esquerdo, abaixo do cabeçalho, dizendo para onde leva; logo leva ao início do perfil; título abaixo do voltar e ações secundárias à direita; ação principal embaixo e larga no celular. Implementado uma vez em `components/ui.tsx` (`AppHeader`, `PageTop`, `Button`, `Tag`); telas não criam estilo próprio de botão ou navegação.
+- Motivo: no mini-teste os botões pareciam texto, o fluxo ficou confuso e cada tela tinha o voltar num lugar (ou nenhum).
