@@ -160,6 +160,11 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await row.getByText('1+4',{exact:true}).waitFor()
         await shot(independent.p,'05-independent-monitor')
         await shot(page,'06-admin-live',false)
+        if(process.env.SCREENSHOT_DIR){ // admin home while the count runs, in its own tab
+          const home=await page.context().newPage()
+          await home.goto(base+'/admin').then(()=>shot(home,'06b-admin-home',false)).then(()=>shot(home,'06c-admin-home-phone')).catch(()=>{})
+          await home.close()
+        }
         stage='reconnection: failed refresh'
         let blocked=false
         await independent.p.route('**/team/*',async route=>{
