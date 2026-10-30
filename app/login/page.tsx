@@ -52,7 +52,7 @@ export default function LoginPage() {
             </>
           )}
           {state?.error && (
-            <p role="alert" className="m-0 rounded-[10px] bg-alert px-3 py-2 text-center text-sm font-medium text-white">{state.error}</p>
+            <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-center text-sm font-medium text-white">{state.error}</p>
           )}
           <Button type="submit" variant="primary" size="lg" full disabled={pending}>
             {pending ? 'Logging in...' : 'Log In'}

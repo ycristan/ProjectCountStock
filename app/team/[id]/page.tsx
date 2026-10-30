@@ -33,6 +33,6 @@ export default async function TeamCountPage({ params }: { params: Promise<{ id: 
     {state && items ? <TeamCountClient initial={state} inventory={items} back={back} />
       : <div className="mx-auto max-w-lg"><PageTop back={back} title="Team" />
         {closed ? <p role="status" className="m-0 rounded-xl bg-ok p-4 text-[17px] font-medium text-white">This team is closed: all signatures were received. Your part of the count is finished.</p>
-        : <p role="alert" className="m-0 rounded-[10px] bg-alert px-3 py-2 text-white">Team access unavailable. Refresh or sign in again.</p>}</div>}
+        : <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-white">Team access unavailable. Refresh or sign in again.</p>}</div>}
   </main>
 }

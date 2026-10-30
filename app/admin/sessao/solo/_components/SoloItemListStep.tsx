@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { ItemBusca } from '@/actions/contagem'
+import { filterItems } from '@/lib/inventory-search'
 import { ResultList } from '@/app/(counter)/busca/_components/ResultList'
 
 type Item = { brand_code: string; brand_name: string }
@@ -15,15 +16,7 @@ type Props = {
 export function SoloItemListStep({ inventory, items, onChange }: Props) {
   const [termo, setTermo] = useState('')
   const listedCodes = new Set(items.map((i) => i.brand_code))
-  const ql = termo.trim().toLowerCase()
-  const matches = ql
-    ? inventory
-        .filter(
-          (i) =>
-            !listedCodes.has(i.brand_code) &&
-            (i.brand_code.toLowerCase().includes(ql) || i.brand_name.toLowerCase().includes(ql))
-        )
-    : []
+  const matches = filterItems(inventory, termo).filter((i) => !listedCodes.has(i.brand_code))
 
   function addItem(item: ItemBusca) {
     onChange([...items, { brand_code: item.brand_code, brand_name: item.brand_name }])

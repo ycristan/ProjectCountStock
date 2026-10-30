@@ -145,9 +145,25 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
       />
 
       {!termo && !restrictToList && (
-        <p className="mt-4 text-center text-sm text-ink-2">
-          Type a code (e.g. 6323), a product name or a BIN (e.g. 40A02).
-        </p>
+        <div className="mt-4 flex flex-col gap-3 rounded-md border border-line bg-surface p-4">
+          <span className="text-[15px] font-semibold">Search by any part of</span>
+          <span className="flex items-center gap-3 text-[15px]">
+            <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-md bg-ink font-mono text-[13px] font-semibold text-safety">123</span>
+            <span>Brand code, e.g. <strong className="font-mono">6323</strong></span>
+          </span>
+          <span className="flex items-center gap-3 text-[15px]">
+            <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-md bg-ink text-safety">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square"><path d="M3 7l9-4 9 4v10l-9 4-9-4z" /><path d="M3 7l9 4 9-4M12 11v10" /></svg>
+            </span>
+            <span>Product name, e.g. <strong>kinder</strong></span>
+          </span>
+          <span className="flex items-center gap-3 text-[15px]">
+            <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-md bg-ink text-safety">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square"><path d="M4 21V4h16v17" /><path d="M4 10h16M4 16h16" /></svg>
+            </span>
+            <span>BIN, e.g. <span className="rounded-sm border-[1.5px] border-ink bg-safety px-1.5 font-mono text-sm font-semibold">40A02</span></span>
+          </span>
+        </div>
       )}
 
       {modalItem && (
@@ -173,7 +189,7 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
                 </dl>
               )}
               {!readOnly && modalItem.entryExistente && (
-                <div className="mt-3 flex items-center justify-between rounded-[10px] bg-ink px-3 py-2 text-ground">
+                <div className="mt-3 flex items-center justify-between rounded-md bg-ink px-3 py-2 text-ground">
                   <span className="text-sm">Your count</span>
                   <span className="font-display text-2xl font-bold text-safety">
                     {modalItem.entryExistente.pallets}p · {modalItem.entryExistente.cases}c · {modalItem.entryExistente.units}u

@@ -11,7 +11,7 @@ import { CountForm } from '@/app/(counter)/busca/_components/CountForm'
 import { markCounterAbsent, readTeamSigning } from '@/actions/team-signing'
 import { SigningPanel } from './SigningPanel'
 import { PHASE_LABEL, PHASE_STEPS } from '@/lib/team-count-types'
-import { Button, Label, PageTop, Tag } from '@/components/ui'
+import { Button, FlagIcon, Label, PageTop, Tag } from '@/components/ui'
 
 export function TeamCountClient({ initial, inventory, back }: {
   initial: TeamCountState; inventory: ItemBusca[]; back: { href: string; label: string }
@@ -302,8 +302,8 @@ export function TeamCountClient({ initial, inventory, back }: {
       {state.role === 'counter' && state.phase === 'counting' && <p className="m-0 text-[13px] text-[#C9C6BE]">Blind count: you only see your own quantities.</p>}
     </div>
 
-    {unavailable && <p role="alert" className="m-0 rounded-[10px] bg-alert px-3 py-2 text-[15px] font-medium text-white">Connection or access unavailable. Counts are blocked until refreshed.</p>}
-    {notice && <p role="status" className="m-0 rounded-[10px] border-2 border-ink bg-surface px-3 py-2 text-[15px] font-medium">{notice}</p>}
+    {unavailable && <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-[15px] font-medium text-white">Connection or access unavailable. Counts are blocked until refreshed.</p>}
+    {notice && <p role="status" className="m-0 rounded-md border-2 border-ink bg-surface px-3 py-2 text-[15px] font-medium">{notice}</p>}
 
     {state.role === 'admin' && state.phase === 'setup' && <Button variant="primary" size="lg" full disabled={pending || unavailable}
       onClick={() => startTransition(async () => {
@@ -316,7 +316,7 @@ export function TeamCountClient({ initial, inventory, back }: {
       <h2 className="m-0 font-display text-lg font-bold uppercase tracking-[0.04em]">Counters</h2>
       <div className="grid gap-2 md:grid-cols-2">
       {counters.map(m => <div key={m.id} data-member={m.order}
-        className={'flex flex-wrap items-center gap-2 rounded-[10px] bg-surface p-3 ' + (m.finishState === 'requested' ? 'border-2 border-ink' : 'border border-line')}>
+        className={'flex flex-wrap items-center gap-2 rounded-md bg-surface p-3 ' + (m.finishState === 'requested' ? 'border-2 border-ink' : 'border border-line')}>
         <span className="flex min-w-0 flex-grow flex-col gap-1">
           <span className="text-[15px] font-semibold">Counter {m.order} — {m.name}</span>
           <span>{m.departed ? <Tag tone="alert">Absent</Tag> : <Tag tone={statusTone[m.finishState] ?? 'neutral'}>{statusLabel[m.finishState] ?? m.finishState}</Tag>}</span>
@@ -339,9 +339,9 @@ export function TeamCountClient({ initial, inventory, back }: {
       </div>)}
       </div>
       <div className="grid grid-cols-3 gap-2">
-        <span className="flex flex-col items-center rounded-[10px] bg-ok py-2 text-white"><strong className="font-display text-2xl">{tally.equal}</strong><span className="text-xs font-semibold">Equal</span></span>
-        <span className="flex flex-col items-center rounded-[10px] bg-diff py-2 text-white"><strong className="font-display text-2xl">{tally.different}</strong><span className="text-xs font-semibold">Different</span></span>
-        <span className="flex flex-col items-center rounded-[10px] border border-line bg-surface py-2"><strong className="font-display text-2xl">{tally.waiting}</strong><span className="text-xs font-semibold text-ink-2">Waiting</span></span>
+        <span className="flex flex-col items-center rounded-md bg-ok py-2 text-white"><strong className="font-display text-2xl">{tally.equal}</strong><span className="text-xs font-semibold">Equal</span></span>
+        <span className="flex flex-col items-center rounded-md bg-diff py-2 text-white"><strong className="font-display text-2xl">{tally.different}</strong><span className="text-xs font-semibold">Different</span></span>
+        <span className="flex flex-col items-center rounded-md border border-line bg-surface py-2"><strong className="font-display text-2xl">{tally.waiting}</strong><span className="text-xs font-semibold text-ink-2">Waiting</span></span>
       </div>
     </div>}
 
@@ -468,7 +468,7 @@ export function TeamCountClient({ initial, inventory, back }: {
           const membershipId = state.membershipId!
           finish(() => requestTeamFinish(teamId, membershipId, state.revision, crypto.randomUUID()),
             'Finish requested. Waiting for the Independent.')
-        }}>Finish my count</Button>
+        }}><FlagIcon />Finish my count</Button>
     </div>}
   </section>
 }

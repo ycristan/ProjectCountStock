@@ -22,6 +22,15 @@
   --color-diff: #C2410C;        /* different counts; white text */
   --color-info: #1D4ED8;        /* waiting for someone else */
   --color-alert: #B42318;       /* rejected / error; white text */
+
+  /* Signage corners: 4px everywhere, tags 2px (Yuri, 30/10). Overrides Tailwind's
+   * scale so older screens follow without editing each class. */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
 }
 
 body {

@@ -60,7 +60,7 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
       const waiting = p.role === 'independent' && !countersDone
       const signed = c && (c.kind === 'pin' || p.role === 'counter' || c.witnessed)
       return <div key={p.membershipId} data-participant={p.name} data-status={status}
-        className={'flex flex-col gap-3 rounded-[10px] p-3 ' + (active ? 'border-2 border-ink bg-surface'
+        className={'flex flex-col gap-3 rounded-md p-3 ' + (active ? 'border-2 border-ink bg-surface'
           : waiting && !c ? 'border border-dashed border-line-2 bg-[#ECE9E1]' : 'border border-line bg-surface')}>
         <div className="flex items-center gap-3">
           <span aria-hidden="true" className={'flex size-8 shrink-0 items-center justify-center rounded-full font-display font-bold '

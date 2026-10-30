@@ -9,7 +9,7 @@ export default async function TeamPage() {
   const context = await getTeamFlowContexts()
   return <main className="mx-auto max-w-lg px-4 py-5">
     <PageTop title="Your team" />
-    {!context.ok ? <p role="alert" className="rounded-[10px] bg-alert px-3 py-2 text-white">Team access is unavailable. Please retry.</p>
+    {!context.ok ? <p role="alert" className="rounded-md bg-alert px-3 py-2 text-white">Team access is unavailable. Please retry.</p>
       : context.teams.length === 0 ? <p className="text-ink-2">You are not in an active team.</p>
       : context.teams.map(team => <section key={team.membershipId}
           className="mb-3 flex flex-col gap-3 rounded-xl border-2 border-ink bg-surface p-4">

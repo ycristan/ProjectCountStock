@@ -33,6 +33,23 @@ test('same search function finds active and inactive by name, code and BIN', asy
   assert.equal(filterItems(items,'12').length,2)
   assert.equal(filterItems(items,'').length,0)
 })
+test('search finds any part of name, code or BIN; closest matches first', async () => {
+  const { filterItems } = await loadSource('lib/inventory-search.ts')
+  const items = [
+    {brand_code:'TESTE-009',brand_name:'Teste Avulso com peso (BPU 1, 300g)',brand_active:true,bins:['T-05']},
+    {brand_code:'80052137',brand_name:'Kinder Country',brand_active:true,bins:['02A01']},
+    {brand_code:'0091',brand_name:'Other',brand_active:true,bins:['40A02']},
+  ]
+  const codes = (q) => Array.from(filterItems(items, q), (i) => i.brand_code) // array from this realm, not the vm's
+  assert.deepEqual(codes('009'), ['0091','TESTE-009'])     // code start before code middle
+  assert.deepEqual(codes('05'), ['80052137','TESTE-009'])  // inside a code and inside a BIN
+  assert.deepEqual(codes('T-05'), ['TESTE-009'])
+  assert.deepEqual(codes('t05'), ['TESTE-009'])            // hyphens and spaces ignored
+  assert.deepEqual(codes('a02'), ['0091'])
+  assert.deepEqual(codes('300g'), ['TESTE-009'])
+  assert.deepEqual(codes('country'), ['80052137'])
+  assert.deepEqual(codes('-'), [])
+})
 test('empty historical warehouse is omitted only in session options; inactive inventory qualifies', async () => {
   let joined = false, reads = 0
   const db = {from(table) {

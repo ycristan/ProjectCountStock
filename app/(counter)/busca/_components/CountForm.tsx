@@ -178,7 +178,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
     ? 'Save Edit'
     : 'Confirm Count'
 
-  const fieldBox = 'flex flex-col gap-1.5 rounded-[10px] border border-line bg-surface p-3'
+  const fieldBox = 'flex flex-col gap-1.5 rounded-md border border-line bg-surface p-3'
   const bigInput = 'w-full rounded-lg border-2 px-1 py-2.5 text-center font-display text-[28px] font-bold outline-none focus:outline-3 focus:outline-info'
 
   return (
@@ -213,7 +213,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
               { label: 'Cases', value: entry.cases },
               { label: 'Units', value: entry.units },
             ].map(({ label, value }) => (
-              <div key={label} className="rounded-[10px] border border-line bg-[#ECE9E1] py-2 text-center">
+              <div key={label} className="rounded-md border border-line bg-[#ECE9E1] py-2 text-center">
                 <div className="font-display text-[26px] font-bold">{value}</div>
                 <div className="text-xs font-semibold text-ink-2">{label}</div>
               </div>
@@ -224,7 +224,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
 
       {/* Weight mode toggle — hidden in additive mode */}
       {!isAdditive && item.weight_avg > 0 && (
-        <div role="group" aria-label="Count method" className="grid grid-cols-2 gap-1 rounded-[10px] bg-ground-2 p-1">
+        <div role="group" aria-label="Count method" className="grid grid-cols-2 gap-1 rounded-md bg-ground-2 p-1">
           {([['normal', 'Count by Quantity'], ['peso', 'Count by Weight']] as const).map(([m, label]) =>
             <button key={m} type="button" aria-pressed={modo === m} onClick={() => switchModo(m)}
               className={'min-h-11 rounded-lg text-[15px] font-semibold ' + (modo === m ? 'bg-ink text-white' : 'bg-transparent text-ink-2')}>
@@ -352,7 +352,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
       )}
 
       {erro && (
-        <p role="alert" className="m-0 rounded-[10px] bg-alert px-3 py-2 text-sm font-medium text-white">{erro}</p>
+        <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-sm font-medium text-white">{erro}</p>
       )}
 
       <div className="sticky bottom-0 -mx-4 border-t border-line bg-ground px-4 py-3">

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { ItemBusca, LancarContagemPayload } from '@/actions/contagem'
 import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
 import { lancarSoloContagemCounter, finalizarSoloContagemCounter, definirNomeContadorSolo } from '@/actions/solo'
+import { Button, FlagIcon, Label } from '@/components/ui'
 
 type Props = {
   sessionId: string
@@ -31,10 +32,12 @@ export function SoloCounterClient({ sessionId, title, counterName, items, restri
       if (res.error) { setErro(res.error); return }
       setErro(null)
       setName(nameInput.trim())
+      router.refresh() // the header shows the typed name
     })
   }
 
-  function handleFinalise() {
+  function handleFinish() {
+    if (!window.confirm('Finish this count? You will not be able to add or edit counts in this session.')) return
     startTransition(async () => {
       const res = await finalizarSoloContagemCounter(sessionId)
       if (res.error) { setErro(res.error); return }
@@ -42,47 +45,34 @@ export function SoloCounterClient({ sessionId, title, counterName, items, restri
     })
   }
 
+  const alert = erro && <p role="alert" className="mb-3 rounded-md bg-alert px-3 py-2 text-[15px] font-medium text-white">{erro}</p>
+
   if (!name) {
     return (
-      <form onSubmit={handleSetName} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-        <p className="text-sm text-slate-500">Enter your name before you start counting.</p>
-        <input
-          value={nameInput}
-          onChange={(e) => setNameInput(e.target.value)}
-          placeholder="Your name"
-          autoFocus
-          className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-slate-900"
-        />
-        {erro && <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">{erro}</div>}
-        <button
-          type="submit"
-          disabled={isPending || !nameInput.trim()}
-          className="w-full bg-slate-900 text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-40"
-        >
-          Start counting →
-        </button>
+      <form onSubmit={handleSetName} className="flex flex-col gap-4 rounded-md border-2 border-ink bg-surface p-5">
+        <h1 className="m-0 font-display text-2xl font-bold uppercase">{title}</h1>
+        <label className="flex flex-col gap-1.5">
+          <Label>Your name</Label>
+          <input
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            autoFocus
+            autoComplete="name"
+            className="min-h-13 rounded-md border-2 border-ink bg-surface px-3 text-[17px] font-medium outline-none focus-visible:outline-3 focus-visible:outline-info"
+          />
+          <span className="text-sm text-ink-2">Shown on this count and in the results. Enter it once, before you start.</span>
+        </label>
+        {alert}
+        <Button type="submit" variant="primary" size="lg" full disabled={isPending || !nameInput.trim()}>Start counting</Button>
       </form>
     )
   }
 
-  const header = (
-    <div className="mb-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
-        <button
-          onClick={handleFinalise}
-          disabled={isPending}
-          className="text-sm font-semibold bg-slate-900 text-white rounded-xl px-4 py-2 hover:bg-slate-700 disabled:opacity-40"
-        >
-          {isPending ? '...' : 'Finalise Count'}
-        </button>
-      </div>
-      {erro && (
-        <div className="mt-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">{erro}</div>
-      )}
+  return <>
+    <BuscaClient items={items} onSubmit={onSubmit} headerSlot={alert} restrictToList={restrictToList} />
+    <div className="sticky bottom-0 -mx-4 mt-4 flex flex-col gap-1 border-t-2 border-ink bg-ground px-4 py-3">
+      <Button variant="primary" size="lg" full disabled={isPending} onClick={handleFinish}><FlagIcon />Finish count</Button>
+      <span className="text-center text-[13px] text-ink-2">Asks you to confirm before closing the count.</span>
     </div>
-  )
-
-  return <BuscaClient items={items} onSubmit={onSubmit} headerSlot={header} restrictToList={restrictToList} />
+  </>
 }
