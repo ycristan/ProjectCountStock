@@ -183,3 +183,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Skills de design e de método (2026-10-30)
 - Yuri desistiu da UI/UX Pro Max (conteúdo genérico, PR #102 fechada) e pediu `frontend-design` (Anthropic, Apache 2.0) e Superpowers (obra, MIT). Copiadas para `.claude/skills/`, porque plugin não carrega na nuvem.
 - Do Superpowers entraram só 4 skills: `systematic-debugging`, `verification-before-completion`, `test-driven-development`, `receiving-code-review`. Ficaram fora brainstorming, planos, worktrees, finalização de branch e o hook de início de sessão. Motivo: gravam specs e planos em `docs/superpowers/` (memória paralela), fazem merge local e impõem um fluxo próprio por cima do CLAUDE.md.
+
+## Busca de produtos (2026-10-30)
+- Yuri decidiu: a busca acha qualquer parte do nome, do código ou do BIN, ignorando hífen, espaço e maiúsculas ("009", "05" e "T-05" acham TESTE-009 no BIN T-05). Mais próximos primeiro: código ou BIN exato, depois começo do código ou BIN, começo do nome, e o resto. Vale para contador de equipe, Solo e montagem da lista do Solo.
+- Substitui a regra antiga, não documentada, que escolhia o campo pelo primeiro caractere e só olhava o começo de códigos e BINs. Motivo: no teste de Yuri, código e BIN de letras não eram achados.
