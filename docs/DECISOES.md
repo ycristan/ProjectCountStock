@@ -179,3 +179,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Cartões impressos com QR e PINs (um por pessoa, guardado até o fim) voltam a ser o "Print" das sessões novas: no fluxo novo tinham virado só a tabela. Cabeçalho com o nome de quem está logado volta em todas as telas de equipe.
 - Yuri reprovou o visual: botões que parecem texto, telas genéricas, sem padrão, não pensadas para celular; o monitor perdeu as cores e o "flash" da tela do legado. O escopo e a data dessa padronização visual são decisão pendente de Yuri (prazo de 27/11).
 
+
+## Skills de design e de método (2026-10-30)
+- Yuri desistiu da UI/UX Pro Max (conteúdo genérico, PR #102 fechada) e pediu `frontend-design` (Anthropic, Apache 2.0) e Superpowers (obra, MIT). Copiadas para `.claude/skills/`, porque plugin não carrega na nuvem.
+- Do Superpowers entraram só 4 skills: `systematic-debugging`, `verification-before-completion`, `test-driven-development`, `receiving-code-review`. Ficaram fora brainstorming, planos, worktrees, finalização de branch e o hook de início de sessão. Motivo: gravam specs e planos em `docs/superpowers/` (memória paralela), fazem merge local e impõem um fluxo próprio por cima do CLAUDE.md.
