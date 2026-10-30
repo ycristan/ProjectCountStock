@@ -19,7 +19,7 @@ export async function verifyRecoveredWarehouse({db,base,headers,cookies}) {
     const errors=[]
     page.on('pageerror',()=>errors.push('pageerror'))
     await page.goto(base+'/admin/solo/'+solo.id)
-    const search=page.getByPlaceholder('Brand Code (e.g. 6323), Name or BIN (e.g. 40A02)')
+    const search=page.getByRole('textbox',{name:'Find product'})
     await search.fill('kinder')
     const active=page.getByRole('region',{name:'Active products',exact:true})
     const inactive=page.getByRole('region',{name:'Inactive products',exact:true})

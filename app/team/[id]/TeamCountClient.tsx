@@ -10,8 +10,12 @@ import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
 import { CountForm } from '@/app/(counter)/busca/_components/CountForm'
 import { markCounterAbsent, readTeamSigning } from '@/actions/team-signing'
 import { SigningPanel } from './SigningPanel'
+import { PHASE_LABEL, PHASE_STEPS } from '@/lib/team-count-types'
+import { Button, FlagIcon, Label, PageTop, Tag } from '@/components/ui'
 
-export function TeamCountClient({ initial, inventory }: { initial: TeamCountState; inventory: ItemBusca[] }) {
+export function TeamCountClient({ initial, inventory, back }: {
+  initial: TeamCountState; inventory: ItemBusca[]; back: { href: string; label: string }
+}) {
   const [state, setState] = useState(initial)
   const [catalog, setCatalog] = useState(inventory)
   const [comparison, setComparison] = useState<TeamComparisonItem[]>([])
@@ -33,6 +37,9 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
   const phase = useRef(initial.phase)
   // The Independent sent this counter back to counting: their last finish event is a reject.
   const [rejected, setRejected] = useState(false)
+  // Products whose count just changed flash once on the monitor; the number restarts the animation.
+  const [flash, setFlash] = useState(new Map<string, number>())
+  const seen = useRef(new Map(initial.records.map(r => [r.brandCode + ':' + r.membershipId, r.revision])))
   const refresh = useCallback(async () => {
     const sequence = ++readSequence.current
     try {
@@ -53,6 +60,13 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
       setComparison(compared)
       setReviews(history)
       setSigning(collection)
+      const changed = next.records.filter(r => seen.current.get(r.brandCode + ':' + r.membershipId) !== r.revision).map(r => r.brandCode)
+      seen.current = new Map(next.records.map(r => [r.brandCode + ':' + r.membershipId, r.revision]))
+      if (changed.length) setFlash(current => {
+        const marked = new Map(current)
+        for (const brand of changed) marked.set(brand, (marked.get(brand) ?? 0) + 1)
+        return marked
+      })
       setState(next)
       setUnavailable(false)
       setRejected(lastFinish === 'reject')
@@ -206,17 +220,35 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
   const reconcilingRow = canReconcile ? comparison.find(row => row.brandCode === reconciling && needsReconciliation(row)) : undefined
   const reconcilingItem = reconcilingRow && catalog.find(i => i.brand_code === reconcilingRow.brandCode)
 
+  const statusTone: Record<string, 'neutral' | 'info' | 'ok'> = { counting: 'neutral', requested: 'info', accepted: 'ok' }
+  const th = 'px-3 py-2.5 text-left font-display text-[13px] font-bold uppercase tracking-[0.08em] whitespace-nowrap'
+  const td = 'px-3 py-2.5 align-top'
+  const qty = 'font-display text-xl font-bold whitespace-nowrap'
+  const tableBox = 'overflow-x-auto rounded-xl border border-line bg-surface'
+  const stepIndex = PHASE_STEPS.indexOf(state.phase as typeof PHASE_STEPS[number])
+  // One sentence: what is happening and what this person does now.
+  const guidance = state.phase === 'setup' ? (state.role === 'admin' ? 'Everyone has their card? Start the count.' : 'Wait: the admin has not started the count yet.')
+    : state.phase === 'counting' ? (state.role === 'counter'
+        ? state.finishState === 'counting' ? 'Find each product, count it and save. When you are done, tap Finish my count.'
+        : state.finishState === 'requested' ? 'You asked to finish. Wait for the Independent to accept.'
+        : 'Your count is accepted. Wait for the others.'
+      : state.role === 'independent' ? 'Watch the counts. Accept or reject each counter who asks to finish.'
+      : 'The team is counting. Counts appear here live.')
+    : state.phase === 'reconciling' ? (state.role === 'independent' ? 'Check each product marked in orange, then send the result to the admin.' : 'The Independent is checking the differences.')
+    : state.phase === 'admin_review' ? (state.role === 'admin' ? 'Accept the result, or choose products to recount.' : 'The admin is reviewing the result.')
+    : state.phase === 'signing' ? 'Counters sign first, the Independent last. Then the admin closes the team.'
+    : ''
+
   if (reconcilingRow && reconcilingItem) {
     const previous = reconcilingRow.reconciliation
-    return <section className="mt-4 space-y-4">
-      <h1 className="text-xl font-semibold">{state.teamName} — Reconciliation</h1>
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Original counts</div>
+    return <section className="mx-auto flex max-w-lg flex-col gap-4">
+      <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-4">
+        <Label>Original counts</Label>
         {reconcilingRow.cells.map(cell => {
           const member = counters.find(m => m.id === cell.membershipId)
-          return <div key={cell.membershipId} className="flex justify-between text-sm">
-            <span>Counter {member?.order} — {member?.name}</span>
-            <span className="font-semibold">{cell.quantity == null ? 'Not counted'
+          return <div key={cell.membershipId} className="flex items-center justify-between gap-2">
+            <span className="text-[15px]">Counter {member?.order} — {member?.name}</span>
+            <span className={cell.quantity == null ? 'text-ink-3' : qty}>{cell.quantity == null ? 'Not counted'
               : format(cell.quantity, reconcilingRow.brandCode) + (cell.method === 'weight' ? ' (weight)' : '')}</span>
           </div>
         })}
@@ -231,66 +263,126 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
     </section>
   }
 
-  return <section className="mt-4 space-y-4">
-    <h1 className="text-xl font-semibold">{state.teamName} — {state.warehouseName}</h1>
-    <p className="font-semibold">You: {state.role === 'admin' ? 'Admin' : (() => {
-      const m = state.members.find(x => x.id === state.membershipId)
-      return (state.role === 'independent' ? 'Independent' : 'Counter ' + m?.order) + (m ? ' — ' + m.name : '')
-    })()}</p>
-    <p>{state.role === 'counter' ? 'Blind count — only your quantities are shown.' : 'Team monitor — product consultation only.'}</p>
-    <p>Phase: {state.phase}</p>
-    {state.role === 'counter' && <p>Your count status: {statusLabel[state.finishState ?? ''] ?? state.finishState}</p>}
-    {state.role === 'counter' && rejected && state.finishState === 'counting' && <p role="alert"
-      className="rounded-xl border-2 border-red-600 bg-red-50 p-4 font-semibold text-red-800">
-      Your finish was rejected by the Independent. Check your counts, continue counting and tap &quot;Finish my count&quot; again.</p>}
-    {unavailable && <p role="alert">Connection or access unavailable. Counts are blocked until refreshed.</p>}
-    {notice && <p role="status">{notice}</p>}
-    <button className="border rounded px-3 py-2" onClick={() => { void refresh(); void reloadCatalog() }}>Refresh team</button>
-    {state.role === 'admin' && state.phase === 'setup' && <button disabled={pending || unavailable}
-      className="bg-slate-900 text-white rounded px-3 py-2" onClick={() => startTransition(async () => {
+  const tally = (() => {
+    const rows = catalog.filter(i => counted.has(i.brand_code)).map(item => counters.map(m => records.get(item.brand_code + ':' + m.id)))
+    return { equal: rows.filter(v => v.every(Boolean) && new Set(v.map(r => r!.quantity)).size === 1).length,
+      different: rows.filter(v => v.every(Boolean) && new Set(v.map(r => r!.quantity)).size > 1).length,
+      waiting: rows.filter(v => v.some(r => !r)).length }
+  })()
+
+  return <section data-phase={state.phase} className={'mx-auto flex flex-col gap-4 ' + (monitor ? 'max-w-6xl' : 'max-w-lg')}>
+    <PageTop back={back} kicker={state.warehouseName} title={state.teamName}
+      actions={<Button variant="quiet" size="sm" onClick={() => { void refresh(); void reloadCatalog() }}>Refresh team</Button>} />
+
+    {state.phase !== 'setup' && <ol aria-label="Steps" className="m-0 grid list-none grid-cols-4 gap-1 p-0">
+      {PHASE_STEPS.map((step, index) => <li key={step} aria-current={index === stepIndex ? 'step' : undefined} className="flex flex-col gap-1">
+        <span className={'h-1 ' + (index <= stepIndex ? 'bg-ink' : 'bg-line')} />
+        <span className={'text-[11px] leading-tight ' + (index === stepIndex ? 'font-semibold' : 'text-ink-3')}>{PHASE_LABEL[step]}</span>
+      </li>)}
+    </ol>}
+
+    {state.role === 'counter' && rejected && state.finishState === 'counting' && <div role="alert"
+      className="flex items-start gap-3 rounded-xl bg-alert p-4 text-white">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="shrink-0"><path d="M12 3l10 18H2z" /><path d="M12 10v5" /><path d="M12 18v.5" /></svg>
+      <span className="flex flex-col gap-1">
+        <strong className="font-display text-lg uppercase tracking-[0.04em]">Finish rejected</strong>
+        <span className="text-[15px] leading-snug">Your finish was rejected by the Independent. Check your counts, continue counting and tap &quot;Finish my count&quot; again.</span>
+      </span>
+    </div>}
+
+    <div className="flex flex-col gap-2 rounded-xl bg-ink p-4 text-ground">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Label className="text-[#C9C6BE]">{PHASE_LABEL[state.phase] ?? state.phase}</Label>
+        {state.role === 'counter' && state.finishState && <span data-finish={state.finishState}>
+          <Tag tone={statusTone[state.finishState] ?? 'neutral'}>{statusLabel[state.finishState] ?? state.finishState}</Tag></span>}
+      </div>
+      <p className="m-0 text-[17px] leading-snug font-medium">{guidance}</p>
+      {state.role === 'counter' && <p className="m-0 text-[13px] text-[#C9C6BE]">
+        Your count status: {statusLabel[state.finishState ?? ''] ?? state.finishState}</p>}
+      {state.role === 'counter' && state.phase === 'counting' && <p className="m-0 text-[13px] text-[#C9C6BE]">Blind count: you only see your own quantities.</p>}
+    </div>
+
+    {unavailable && <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-[15px] font-medium text-white">Connection or access unavailable. Counts are blocked until refreshed.</p>}
+    {notice && <p role="status" className="m-0 rounded-md border-2 border-ink bg-surface px-3 py-2 text-[15px] font-medium">{notice}</p>}
+
+    {state.role === 'admin' && state.phase === 'setup' && <Button variant="primary" size="lg" full disabled={pending || unavailable}
+      onClick={() => startTransition(async () => {
         const result = await startTeamCount(teamId, state.revision)
         setNotice(result.error ?? 'Counting started.')
         await refresh()
-      })}>{pending ? 'Starting...' : 'Start team counting'}</button>}
-    {state.role === 'counter' && canCount && state.membershipId && <button disabled={pending}
-      className="w-full bg-white border border-slate-300 rounded-xl py-3 font-semibold"
-      onClick={() => {
-        if (!window.confirm('Finish your count? You will not be able to add or edit counts unless the Independent rejects it.')) return
-        const membershipId = state.membershipId!
-        finish(() => requestTeamFinish(teamId, membershipId, state.revision, crypto.randomUUID()),
-          'Finish requested. Waiting for the Independent.')
-      }}>Finish my count</button>}
-    {monitor && !unavailable && state.phase === 'counting' && <div className="space-y-2">
-      <h2 className="font-semibold">Counters</h2>
+      })}>{pending ? 'Starting...' : 'Start team counting'}</Button>}
+
+    {monitor && !unavailable && state.phase === 'counting' && <div className="flex flex-col gap-2">
+      <h2 className="m-0 font-display text-lg font-bold uppercase tracking-[0.04em]">Counters</h2>
+      <div className="grid gap-2 md:grid-cols-2">
       {counters.map(m => <div key={m.id} data-member={m.order}
-        className="flex items-center justify-between border rounded-xl px-3 py-2">
-        <span>Counter {m.order} — {m.name}: {m.departed ? 'Absent' : statusLabel[m.finishState] ?? m.finishState}</span>
-        {state.role === 'independent' && !m.departed && m.finishState !== 'accepted' && <button disabled={pending}
-          className="border rounded px-3 py-2" onClick={() => {
+        className={'flex flex-wrap items-center gap-2 rounded-md bg-surface p-3 ' + (m.finishState === 'requested' ? 'border-2 border-ink' : 'border border-line')}>
+        <span className="flex min-w-0 flex-grow flex-col gap-1">
+          <span className="text-[15px] font-semibold">Counter {m.order} — {m.name}</span>
+          <span>{m.departed ? <Tag tone="alert">Absent</Tag> : <Tag tone={statusTone[m.finishState] ?? 'neutral'}>{statusLabel[m.finishState] ?? m.finishState}</Tag>}</span>
+        </span>
+        {state.role === 'independent' && m.finishState === 'requested' && <span className="flex gap-2">
+          <Button variant="danger" size="sm" disabled={pending}
+            onClick={() => finish(() => decideTeamFinish(teamId, m.id, false, state.revision, crypto.randomUUID()),
+              'Finish rejected: ' + m.name + ' can count again.')}>Reject</Button>
+          <Button variant="success" size="sm" disabled={pending}
+            onClick={() => finish(() => decideTeamFinish(teamId, m.id, true, state.revision, crypto.randomUUID()),
+              'Finish accepted: ' + m.name + '.')}>Accept</Button>
+        </span>}
+        {state.role === 'independent' && !m.departed && m.finishState !== 'accepted' && <Button variant="quiet" size="sm" disabled={pending}
+          onClick={() => {
             // R08: a counter who left and will not return; their counts stay valid.
             const reason = window.prompt('Mark ' + m.name + ' as absent? They will lose access. Reason:')?.trim()
             if (reason) finish(() => markCounterAbsent(teamId, m.id, reason, state.revision, crypto.randomUUID()),
               m.name + ' marked absent.')
-          }}>Mark absent</button>}
-        {state.role === 'independent' && m.finishState === 'requested' && <span className="flex gap-2">
-          <button disabled={pending} className="bg-slate-900 text-white rounded px-3 py-2"
-            onClick={() => finish(() => decideTeamFinish(teamId, m.id, true, state.revision, crypto.randomUUID()),
-              'Finish accepted: ' + m.name + '.')}>Accept</button>
-          <button disabled={pending} className="border rounded px-3 py-2"
-            onClick={() => finish(() => decideTeamFinish(teamId, m.id, false, state.revision, crypto.randomUUID()),
-              'Finish rejected: ' + m.name + ' can count again.')}>Reject</button>
-        </span>}
+          }}>Mark absent</Button>}
       </div>)}
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <span className="flex flex-col items-center rounded-md bg-ok py-2 text-white"><strong className="font-display text-2xl">{tally.equal}</strong><span className="text-xs font-semibold">Equal</span></span>
+        <span className="flex flex-col items-center rounded-md bg-diff py-2 text-white"><strong className="font-display text-2xl">{tally.different}</strong><span className="text-xs font-semibold">Different</span></span>
+        <span className="flex flex-col items-center rounded-md border border-line bg-surface py-2"><strong className="font-display text-2xl">{tally.waiting}</strong><span className="text-xs font-semibold text-ink-2">Waiting</span></span>
+      </div>
     </div>}
-    {state.phase !== 'setup' && <BuscaClient key={canCount ? 'count' : 'consult'}
-      items={items} readOnly={!canCount} onSubmit={submit} />}
-    {monitor && !unavailable && !['setup', 'counting'].includes(state.phase) && <div className="overflow-x-auto">
-      <h2 className="font-semibold mb-2">Comparison</h2>
-      <table className="w-full text-sm border-collapse">
-        <thead><tr><th className="border p-2">Product</th>
-          {counters.map(m => <th key={m.id} className="border p-2">Counter {m.order} — {m.name}</th>)}
-          <th className="border p-2">Result</th>
-          {reviewing && <th className="border p-2">Recount</th>}</tr></thead>
+
+    {monitor && !unavailable && state.phase === 'counting' && <div className="flex flex-col gap-2">
+      <h2 className="m-0 flex items-center gap-2 font-display text-lg font-bold uppercase tracking-[0.04em]">
+        <span aria-hidden="true" className="cs-live size-2.5 rounded-full bg-ok" />Live counts — not a final result</h2>
+      <div className={tableBox}>
+      <table className="w-full border-collapse text-sm">
+        <thead><tr className="bg-ink text-ground"><th className={th}>Product</th>
+          {counters.map(m => <th key={m.id} className={th}>C{m.order} · {m.name}</th>)}
+          <th className={th}>Status</th></tr></thead>
+        <tbody>{catalog.filter(i => counted.has(i.brand_code)).map(item => {
+          const values = counters.map(m => records.get(item.brand_code + ':' + m.id))
+          const status = values.some(r => !r) ? 'waiting' : new Set(values.map(r => r!.quantity)).size === 1 ? 'equal' : 'different'
+          return <tr key={item.brand_code + ':' + (flash.get(item.brand_code) ?? 0)} data-brand={item.brand_code}
+            className={'border-t border-ground-2 ' + (flash.has(item.brand_code) ? 'cs-flash ' : '') + (status === 'different' ? 'bg-[#FFF4EC]' : '')}>
+            <td className={td}><span className="block font-mono text-xs font-semibold text-ink-2">{item.brand_code}</span>
+              <span className="font-semibold">{item.brand_name}</span></td>
+            {values.map((r, index) => <td key={counters[index].id} className={td}>
+              {r ? <span className={qty + (status === 'different' ? ' text-diff' : '')}>{format(r.quantity, item.brand_code)}</span>
+                : <span className="text-ink-3">Not counted</span>}
+            </td>)}
+            <td className={td}>{status === 'waiting' ? <Tag>Pending counts</Tag>
+              : status === 'equal' ? <Tag tone="ok">Equal</Tag> : <Tag tone="diff">Provisional difference</Tag>}</td>
+          </tr>
+        })}</tbody>
+      </table>
+      </div>
+    </div>}
+
+    {state.phase !== 'setup' && <div className={monitor ? 'mx-auto w-full max-w-lg' : ''}><BuscaClient key={canCount ? 'count' : 'consult'}
+      items={items} readOnly={!canCount} onSubmit={submit} /></div>}
+
+    {monitor && !unavailable && !['setup', 'counting'].includes(state.phase) && <div className="flex flex-col gap-3">
+      <h2 className="m-0 font-display text-lg font-bold uppercase tracking-[0.04em]">Comparison</h2>
+      <div className={tableBox}>
+      <table className="w-full border-collapse text-sm">
+        <thead><tr className="bg-ink text-ground"><th className={th}>Product</th>
+          {counters.map(m => <th key={m.id} className={th}>C{m.order} · {m.name}</th>)}
+          <th className={th}>Result</th>
+          {reviewing && <th className={th}>Recount</th>}</tr></thead>
         <tbody>{comparison.map(row => {
           const item = catalog.find(i => i.brand_code === row.brandCode)
           const decided = row.decision
@@ -301,30 +393,32 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
             : row.status === 'tolerance' && !decided ? 'Within weight tolerance'
             : row.reconciliation ? 'Reconciled ' + format(row.reconciliation.quantity, row.brandCode)
             : 'Needs reconciliation'
+          const tone = resolved(row) ? 'ok' : row.status === 'tolerance' && !decided ? 'info' : 'diff'
           const choosing = row.status === 'tolerance' && !decided && !openRound && state.role === 'independent' && state.phase === 'reconciling'
-          return <tr key={row.brandCode} data-brand={row.brandCode} data-result={result}>
-            <td className="border p-2">{row.brandCode} — {item?.brand_name}</td>
-            {row.cells.map(cell => <td key={cell.membershipId} className="border p-2">
-              {cell.quantity == null ? 'Not counted' : format(cell.quantity, row.brandCode)}
+          return <tr key={row.brandCode} data-brand={row.brandCode} data-result={result}
+            className={'border-t border-ground-2 ' + (tone === 'diff' ? 'bg-[#FFF4EC]' : '')}>
+            <td className={td}><span className="block font-mono text-xs font-semibold text-ink-2">{row.brandCode}</span>
+              <span className="font-semibold">{item?.brand_name}</span></td>
+            {row.cells.map(cell => <td key={cell.membershipId} className={td}>
+              {cell.quantity == null ? <span className="text-ink-3">Not counted</span> : <span className={qty}>{format(cell.quantity, row.brandCode)}</span>}
             </td>)}
-            <td className="border p-2">{result}
-              {choosing && <span className="flex flex-wrap gap-2 mt-1">
+            <td className={td}><div className="flex flex-col items-start gap-2"><Tag tone={tone}>{result}</Tag>
+              {choosing && <span className="flex flex-wrap gap-2">
                 {row.cells.filter((c, i, all) => all.findIndex(o => o.quantity === c.quantity) === i).map(cell =>
-                  <button key={cell.recordId} disabled={pending} className="bg-slate-900 text-white rounded px-3 py-2"
+                  <Button key={cell.recordId} variant="dark" size="sm" disabled={pending}
                     onClick={() => finish(() => decideTeamItem(teamId, row.brandCode, cell.recordId, state.revision, crypto.randomUUID()),
                       'Using ' + format(cell.quantity!, row.brandCode) + ' for ' + row.brandCode + '.')}>
-                    Use {format(cell.quantity!, row.brandCode)}</button>)}
-                <button disabled={pending} className="border rounded px-3 py-2"
+                    Use {format(cell.quantity!, row.brandCode)}</Button>)}
+                <Button variant="outline" size="sm" disabled={pending}
                   onClick={() => finish(() => decideTeamItem(teamId, row.brandCode, null, state.revision, crypto.randomUUID()),
-                    row.brandCode + ' sent to reconciliation.')}>Reconcile</button>
+                    row.brandCode + ' sent to reconciliation.')}>Reconcile</Button>
               </span>}
-              {canReconcile && needsReconciliation(row) && <button disabled={pending}
-                className="block mt-1 bg-slate-900 text-white rounded px-3 py-2"
+              {canReconcile && needsReconciliation(row) && <Button variant="dark" size="sm" disabled={pending}
                 onClick={() => { setNotice(''); setReconciling(row.brandCode) }}>
-                {row.reconciliation ? 'Edit reconciled count' : 'Enter reconciled count'}</button>}
-            </td>
-            {reviewing && <td className="border p-2 text-center">
-              <input type="checkbox" aria-label={'Recount ' + row.brandCode} disabled={pending}
+                {row.reconciliation ? 'Edit reconciled count' : 'Enter reconciled count'}</Button>}
+            </div></td>
+            {reviewing && <td className={td + ' text-center'}>
+              <input type="checkbox" aria-label={'Recount ' + row.brandCode} disabled={pending} className="size-6 accent-ink"
                 checked={selection.has(row.brandCode)} onChange={event => setSelection(current => {
                   const next = new Set(current)
                   if (event.target.checked) next.add(row.brandCode); else next.delete(row.brandCode)
@@ -334,56 +428,47 @@ export function TeamCountClient({ initial, inventory }: { initial: TeamCountStat
           </tr>
         })}</tbody>
       </table>
-      {canReconcile && comparison.length > 0 && <div className="mt-3 space-y-2">
-        <p>{pendingItems === 0 ? 'Every item is resolved.' : pendingItems + ' item(s) still need a decision or reconciled count.'}</p>
-        <button disabled={pending || pendingItems > 0} className="w-full bg-slate-900 text-white rounded-xl py-3 font-semibold disabled:opacity-40"
+      </div>
+      {canReconcile && comparison.length > 0 && <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 border-t border-line bg-ground px-4 py-3">
+        <p className="m-0 text-[15px] font-medium">{pendingItems === 0 ? 'Every item is resolved.' : pendingItems + ' item(s) still need a decision or reconciled count.'}</p>
+        <Button variant="primary" size="lg" full disabled={pending || pendingItems > 0}
           onClick={() => {
             if (!window.confirm('Submit the team result to the admin? Reconciliation will be closed for this team.')) return
             if (submission.current?.revision !== state.revision)
               submission.current = { revision: state.revision, id: crypto.randomUUID() }
             const { revision, id } = submission.current
             finish(() => submitTeamReconciliation(teamId, revision, id), 'Submitted to the admin for review.')
-          }}>Submit to admin</button>
+          }}>Submit to admin</Button>
       </div>}
-      {canReconcile && openRound && <p className="mt-3">Recount round: only the products returned by the admin can be recounted. Other results are kept.</p>}
-      {state.phase === 'admin_review' && state.role !== 'admin' && <p className="mt-3">Waiting for admin review. The submitted result is sealed.</p>}
-      {reviewing && comparison.length > 0 && <div className="mt-3 space-y-2">
-        <p>Accept the sealed result, or select the products the Independent must recount.</p>
-        <button disabled={pending} className="w-full bg-slate-900 text-white rounded-xl py-3 font-semibold disabled:opacity-40"
-          onClick={() => decide(true)}>Accept result</button>
-        <button disabled={pending || selection.size === 0} className="w-full bg-white border border-slate-300 rounded-xl py-3 font-semibold disabled:opacity-40"
-          onClick={() => decide(false)}>{'Return ' + (selection.size ? selection.size + ' ' : '') + 'selected for recount'}</button>
+      {canReconcile && openRound && <p className="m-0 text-[15px]">Recount round: only the products returned by the admin can be recounted. Other results are kept.</p>}
+      {state.phase === 'admin_review' && state.role !== 'admin' && <p className="m-0 text-[15px]">Waiting for admin review. The submitted result is sealed.</p>}
+      {reviewing && comparison.length > 0 && <div className="flex flex-col gap-2 md:flex-row">
+        <Button variant="primary" size="lg" full disabled={pending} onClick={() => decide(true)}>Accept result</Button>
+        <Button variant="outline" size="lg" full disabled={pending || selection.size === 0}
+          onClick={() => decide(false)}>{'Return ' + (selection.size ? selection.size + ' ' : '') + 'selected for recount'}</Button>
       </div>}
-      {state.phase === 'signing' && !signing && <p className="mt-3">Result accepted by the admin. Signature collection is next.</p>}
-      {reviews.length > 0 && <div className="mt-3">
-        <h2 className="font-semibold mb-1">Admin review history</h2>
-        <ul className="text-sm space-y-1">{reviews.map(r => <li key={r.id}>
+      {state.phase === 'signing' && !signing && <p className="m-0 text-[15px]">Result accepted by the admin. Signature collection is next.</p>}
+      {reviews.length > 0 && <div className="flex flex-col gap-1">
+        <Label>Admin review history</Label>
+        <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm">{reviews.map(r => <li key={r.id}>
           {new Date(r.decidedAt).toLocaleString()} — {r.decision === 'accept' ? 'Result accepted'
             : r.decision === 'cancel_signing' ? 'Signature collection cancelled'
             : 'Round ' + r.round + ': returned ' + r.brands.join(', ')}
         </li>)}</ul>
       </div>}
     </div>}
-    {monitor && !unavailable && state.phase === 'counting' && <div className="overflow-x-auto">
-      <h2 className="font-semibold mb-2">Provisional counts — not a reconciled result</h2>
-      <table className="w-full text-sm border-collapse">
-        <thead><tr><th className="border p-2">Product</th>
-          {counters.map(m => <th key={m.id} className="border p-2">Counter {m.order} — {m.name}</th>)}
-          <th className="border p-2">Status</th></tr></thead>
-        <tbody>{catalog.filter(i => counted.has(i.brand_code)).map(item => {
-          const values = counters.map(m => records.get(item.brand_code + ':' + m.id))
-          return <tr key={item.brand_code} data-brand={item.brand_code}>
-            <td className="border p-2">{item.brand_code} — {item.brand_name}</td>
-            {values.map((r, index) => <td key={counters[index].id} className="border p-2">
-              {r ? format(r.quantity, item.brand_code) : 'Not counted'}
-            </td>)}
-            <td className="border p-2">{values.some(r => !r) ? 'Pending counts'
-              : new Set(values.map(r => r!.quantity)).size === 1 ? 'Equal' : 'Provisional difference'}</td>
-          </tr>
-        })}</tbody>
-      </table>
+
+    {state.phase === 'signing' && signing && !unavailable && <div className="mx-auto w-full max-w-lg"><SigningPanel teamId={teamId} signing={signing}
+      isAdmin={state.role === 'admin'} pending={pending} run={finish} /></div>}
+
+    {state.role === 'counter' && canCount && state.membershipId && <div className="sticky bottom-0 -mx-4 border-t border-line bg-ground px-4 py-3">
+      <Button variant="primary" size="lg" full disabled={pending}
+        onClick={() => {
+          if (!window.confirm('Finish your count? You will not be able to add or edit counts unless the Independent rejects it.')) return
+          const membershipId = state.membershipId!
+          finish(() => requestTeamFinish(teamId, membershipId, state.revision, crypto.randomUUID()),
+            'Finish requested. Waiting for the Independent.')
+        }}><FlagIcon />Finish my count</Button>
     </div>}
-    {state.phase === 'signing' && signing && !unavailable && <SigningPanel teamId={teamId} signing={signing}
-      isAdmin={state.role === 'admin'} pending={pending} run={finish} />}
   </section>
 }
