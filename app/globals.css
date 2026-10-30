@@ -1,34 +1,52 @@
 @import "tailwindcss";
 
-/* Design tokens — Count Stock mobile UI
- *
- * --cs-bg            page background      #f1f5f9
- * --cs-surface        card / input bg      #ffffff
- * --cs-dark           header, primary btn  #1e293b
- * --cs-accent         focus ring           #3b82f6
- * --cs-success-bg     success card bg      #f0fdf4
- * --cs-success-border success card border  #bbf7d0
- * --cs-radius-card    card border-radius   12px
- * --cs-radius-input   input border-radius  8px
- * --cs-touch-min      min touch target     56px
- */
-:root {
-  --cs-bg: #f1f5f9;
-  --cs-surface: #ffffff;
-  --cs-dark: #1e293b;
-  --cs-accent: #3b82f6;
-  --cs-success-bg: #f0fdf4;
-  --cs-success-border: #bbf7d0;
-  --cs-radius-card: 12px;
-  --cs-radius-input: 8px;
-  --cs-touch-min: 56px;
+/* "Warehouse floor" visual (approved by Yuri on 2026-10-30): industrial signage,
+ * safety yellow on graphite, concrete background, large numbers.
+ * Counters and Independents use phones only; admins use tablets and laptops.
+ * Status colors also differ in lightness, not hue alone. */
+@theme {
+  --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --font-display: var(--font-barlow), 'Arial Narrow', sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --color-ground: #F2F0EA;      /* page background (concrete) */
+  --color-ground-2: #E4E1D8;    /* segmented controls, progress track */
+  --color-surface: #FFFFFF;     /* cards, inputs */
+  --color-ink: #15171A;         /* text, header, primary button */
+  --color-ink-2: #4A4F57;       /* secondary text on white and ground */
+  --color-ink-3: #5B6068;       /* tertiary text, placeholders (4.5:1 on white) */
+  --color-line: #D9D6CE;        /* borders */
+  --color-line-2: #A8A49A;      /* dashed / inactive borders */
+  --color-safety: #FFC400;      /* main action, current step; always with ink text */
+  --color-ok: #0B6E4F;          /* equal / signed / accepted; white text */
+  --color-diff: #C2410C;        /* different counts; white text */
+  --color-info: #1D4ED8;        /* waiting for someone else */
+  --color-alert: #B42318;       /* rejected / error; white text */
+
+  /* Signage corners: 4px everywhere, tags 2px (Yuri, 30/10). Overrides Tailwind's
+   * scale so older screens follow without editing each class. */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
 }
 
 body {
-  background: var(--cs-bg);
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
 }
 
 /* Prevents iOS Safari from zooming on input focus */
 input, select, textarea {
   font-size: max(16px, 1em);
 }
+
+/* A new count flashes its row once (monitors). */
+@keyframes cs-flash { from { background-color: var(--color-safety); } to { background-color: transparent; } }
+.cs-flash { animation: cs-flash 1.6s ease-out; }
+@keyframes cs-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.cs-live { animation: cs-pulse 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .cs-flash, .cs-live { animation: none; } }

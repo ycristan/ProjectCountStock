@@ -7,6 +7,8 @@ import { readTeamSessionClosing } from '@/actions/team-session'
 import { listarEquipes } from '@/actions/sessao'
 import { EquipesForm } from './_components/EquipesForm'
 import { EquipesGerenciar } from './_components/EquipesGerenciar'
+import { buttonClass } from '@/components/ui'
+import { Icon } from '@/components/icons'
 
 export default async function EquipesPage({
   params,
@@ -32,6 +34,8 @@ export default async function EquipesPage({
     return <>
       <TeamSetupForm sessionId={id} numberOfTeams={Number.isFinite(numEquipes) ? numEquipes : 1}
         savedDraft={saved.draft} credentials={saved.credenciais} />
+      {teams.length > 0 && <Link href={'/admin/sessao/' + id + '/ao-vivo'} className={buttonClass('primary', 'md') + ' mt-4 no-underline'}>
+        <Icon name="live" size={20} />Live count — all teams</Link>}
       <nav className="mt-4 flex flex-col gap-2" aria-label="Team counting monitors">
         {teams.map(team => <Link key={team.id} href={'/team/' + team.id}>Open monitor — {team.team_name}</Link>)}
       </nav>

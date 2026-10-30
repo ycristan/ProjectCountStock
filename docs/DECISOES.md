@@ -180,6 +180,10 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri reprovou o visual: botões que parecem texto, telas genéricas, sem padrão, não pensadas para celular; o monitor perdeu as cores e o "flash" da tela do legado. O escopo e a data dessa padronização visual são decisão pendente de Yuri (prazo de 27/11).
 
 
+## Visual "Chão de armazém" e padrão de navegação (2026-10-30)
+- Yuri aprovou a proposta visual: sinalização industrial, amarelo de segurança sobre grafite, fundo concreto, números grandes. Contadores e Independentes usam só celular (mobile first, linguagem simples, um botão principal por tela); admins usam iPad e notebook (tabela larga ao vivo, com cores e flash).
+- Padrão obrigatório em todas as telas: voltar sempre no canto superior esquerdo, abaixo do cabeçalho, dizendo para onde leva; logo leva ao início do perfil; título abaixo do voltar e ações secundárias à direita; ação principal embaixo e larga no celular. Implementado uma vez em `components/ui.tsx` (`AppHeader`, `PageTop`, `Button`, `Tag`); telas não criam estilo próprio de botão ou navegação.
+- Motivo: no mini-teste os botões pareciam texto, o fluxo ficou confuso e cada tela tinha o voltar num lugar (ou nenhum).
 ## Skills de design e de método (2026-10-30)
 - Yuri desistiu da UI/UX Pro Max (conteúdo genérico, PR #102 fechada) e pediu `frontend-design` (Anthropic, Apache 2.0) e Superpowers (obra, MIT). Copiadas para `.claude/skills/`, porque plugin não carrega na nuvem.
 - Do Superpowers entraram só 4 skills: `systematic-debugging`, `verification-before-completion`, `test-driven-development`, `receiving-code-review`. Ficaram fora brainstorming, planos, worktrees, finalização de branch e o hook de início de sessão. Motivo: gravam specs e planos em `docs/superpowers/` (memória paralela), fazem merge local e impõem um fluxo próprio por cima do CLAUDE.md.
@@ -187,3 +191,11 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Busca de produtos (2026-10-30)
 - Yuri decidiu: a busca acha qualquer parte do nome, do código ou do BIN, ignorando hífen, espaço e maiúsculas ("009", "05" e "T-05" acham TESTE-009 no BIN T-05). Mais próximos primeiro: código ou BIN exato, depois começo do código ou BIN, começo do nome, e o resto. Vale para contador de equipe, Solo e montagem da lista do Solo.
 - Substitui a regra antiga, não documentada, que escolhia o campo pelo primeiro caractere e só olhava o começo de códigos e BINs. Motivo: no teste de Yuri, código e BIN de letras não eram achados.
+
+## Padronização visual de todo o app (2026-10-30)
+- Yuri aprovou o plano completo: cantos de 4px em tudo (também nas telas de equipe), ícone sempre com texto, 5 tipos de botão, amarelo só para a ação principal, cabeçalho único para todos os usuários. Admin em partes: painel e menu novo; Inventory; Sessões e Ajustes. Abas por warehouse ficam para depois porque mudam o download.
+- Tela do Solo aprovada após o teste de Yuri: o cabeçalho mostrava o login (os dois PINs) no lugar do nome. Regra: o cabeçalho nunca mostra login; o Solo mostra o nome digitado. "Finish count" pede confirmação.
+
+## Contagem ao vivo consolidada no fluxo novo (2026-10-30)
+- O fluxo novo trocou, sem decisão registrada, a tela única do admin do fluxo antigo (todas as equipes, colunas por pessoa, linha piscando) por um monitor por equipe. Yuri apontou a regressão e aprovou a tela 5b: todas as equipes numa tabela ao vivo, com placas por equipe, totais e filtros por equipe, status e produto. Prioridade antes do Inventory.
+- Sem coluna de hora da última entrada: a leitura das contagens não traz a hora; incluir exigiria mudar função do banco. As contagens que chegam com a tela aberta sobem para o topo e piscam.

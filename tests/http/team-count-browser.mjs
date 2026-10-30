@@ -21,6 +21,15 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
     {brand_code:codes[3],brand_name:'Count Other '+suffix,bpu:10,pallet_size:5,weight_avg:100,warehouse_id:other.id,brand_active:true},
   ]))
   let stage='setup', contexts=[]
+  // Review screenshots of the synthetic run (first team only); never affect the checks.
+  const shot=async(p,name,phone=true)=>{
+    if(!process.env.SCREENSHOT_DIR)return
+    const {mkdirSync}=await import('node:fs');mkdirSync(process.env.SCREENSHOT_DIR,{recursive:true})
+    const size=p.viewportSize()
+    await p.setViewportSize(phone?{width:390,height:844}:{width:1280,height:800})
+    await p.screenshot({path:process.env.SCREENSHOT_DIR+'/'+name+'.png',fullPage:true}).catch(()=>{})
+    if(size)await p.setViewportSize(size)
+  }
   const person=async(team,member)=>{
     const context=await browser.newContext();contexts.push(context)
     const p=await context.newPage();p.setDefaultTimeout(30000)
@@ -38,21 +47,21 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
     p_pallets:0,p_cases:0,p_units:units,p_weight:false,p_bpu:10,p_pallet_size:5,p_weight_avg:100,p_tare:300,
   })
   const weighing=grams=>({rounds:[{boxes:0,grams}],visualCases:0})
-  const search=async(p,name)=>p.getByPlaceholder('Brand Code (e.g. 6323), Name or BIN (e.g. 40A02)').fill(name)
+  const search=async(p,name)=>p.getByRole('textbox',{name:'Find product'}).fill(name)
   try {
     for(const [index,team] of plan.entries()){
       stage='start and monitor '+index
       const stored=checked(await db.from('teams').select('id').eq('session_id',session.id).eq('team_name',team.name).single())
       await page.goto(base+'/team/'+stored.id)
       await page.getByRole('button',{name:'Start team counting',exact:true}).click()
-      await page.getByText('Phase: counting',{exact:true}).waitFor()
+      await page.locator('[data-phase="counting"]').waitFor()
       assert.equal((await login.rpc('read_team_count',{p_team:stored.id})).data.role,'admin')
       const first=await person(team,team.members[0])
       const second=await person(team,team.members[1])
       const independent=await person(team,team.members.find(m=>m.role==='independent'))
       for(const user of [first,second,independent]){
         await user.p.goto(base+'/team/'+stored.id)
-        await user.p.getByText('Phase: counting',{exact:true}).waitFor()
+        await user.p.locator('[data-phase="counting"]').waitFor()
       }
       assert.ok((await first.client.rpc('start_team_count',{p_team:stored.id,p_revision:0})).error)
       assert.ok((await independent.client.rpc('save_team_count',saveArgs(stored.id))).error)
@@ -64,11 +73,14 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
       assert.equal(await first.p.getByRole('heading',{name:'Active',exact:true}).count(),1)
       assert.equal(await first.p.getByRole('heading',{name:'Inactive',exact:true}).count(),1)
       assert.equal(await first.p.getByRole('button').filter({hasText:codes[3]}).count(),0)
+      if(index===0)await shot(first.p,'01-counter-search')
       await first.p.getByRole('button').filter({hasText:codes[0]}).click()
       const inputs=first.p.locator('input[type="number"]')
       await inputs.nth(0).fill('1');await inputs.nth(1).fill('2');await inputs.nth(2).fill('3')
+      if(index===0)await shot(first.p,'02-count-form')
       await first.p.getByRole('button',{name:'Confirm Count',exact:true}).click()
       await first.p.getByText('7 cases · 3 units',{exact:true}).waitFor()
+      if(index===0)await shot(first.p,'03-count-saved')
       const row=independent.p.locator('tr[data-brand="'+codes[0]+'"]')
       await row.getByText('7+3',{exact:true}).waitFor()
       assert.equal(await row.locator('td').count(),index+4)
@@ -110,13 +122,14 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
       assert.equal(await second.p.getByText('Full Cases (visually confirmed)').count(),0)
       await second.p.locator('input[type="number"]').fill('1')
       await second.p.locator('input[type="text"]').fill('1300')
+      if(index===0)await shot(second.p,'04-weight-form')
       await second.p.getByRole('button',{name:'Confirm Count',exact:true}).click()
       await second.p.getByText('10 cases · 0 units',{exact:true}).waitFor()
       await independent.p.locator('tr[data-brand="'+codes[1]+'"]').getByText('0+0',{exact:true}).waitFor()
       assert.equal(await independent.p.getByRole('button',{name:/Confirm Count|Save Edit/}).count(),0)
       stage='lost successful response '+index
       await first.p.reload()
-      await first.p.getByText('Phase: counting',{exact:true}).waitFor()
+      await first.p.locator('[data-phase="counting"]').waitFor()
       await search(first.p,'Count Active')
       await first.p.getByRole('button').filter({hasText:codes[0]}).click()
       await first.p.getByRole('button',{name:/Edit Count/}).click()
@@ -145,6 +158,21 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await independent.p.evaluate(()=>window.dispatchEvent(new Event('online')))
         stage='reconnection: authoritative recovered row'
         await row.getByText('1+4',{exact:true}).waitFor()
+        await shot(independent.p,'05-independent-monitor')
+        await shot(page,'06-admin-live',false)
+        stage='consolidated live view'
+        const all=await page.context().newPage()
+        await all.goto(base+'/admin/sessao/'+session.id+'/ao-vivo')
+        const allRow=all.locator('tr',{hasText:'Count Active '+suffix})
+        await allRow.getByText('1+4',{exact:true}).first().waitFor()
+        await allRow.getByText(team.name,{exact:true}).waitFor()
+        await shot(all,'06d-admin-all-teams',false)
+        await all.close()
+        if(process.env.SCREENSHOT_DIR){ // admin home while the count runs, in its own tab
+          const home=await page.context().newPage()
+          await home.goto(base+'/admin').then(()=>shot(home,'06b-admin-home',false)).then(()=>shot(home,'06c-admin-home-phone')).catch(()=>{})
+          await home.close()
+        }
         stage='reconnection: failed refresh'
         let blocked=false
         await independent.p.route('**/team/*',async route=>{
@@ -181,6 +209,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await first.p.getByRole('alert').filter({hasText:'Your finish was rejected by the Independent.'}).waitFor()
         await first.p.reload()
         await first.p.getByRole('alert').filter({hasText:'Your finish was rejected by the Independent.'}).waitFor()
+        await shot(first.p,'07-counter-rejected')
         stage='second request and acceptance'
         await requestFinish()
         assert.equal(await page.getByRole('button',{name:/^(Accept|Reject)$/}).count(),0)
@@ -201,7 +230,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         const monitorState=checked(await independent.client.rpc('read_team_count',{p_team:stored.id}))
         checked(await independent.client.rpc('decide_team_finish',{p_team:stored.id,p_membership:secondState.membershipId,
           p_accept:true,p_expected_revision:monitorState.revision,p_command:randomUUID()}))
-        await independent.p.getByText('Phase: reconciling',{exact:true}).waitFor()
+        await independent.p.locator('[data-phase="reconciling"]').waitFor()
         const weightRow=independent.p.locator('tr[data-brand="'+codes[2]+'"]')
         await weightRow.getByText('Within weight tolerance').waitFor()
         await independent.p.locator('tr[data-brand="'+codes[0]+'"][data-result="Needs reconciliation"]').waitFor()
@@ -235,8 +264,9 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         stage='submission to the admin (block 7)'
         independent.p.once('dialog',dialog=>dialog.accept())
         await submitButton.click()
-        await independent.p.getByText('Phase: admin_review',{exact:true}).waitFor()
-        await page.getByText('Phase: admin_review',{exact:true}).waitFor()
+        await independent.p.locator('[data-phase="admin_review"]').waitFor()
+        await page.locator('[data-phase="admin_review"]').waitFor()
+        await shot(page,'08-admin-review',false)
         const result=checked(await db.from('team_result_items').select('brand_code,quantity_units,resolution').eq('team_id',stored.id))
         assert.deepEqual(Object.fromEntries(result.map(r=>[r.brand_code,r.quantity_units+':'+r.resolution])),
           {[codes[0]]:'15:reconciled',[codes[1]]:'0:reconciled',[codes[2]]:'49:weight_tolerance'})
@@ -248,7 +278,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await page.getByRole('checkbox',{name:'Recount '+codes[1],exact:true}).check()
         page.once('dialog',dialog=>dialog.accept())
         await returnButton.click()
-        await independent.p.getByText('Phase: reconciling',{exact:true}).waitFor()
+        await independent.p.locator('[data-phase="reconciling"]').waitFor()
         await independent.p.locator('tr[data-brand="'+codes[1]+'"][data-result="Recount requested"]').waitFor()
         await independent.p.locator('tr[data-brand="'+codes[0]+'"][data-result="Reconciled 1+5"]').waitFor()
         assert.equal(await independent.p.locator('tr[data-brand="'+codes[0]+'"]').getByRole('button').count(),0,'products not returned stay closed')
@@ -260,12 +290,12 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await independent.p.locator('tr[data-brand="'+codes[1]+'"][data-result="Recounted 0+3"]').waitFor()
         independent.p.once('dialog',dialog=>dialog.accept())
         await submitButton.click()
-        await page.getByText('Phase: admin_review',{exact:true}).waitFor()
+        await page.locator('[data-phase="admin_review"]').waitFor()
         await page.getByText(/Round 1: returned /).waitFor()
         stage='admin acceptance (block 8)'
         page.once('dialog',dialog=>dialog.accept())
         await page.getByRole('button',{name:'Accept result',exact:true}).click()
-        await independent.p.getByText('Phase: signing',{exact:true}).waitFor()
+        await independent.p.locator('[data-phase="signing"]').waitFor()
         const accepted=checked(await db.from('team_flows').select('result_version_id').eq('team_id',stored.id).single())
         const sealed=checked(await db.from('team_result_items').select('brand_code,quantity_units,resolution').eq('version_id',accepted.result_version_id))
         assert.deepEqual(Object.fromEntries(sealed.map(r=>[r.brand_code,r.quantity_units+':'+r.resolution])),
@@ -306,6 +336,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await independent.p.getByText('All signatures received. Waiting for the admin to close the team.',{exact:true}).waitFor()
         assert.equal(checked(await db.from('team_flows').select('phase').eq('team_id',stored.id).single()).phase,'signing','last signature does not close')
         checked(await independent.client.rpc('read_team_count',{p_team:stored.id}))
+        await shot(page,'09-signatures-complete')
         page.once('dialog',dialog=>dialog.accept())
         await page.getByRole('button',{name:'Confirm and close team',exact:true}).click()
         // The admin is taken to the session closing screen, not asked to sign in again.
