@@ -93,6 +93,17 @@ export async function verifyTeamSetupBrowser({base,db,status,sql,login,envelopes
     assert.equal(await countTeams(),3)
     const final=await read()
     assert.ok(JSON.stringify(final.plan.map(t=>[t.pin,t.members.map(m=>m.pin)]))===firstPlan)
+    stage='printable login cards with QR code'
+    await page.getByRole('link',{name:'Print login cards',exact:true}).click()
+    await page.waitForURL(base+'/admin/sessao/'+session.id+'/imprimir')
+    await page.getByText('12 cards').waitFor()
+    for(const team of final.plan){
+      await page.getByRole('heading',{name:team.name,exact:true}).waitFor()
+      for(const m of team.members)assert.equal(await page.getByText(m.pin,{exact:true}).count()>0,true,'card shows the personal PIN')
+    }
+    assert.equal(await page.locator('svg').count()>=12,true,'one QR code per card')
+    await page.goBack()
+    await page.getByRole('heading',{name:'Logins Generated',exact:true}).waitFor()
     for(const [index,team] of final.plan.entries()){
       const stored=checked(await db.from('teams').select('id,session_id').eq('session_id',session.id).eq('team_name',team.name).single())
       const members=checked(await db.from('team_memberships').select('role,display_order,user_id').eq('team_id',stored.id))
@@ -124,6 +135,7 @@ export async function verifyTeamSetupBrowser({base,db,status,sql,login,envelopes
         await p.getByRole('button',{name:'Log In',exact:true}).click()
         await p.waitForURL(base+'/team')
         await p.getByText(team.name+' — '+wh.name,{exact:true}).waitFor()
+        await p.getByText('Hello, '+person.name,{exact:true}).waitFor()
         await p.getByText(person.name+' — '+(person.role==='independent'?'Independent':'Counter 1'),{exact:true}).waitFor()
         assert.equal(await p.getByRole('button',{name:/Confirm Count|Add to Count/}).count(),0)
         await p.goto(base+'/busca')

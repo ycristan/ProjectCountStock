@@ -14,7 +14,7 @@ const KEYS: Record<string, string[]> = {
   team_recount_items: ['review_id', 'brand_code'], teams: ['id'], team_memberships: ['id'], team_slot_assignments: ['id'],
   team_count_records: ['id'], team_count_record_history: ['record_id', 'revision'], team_reconciliations: ['id'],
   team_item_decisions: ['id'], team_finish_events: ['id'], team_departures: ['id'], team_admin_reviews: ['id'],
-  team_confirmations: ['id'],
+  team_confirmations: ['id'], team_flows: ['team_id'],
 }
 async function all<T>(db: Db, table: string, columns: string, key: string, values: string[]): Promise<T[]> {
   const out: T[] = []
@@ -60,7 +60,7 @@ export async function loadTeamAudit(db: Db, sessionId: string) {
   const teamIds = teams.map(t => t.id)
   if (!teamIds.length) return null
   const teamName = new Map(teams.map(t => [t.id, t.team_name]))
-  const [members, assignments, records, reconciliations, decisions, finishes, departures, reviews, recountItems, confirmations] =
+  const [members, assignments, records, reconciliations, decisions, finishes, departures, reviews, recountItems, confirmations, flows] =
     await Promise.all([
       all<Member>(db, 'team_memberships', 'id,team_id,user_id,display_name', 'team_id', teamIds),
       all<{ id: string; membership_id: string }>(db, 'team_slot_assignments', 'id,membership_id', 'team_id', teamIds),
@@ -84,6 +84,7 @@ export async function loadTeamAudit(db: Db, sessionId: string) {
       all<{ team_id: string; membership_id: string; kind: string; reason: string | null; recorded_by: string
         witness_user_id: string | null; recorded_at: string; witnessed_at: string | null }>(db, 'team_confirmations',
         'team_id,membership_id,kind,reason,recorded_by,witness_user_id,recorded_at,witnessed_at', 'team_id', teamIds),
+      all<{ team_id: string; closed_by: string | null; closed_at: string | null }>(db, 'team_flows', 'team_id,closed_by,closed_at', 'team_id', teamIds),
     ])
   const history = await all<{ record_id: string; revision: number; pallets: number; cases: number; units: number
     quantity_units: number; method: string; weighing: AuditCount['weighing']; recorded_at: string; superseded_at: string }>(db,
@@ -96,7 +97,7 @@ export async function loadTeamAudit(db: Db, sessionId: string) {
   const byMember = new Map(members.map(m => [m.id, m.display_name]))
   const byUser = new Map(members.map(m => [m.user_id, m.display_name]))
   const adminIds = [...new Set([...reviews.map(r => r.decided_by), ...confirmations.flatMap(c => [c.recorded_by, c.witness_user_id]),
-    closing?.acknowledged_by].filter((id): id is string => !!id && !byUser.has(id)))]
+    ...flows.map(f => f.closed_by), closing?.acknowledged_by].filter((id): id is string => !!id && !byUser.has(id)))]
   const service = createAdminClient()
   const adminName = new Map<string, string>()
   for (const id of adminIds) {
@@ -140,6 +141,8 @@ export async function loadTeamAudit(db: Db, sessionId: string) {
       return c.witness_user_id && c.witnessed_at
         ? [row, { team, at: c.witnessed_at, person: person(c.witness_user_id), action: 'Absence witnessed', detail: subject }] : [row]
     }),
+    ...flows.filter(f => f.closed_at).map(f => ({ team: teamName.get(f.team_id)!, at: f.closed_at!, person: person(f.closed_by),
+      action: 'Team closed by admin', detail: '' })),
     ...(closing ? [{ team: '(session)', at: closing.acknowledged_at, person: person(closing.acknowledged_by),
       action: 'Uncounted list acknowledged; session closed', detail: closing.uncounted_count + ' product(s) not counted' }] : []),
   ]
