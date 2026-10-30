@@ -41,7 +41,6 @@ Sistema web de contagem física de inventário cega em warehouse. Yuri é gerent
 
 ## Qualidade
 - Skill `ponytail` (nível full) antes e durante a escrita de código, e `ponytail-review` no diff ao concluir. Ambas ficam em `.claude/skills/`, porque plugin não carrega em sessão na nuvem. Menos código nunca justifica remover autorização, histórico, testes ou observabilidade.
-- Telas: skill `ui-ux-pro-max` (`.claude/skills/`) como consulta de acessibilidade, toque e formulários. Ela não conhece warehouse e sugere padrão de site de marketing; as regras de tela aprovadas por Yuri e o visual do legado prevalecem.
 - Reutilizar componentes existentes (`CountForm`, `SearchInput`, `ResultList` etc.); divergência visual entre telas é inaceitável.
 - Nunca pular, desativar ou inverter teste para ficar verde. Build verde não prova fluxo de negócio.
 - Não afirmar que algo foi validado sem evidência. Separar sempre: especificado, implementado, testado, publicado.
