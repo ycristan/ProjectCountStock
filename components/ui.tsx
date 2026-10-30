@@ -78,7 +78,7 @@ export function AppHeader({ name, detail, nav, area, status }: {
       <div className="order-4 flex w-full items-center gap-3 rounded-md bg-[#23262A] px-3 py-2 md:order-none md:ml-auto md:w-auto md:bg-transparent md:p-0">
         <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-md bg-safety font-display text-lg font-bold text-ink">{initials(shown)}</span>
         <span className="flex min-w-0 flex-grow flex-col leading-tight">
-          <span className="truncate text-base font-semibold">{shown}</span>
+          <span className="truncate text-base font-semibold">Hello, {shown}</span>
           {detail && <span className="truncate text-[13px] text-[#C9C6BE]">{detail}</span>}
         </span>
         {status}
