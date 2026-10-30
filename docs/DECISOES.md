@@ -179,3 +179,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Cartões impressos com QR e PINs (um por pessoa, guardado até o fim) voltam a ser o "Print" das sessões novas: no fluxo novo tinham virado só a tabela. Cabeçalho com o nome de quem está logado volta em todas as telas de equipe.
 - Yuri reprovou o visual: botões que parecem texto, telas genéricas, sem padrão, não pensadas para celular; o monitor perdeu as cores e o "flash" da tela do legado. O escopo e a data dessa padronização visual são decisão pendente de Yuri (prazo de 27/11).
 
+
+## Skill de UI/UX (2026-10-30)
+- Yuri pediu a skill UI/UX Pro Max (uupm.cc, MIT). Instalada só a parte principal em `.claude/skills/ui-ux-pro-max/`, porque plugin não carrega na nuvem; as outras 6 skills do pacote (slides, banner, marca, fontes) ficaram fora.
+- Uso: consulta de acessibilidade, toque e formulários para a proposta visual das telas de equipe. Não decide o visual: num teste ela sugeriu layout de landing page para contagem de warehouse.
