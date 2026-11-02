@@ -14,7 +14,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Em andamento
 - PR #101 (visual das telas de equipe e Solo) e PR #105 (painel, contagem ao vivo consolidada, Inventory): CI verde, ainda sem merge. Teste de Yuri em 02/11 no preview achou o Finish cobrindo o Confirm: corrigir antes do merge da #101.
-- Próximos passos e decisões pendentes: lista em TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11".
+- Próximos passos: lista em TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11" (decisões de 02/11 em DECISOES).
 - Depois do merge da #101: Yuri gera novo PIN do Solo (o atual apareceu na tela no teste de 30/10).
 
 ## Também em andamento
@@ -23,7 +23,8 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 - O conector da Vercel não grava variáveis (403): produção é republicada por merge na `main`.
 
 ## Decisões pendentes de Yuri
-- Iniciar a sessão inteira de uma vez; assinatura no aparelho de cada um (muda R11); barra de navegação inferior. Detalhes em TEAM_COUNT_PLAN.md (02/11).
+- Aprovar a proposta visual da barra de navegação inferior, quando entregue.
+- Regra do CLAUDE.md sobre teste no preview: exceção para testes manuais de Yuri na warehouse TESTE (proposta do agente em 02/11).
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 
 ## A verificar

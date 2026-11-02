@@ -199,3 +199,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Contagem ao vivo consolidada no fluxo novo (2026-10-30)
 - O fluxo novo trocou, sem decisão registrada, a tela única do admin do fluxo antigo (todas as equipes, colunas por pessoa, linha piscando) por um monitor por equipe. Yuri apontou a regressão e aprovou a tela 5b: todas as equipes numa tabela ao vivo, com placas por equipe, totais e filtros por equipe, status e produto. Prioridade antes do Inventory.
 - Sem coluna de hora da última entrada: a leitura das contagens não traz a hora; incluir exigiria mudar função do banco. As contagens que chegam com a tela aberta sobem para o topo e piscam.
+
+## Teste de Yuri no preview: início, assinaturas e navegação (2026-11-02)
+- O admin inicia a sessão de equipes inteira com um botão; uma equipe criada depois do início ainda pode ser iniciada sozinha (raro).
+- Assinatura no próprio aparelho, com o PIN pessoal: contadores ao mesmo tempo, Independente depois, admin confirma e encerra. Substitui a assinatura de todos num único aparelho (R11 de 29/10). Botão "Sign with Personal PIN Code", para não confundir com o PIN da equipe. Motivo: cada um confirma o encerramento da própria contagem, sem aglomerar todos num aparelho.
+- Barra de navegação inferior no celular: proposta visual primeiro, aprovação de Yuri antes do código.
