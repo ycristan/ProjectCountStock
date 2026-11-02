@@ -207,3 +207,6 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 
 ## Assinatura desenhada descartada (2026-11-02)
 - Com a assinatura no próprio aparelho, a assinatura oficial é o PIN pessoal. A assinatura desenhada (dedo/caneta), antes melhoria futura, sai do backlog.
+
+## PIN do Solo mantido (2026-11-02)
+- Yuri decidiu não trocar o PIN do Solo que apareceu no cabeçalho do preview em 30/10: só ele viu. O cabeçalho já não mostra login (#101).
