@@ -204,3 +204,6 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - O admin inicia a sessão de equipes inteira com um botão; uma equipe criada depois do início ainda pode ser iniciada sozinha (raro).
 - Assinatura no próprio aparelho, com o PIN pessoal: contadores ao mesmo tempo, Independente depois, admin confirma e encerra. Substitui a assinatura de todos num único aparelho (R11 de 29/10). Botão "Sign with Personal PIN Code", para não confundir com o PIN da equipe. Motivo: cada um confirma o encerramento da própria contagem, sem aglomerar todos num aparelho.
 - Barra de navegação inferior no celular: proposta visual primeiro, aprovação de Yuri antes do código.
+
+## Assinatura desenhada descartada (2026-11-02)
+- Com a assinatura no próprio aparelho, a assinatura oficial é o PIN pessoal. A assinatura desenhada (dedo/caneta), antes melhoria futura, sai do backlog.

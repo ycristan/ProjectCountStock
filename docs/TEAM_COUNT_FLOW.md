@@ -67,7 +67,7 @@ Fora do primeiro lançamento. Cada equipe tem seu próprio Independente.
 
 ## R11 — Assinaturas e ausências
 Admin aceita resultados e inicia coleta, sem lançamento de quantidades.
-Revisado em 2026-11-02 (substitui 2026-10-29): cada pessoa assina no próprio aparelho, com o próprio PIN pessoal. Contadores assinam ao mesmo tempo, em qualquer ordem; o independente só depois de todos os contadores (ou de suas ausências formalizadas); por fim o admin confirma o encerramento como admin (R12). Cada aparelho mostra só o botão de quem está logado e o andamento dos demais. Texto do botão: SIGN WITH PERSONAL PIN CODE (não confundir com o PIN da equipe). Assinatura desenhada (dedo/caneta) é melhoria futura, fora do primeiro lançamento. Não adicionar seleção prévia obrigatória de pessoa pelo admin.
+Revisado em 2026-11-02 (substitui 2026-10-29): cada pessoa assina no próprio aparelho, com o próprio PIN pessoal. Contadores assinam ao mesmo tempo, em qualquer ordem; o independente só depois de todos os contadores (ou de suas ausências formalizadas); por fim o admin confirma o encerramento como admin (R12). Cada aparelho mostra só o botão de quem está logado e o andamento dos demais. Texto do botão: SIGN WITH PERSONAL PIN CODE (não confundir com o PIN da equipe). Assinatura desenhada (dedo/caneta) descartada em 2026-11-02: a assinatura oficial é o PIN pessoal. Não adicionar seleção prévia obrigatória de pessoa pelo admin.
 Confirmar por PIN; registrar modalidade, pessoa, equipe, momento e versão dos resultados. Não criar imagem de assinatura genérica.
 Contador ausente: independente registra motivo e confirma formalmente, SEM testemunha.
 Independente ausente: admin formaliza motivo e testemunha identificada (outro contador ou admin) assina.
