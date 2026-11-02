@@ -23,6 +23,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Decisões pendentes de Yuri
 - Aprovar a proposta visual da barra de navegação inferior, quando entregue.
+- Tolerância em gramas (`default_tolerance_g`, `tolerance_g`): só o fluxo antigo usa; remover com ele depois de 02/01.
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 
 ## A verificar

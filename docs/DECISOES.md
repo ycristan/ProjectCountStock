@@ -221,3 +221,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri apontou que Solo do admin, Sessions, Audit e Settings ainda estavam no visual antigo (cinzas e azuis padrão do Tailwind). Foram migradas todas as telas que ainda usavam esse estilo: admin (Solo, Sessions, Audit, Settings, nova sessão, equipes, reconciliação, Combinação, impressão, recuperação) e contador (monitor, reconciliação, finalizar).
 - Regra: tela nova ou antiga usa só `components/ui.tsx` (`PageTop`, `Button`, `Tag`, `Notice`, `cardClass`, `inputClass`, tabela com cabeçalho grafite, controle segmentado). Cor de classe numerada do Tailwind (`slate`, `blue`...) não se usa mais.
 - Textos, papéis e campos que os testes de navegador leem foram mantidos (`Next →`, `← Back`, `Logins Generated`...). O cartão de impressão A4 continua preto e branco de propósito.
+
+## Tolerância de peso fora do Settings (2026-11-02)
+- Yuri confirmou os 2% fixos da R05 e mandou tirar do Settings o campo "Default Weight Tolerance (g)": o fluxo novo nunca o leu. O valor já salvo (`app_settings.default_tolerance_g`) fica intacto e continua sendo copiado para sessões novas, porque o fluxo antigo (Plano B de 02/01) ainda o usa.
+- Remover a coluna e o uso no fluxo antigo junto com a retirada dele, depois de 02/01.
