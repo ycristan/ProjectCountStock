@@ -15,6 +15,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 ## Em andamento
 - Paleta Next Chain e padronização de todas as telas: branch `claude/determined-ritchie-o2ip4w`, aguarda PR e teste visual.
 - Barra inferior (proposta B), Hold to finish e confirmação do app: branch `claude/bottom-nav-hold-finish` (sobre a anterior), aguarda PR e teste no celular.
+- Próximo: investigar a demora de 3 a 4 s ao abrir os menus do admin (Inventory e outros), medindo antes de mudar (proxy, layout, consultas, região Vercel/Supabase, tamanho da lista). Virtualização e abas por warehouse são hipóteses, não diagnóstico.
 - Próximo: itens 2, 3, 4 e 6 de TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11", em PRs pequenas (iniciar a sessão inteira; tabela depois do encerramento; assinatura no próprio aparelho; teste com 9 usuários).
 
 ## Também em andamento
