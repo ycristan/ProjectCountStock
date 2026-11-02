@@ -13,7 +13,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 `main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), ordem de assinatura de 29/10 (migration `team_flow_admin_close` aplicada), busca por qualquer parte do nome, código ou BIN (#104). Backup diário desde 28/10. Solo é usado quase todo dia.
 
 ## Em andamento
-- PR #101 (visual das telas de equipe e Solo) e PR #105 (painel, contagem ao vivo consolidada, Inventory): CI verde, ainda sem merge. Teste de Yuri em 02/11 no preview achou o Finish cobrindo o Confirm: corrigir antes do merge da #101.
+- PR #101 (visual das telas de equipe e Solo) e PR #105 (painel, contagem ao vivo consolidada, Inventory): CI verde, ainda sem merge. Teste de Yuri em 02/11 achou o Finish cobrindo o Confirm: corrigido nas duas PRs (Finish só na lista de busca). Prontas para novo teste e merge.
 - Próximos passos: lista em TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11" (decisões de 02/11 em DECISOES).
 - Depois do merge da #101: Yuri gera novo PIN do Solo (o atual apareceu na tela no teste de 30/10).
 
