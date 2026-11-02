@@ -105,6 +105,8 @@ jobs:
         run: node tests/database/team-flow-concurrency.mjs
 
       - name: HTTP export and real SDK transport integration (disposable only)
+        env:
+          SCREENSHOT_DIR: ${{ runner.temp }}/screens
         run: |
           supabase status --help
           npm ci --ignore-scripts
@@ -114,6 +116,15 @@ jobs:
           /tmp/count-stock-browser/node_modules/.bin/playwright install --with-deps chromium
           node tests/http/inventory-export.mjs
           node tests/http/team-finish.mjs
+
+      # Screens of the synthetic run, for review before merge (no real data).
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screens
+          path: ${{ runner.temp }}/screens
+          retention-days: 14
+          if-no-files-found: ignore
 
       - name: Stop disposable Supabase
         if: always()

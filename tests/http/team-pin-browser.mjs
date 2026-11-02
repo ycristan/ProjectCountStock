@@ -80,7 +80,7 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
     assert.equal(await ind.getByRole('link',{name:'Finalise',exact:true}).count(),0)
     await ind.getByRole('link',{name:'Products',exact:true}).click()
     await ind.getByText('Product consultation only.',{exact:false}).waitFor()
-    await ind.getByPlaceholder('Brand Code (e.g. 6323), Name or BIN (e.g. 40A02)').fill('Browser proof')
+    await ind.getByRole('textbox',{name:'Find product'}).fill('Browser proof')
     await ind.getByRole('button',{name:new RegExp(code)}).click()
     assert.equal(await ind.getByRole('button',{name:/Add to Count|Edit Count|Confirm Count/}).count(),0)
     await ind.getByRole('button',{name:'Cancel',exact:true}).click()
@@ -94,7 +94,7 @@ export async function verifyTeamPinBrowser({base,db,status,sql}) {
       const counter=await pageForRole()
       await pinLogin(counter,rows[i][1],rows[i][4])
       await counter.waitForURL(base+'/busca')
-      await counter.getByPlaceholder('Brand Code (e.g. 6323), Name or BIN (e.g. 40A02)').fill('Browser proof')
+      await counter.getByRole('textbox',{name:'Find product'}).fill('Browser proof')
       await counter.getByRole('button',{name:new RegExp(code)}).click()
       // Fresh counter must not see the other's saved value.
       assert.equal(await counter.getByText('Registered Count',{exact:true}).count(),0)

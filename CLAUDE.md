@@ -22,7 +22,7 @@ Sistema web de contagem física de inventário cega em warehouse. Yuri é gerent
 - Exceção: PR que altera só `docs/` (sem código, workflow, migration ou `CLAUDE.md`) o agente pode mergear sozinho depois do CI verde.
 - Merge com squash.
 - Supabase: toda mudança de schema, RLS ou função vira migration versionada em `supabase/migrations/`. Migration não é aplicada pelo merge; a PR diz se há aplicação manual e ela só ocorre com autorização.
-- Preview da Vercel usa o MESMO banco da produção: nunca criar sessões, equipes, contagens ou alterar cadastro ali para teste.
+- Preview da Vercel usa o MESMO banco da produção. Testes manuais de Yuri no preview só na warehouse TESTE. O agente nunca cria dados no preview nem em produção para teste: usa banco descartável.
 - Testes com dados sintéticos em banco descartável (runner do GitHub ou container do agente).
 - Após aprovar uma entrega, executar implementação, correções e testes sem pedir "continue" a cada passo. Parar só para decisão de negócio nova, acesso, custo ou autorização de produção.
 - Ao fechar cada entrega, dizer explicitamente "TESTE MANUAL NECESSÁRIO" (com ambiente, perfil, passos e resultado esperado) ou "Nenhum teste manual necessário".
@@ -41,7 +41,7 @@ Sistema web de contagem física de inventário cega em warehouse. Yuri é gerent
 
 ## Qualidade
 - Skill `ponytail` (nível full) antes e durante a escrita de código, e `ponytail-review` no diff ao concluir. Ambas ficam em `.claude/skills/`, porque plugin não carrega em sessão na nuvem. Menos código nunca justifica remover autorização, histórico, testes ou observabilidade.
-- Telas novas ou redesenhadas: skill `frontend-design`. O briefing é a operação de warehouse (celular, uma mão, luva, pouca luz) e o visual do legado, nunca "moderno" genérico.
+- Telas novas ou redesenhadas: skill `frontend-design`. O briefing é a operação de warehouse (contadores e Independente só no celular; admin em tablet ou notebook) e o visual do legado, nunca "moderno" genérico.
 - Bug ou teste falhando: `systematic-debugging`. Antes de dizer "pronto": `verification-before-completion`. Revisão recebida: `receiving-code-review`. Código novo: `test-driven-development`. Vêm do Superpowers; o resto dele ficou fora porque grava planos fora de `docs/` e faz merge local, o que este arquivo proíbe.
 - Reutilizar componentes existentes (`CountForm`, `SearchInput`, `ResultList` etc.); divergência visual entre telas é inaceitável.
 - Nunca pular, desativar ou inverter teste para ficar verde. Build verde não prova fluxo de negócio.

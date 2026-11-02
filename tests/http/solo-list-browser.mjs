@@ -48,8 +48,8 @@ export async function verifySoloListBrowser({db,base,cookies}) {
     assert.equal(await active.getByRole('button').count(),1)
     assert.equal(await inactive.getByRole('button').count(),9,'results must not be truncated at eight')
     assert.deepEqual(await page.getByRole('heading',{level:3}).allTextContents(),['Item list','Active','Inactive'])
-    assert.equal(await active.getByRole('button').evaluate(el=>el.classList.contains('bg-green-50')),true)
-    assert.equal(await inactive.getByRole('button').first().evaluate(el=>el.classList.contains('bg-red-50')),true)
+    assert.equal(await active.getByRole('button').getAttribute('data-active'),'true','active rows are marked active')
+    assert.equal(await inactive.getByRole('button').first().getAttribute('data-active'),'false','inactive rows are marked inactive')
     assert.doesNotMatch(await page.locator('body').innerText(),/solo-list-other/)
 
     // Inactive selection, exclusion of an already selected code, removal and re-add.
