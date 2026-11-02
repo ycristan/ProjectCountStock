@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 import type { ItemBusca } from '@/actions/contagem'
 import { AppHeader, Tag } from '@/components/ui'
+import { SOLO_NAV } from '../nav'
 import { SoloCounterClient } from './_components/SoloCounterClient'
 
 export default async function SoloCounterPage({ params }: { params: Promise<{ id: string }> }) {
@@ -64,7 +65,7 @@ export default async function SoloCounterPage({ params }: { params: Promise<{ id
     })
 
   return <>
-    <AppHeader name={session.counter_name ?? 'Solo counter'} detail={'Solo count, ' + session.title}
+    <AppHeader name={session.counter_name ?? 'Solo counter'} items={SOLO_NAV} detail={'Solo count, ' + session.title}
       status={<Tag tone="brand">Counting</Tag>} />
     <main className="mx-auto max-w-lg px-4 pt-4">
       <SoloCounterClient

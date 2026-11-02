@@ -10,13 +10,16 @@ import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
 import { CountForm } from '@/app/(counter)/busca/_components/CountForm'
 import { markCounterAbsent, readTeamSigning } from '@/actions/team-signing'
 import { SigningPanel } from './SigningPanel'
+import { useConfirm } from '@/components/confirm'
+import { HoldButton } from '@/components/hold-button'
 import { PHASE_LABEL, PHASE_STEPS } from '@/lib/team-count-types'
-import { Button, FlagIcon, Label, PageTop, Tag } from '@/components/ui'
+import { Button, Label, PageTop, Tag } from '@/components/ui'
 
 export function TeamCountClient({ initial, inventory, back }: {
   initial: TeamCountState; inventory: ItemBusca[]; back: { href: string; label: string }
 }) {
   const [state, setState] = useState(initial)
+  const [confirm, confirmDialog] = useConfirm()
   const [catalog, setCatalog] = useState(inventory)
   const [comparison, setComparison] = useState<TeamComparisonItem[]>([])
   const [reviews, setReviews] = useState<TeamReview[]>([])
@@ -162,11 +165,12 @@ export function TeamCountClient({ initial, inventory, back }: {
     : row.status === 'equal' || (row.status === 'tolerance' && row.decision?.decision === 'accept_value')
     || (reconcilable(row) && !!row.reconciliation)
   const reviewing = !unavailable && state.role === 'admin' && state.phase === 'admin_review'
-  function decide(accept: boolean) {
+  async function decide(accept: boolean) {
     const brands = accept ? [] : [...selection].sort()
-    const question = accept ? 'Accept this team result? Signature collection starts next.'
-      : 'Return ' + brands.length + ' product(s) to the Independent for recount?'
-    if (!window.confirm(question)) return
+    const ok = await confirm(accept
+      ? { title: 'Accept result?', text: 'Signature collection starts next.', confirm: 'Accept result' }
+      : { title: 'Return for recount?', text: 'Return ' + brands.length + ' product(s) to the Independent for recount?', confirm: 'Return' })
+    if (!ok) return
     // A retry of the same decision reuses its command; the database returns the original receipt.
     const key = state.revision + ':' + accept + ':' + brands.join(',')
     if (review.current?.key !== key) review.current = { key, id: crypto.randomUUID() }
@@ -233,6 +237,7 @@ export function TeamCountClient({ initial, inventory, back }: {
   })()
 
   return <section data-phase={state.phase} className={'mx-auto flex flex-col gap-4 ' + (monitor ? 'max-w-6xl' : 'max-w-lg')}>
+    {confirmDialog}
     <PageTop back={back} kicker={state.warehouseName} title={state.teamName}
       actions={<Button variant="quiet" size="sm" onClick={() => { void refresh(); void reloadCatalog() }}>Refresh team</Button>} />
 
@@ -336,14 +341,15 @@ export function TeamCountClient({ initial, inventory, back }: {
 
     {state.phase !== 'setup' && <div className={monitor ? 'mx-auto w-full max-w-lg' : ''}><BuscaClient key={canCount ? 'count' : 'consult'}
       items={items} readOnly={!canCount} onSubmit={submit}
-      footerSlot={state.role === 'counter' && canCount && state.membershipId && <div className="sticky bottom-0 -mx-4 border-t border-line bg-ground px-4 py-3">
-        <Button variant="primary" size="lg" full disabled={pending}
-          onClick={() => {
-            if (!window.confirm('Finish your count? You will not be able to add or edit counts unless the Independent rejects it.')) return
-            const membershipId = state.membershipId!
-            finish(() => requestTeamFinish(teamId, membershipId, state.revision, crypto.randomUUID()),
-              'Finish requested. Waiting for the Independent.')
-          }}><FlagIcon />Finish my count</Button>
+      footerSlot={state.role === 'counter' && canCount && state.membershipId && <div className="sticky bottom-[var(--bottom-bar)] -mx-4 border-t border-line bg-ground px-4 py-3">
+        <HoldButton label="Hold to finish" disabled={pending} onHeld={async () => {
+          const ok = await confirm({ title: 'Finish my count?', confirm: 'Confirm finish',
+            text: 'You will not be able to add or edit counts unless the Independent rejects it.' })
+          if (!ok) return
+          const membershipId = state.membershipId!
+          finish(() => requestTeamFinish(teamId, membershipId, state.revision, crypto.randomUUID()),
+            'Finish requested. Waiting for the Independent.')
+        }} />
       </div>} /></div>}
 
     {monitor && !unavailable && !['setup', 'counting'].includes(state.phase) && <div className="flex flex-col gap-3">
@@ -400,11 +406,12 @@ export function TeamCountClient({ initial, inventory, back }: {
         })}</tbody>
       </table>
       </div>
-      {canReconcile && comparison.length > 0 && <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 border-t border-line bg-ground px-4 py-3">
+      {canReconcile && comparison.length > 0 && <div className="sticky bottom-[var(--bottom-bar)] -mx-4 flex flex-col gap-2 border-t border-line bg-ground px-4 py-3">
         <p className="m-0 text-[15px] font-medium">{pendingItems === 0 ? 'Every item is resolved.' : pendingItems + ' item(s) still need a decision or reconciled count.'}</p>
         <Button variant="primary" size="lg" full disabled={pending || pendingItems > 0}
-          onClick={() => {
-            if (!window.confirm('Submit the team result to the admin? Reconciliation will be closed for this team.')) return
+          onClick={async () => {
+            const ok = await confirm({ title: 'Submit to admin?', text: 'Reconciliation will be closed for this team.', confirm: 'Submit' })
+            if (!ok) return
             if (submission.current?.revision !== state.revision)
               submission.current = { revision: state.revision, id: crypto.randomUUID() }
             const { revision, id } = submission.current

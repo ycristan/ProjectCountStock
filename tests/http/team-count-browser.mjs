@@ -6,6 +6,11 @@ import { createClient } from '@supabase/supabase-js'
 import * as XLSX from 'xlsx'
 import { pinPassword } from '../../lib/pin-credentials.ts'
 
+// Confirmations are an in-app dialog (components/confirm.tsx), not the browser's box.
+const confirmInApp=async p=>{await p.locator('dialog[open] [data-confirm]').click();await p.locator('dialog[open]').waitFor({state:'detached'})}
+// Hold to finish (components/hold-button.tsx): Space held through the 4 s countdown.
+const holdToFinish=async p=>{await p.getByRole('button',{name:'Hold to finish',exact:true}).focus();await p.keyboard.down('Space');await delay(4300);await p.keyboard.up('Space')}
+
 export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,page,plan,session,wh}) {
   assert.equal(process.env.GITHUB_ACTIONS,'true')
   assert.equal(base,'http://127.0.0.1:3100')
@@ -195,14 +200,14 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         stage='finish request through the screen (block 5)'
         const current=checked(await first.client.rpc('read_team_count',{p_team:stored.id}))
         const requestFinish=async()=>{
-          first.p.once('dialog',dialog=>dialog.accept())
-          await first.p.getByRole('button',{name:'Finish my count',exact:true}).click()
+          await holdToFinish(first.p)
+          await confirmInApp(first.p)
           await first.p.getByText('Your count status: Waiting for the Independent',{exact:true}).waitFor()
         }
         const counterRow=independent.p.locator('[data-member="'+current.members.find(m=>m.id===current.membershipId).order+'"]')
         await requestFinish()
         assert.ok((await first.client.rpc('save_team_count',{...saveArgs(stored.id),p_revision:'3'})).error)
-        assert.equal(await first.p.getByRole('button',{name:'Finish my count',exact:true}).count(),0)
+        assert.equal(await first.p.getByRole('button',{name:'Hold to finish',exact:true}).count(),0)
         stage='independent rejects, counter counts again'
         await counterRow.getByRole('button',{name:'Reject',exact:true}).click()
         await first.p.getByText('Your count status: Counting',{exact:true}).waitFor()
@@ -262,8 +267,8 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
           p_weight_avg:0,p_tare:300}))
         await independent.p.locator('tr[data-brand="'+codes[1]+'"][data-result="Reconciled 0+0"]').waitFor()
         stage='submission to the admin (block 7)'
-        independent.p.once('dialog',dialog=>dialog.accept())
         await submitButton.click()
+        await confirmInApp(independent.p)
         await independent.p.locator('[data-phase="admin_review"]').waitFor()
         await page.locator('[data-phase="admin_review"]').waitFor()
         await shot(page,'08-admin-review',false)
@@ -276,8 +281,8 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         const returnButton=page.getByRole('button',{name:/selected for recount$/})
         assert.ok(await returnButton.isDisabled(),'return needs a selection')
         await page.getByRole('checkbox',{name:'Recount '+codes[1],exact:true}).check()
-        page.once('dialog',dialog=>dialog.accept())
         await returnButton.click()
+        await confirmInApp(page)
         await independent.p.locator('[data-phase="reconciling"]').waitFor()
         await independent.p.locator('tr[data-brand="'+codes[1]+'"][data-result="Recount requested"]').waitFor()
         await independent.p.locator('tr[data-brand="'+codes[0]+'"][data-result="Reconciled 1+5"]').waitFor()
@@ -288,13 +293,13 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await reconcileInputs.nth(2).fill('3')
         await independent.p.getByRole('button',{name:'Confirm Count',exact:true}).click()
         await independent.p.locator('tr[data-brand="'+codes[1]+'"][data-result="Recounted 0+3"]').waitFor()
-        independent.p.once('dialog',dialog=>dialog.accept())
         await submitButton.click()
+        await confirmInApp(independent.p)
         await page.locator('[data-phase="admin_review"]').waitFor()
         await page.getByText(/Round 1: returned /).waitFor()
         stage='admin acceptance (block 8)'
-        page.once('dialog',dialog=>dialog.accept())
         await page.getByRole('button',{name:'Accept result',exact:true}).click()
+        await confirmInApp(page)
         await independent.p.locator('[data-phase="signing"]').waitFor()
         const accepted=checked(await db.from('team_flows').select('result_version_id').eq('team_id',stored.id).single())
         const sealed=checked(await db.from('team_result_items').select('brand_code,quantity_units,resolution').eq('version_id',accepted.result_version_id))
@@ -337,8 +342,8 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         assert.equal(checked(await db.from('team_flows').select('phase').eq('team_id',stored.id).single()).phase,'signing','last signature does not close')
         checked(await independent.client.rpc('read_team_count',{p_team:stored.id}))
         await shot(page,'09-signatures-complete')
-        page.once('dialog',dialog=>dialog.accept())
         await page.getByRole('button',{name:'Confirm and close team',exact:true}).click()
+        await confirmInApp(page)
         // The admin is taken to the session closing screen, not asked to sign in again.
         await page.waitForURL(base+'/admin/sessao/'+session.id+'/equipes')
         await page.locator('[data-closing]').waitFor()

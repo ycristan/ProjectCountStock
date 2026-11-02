@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { isAdmin } from '@/lib/authorization'
 import { getTeamFlowContexts } from '@/lib/team-flow-context'
-import { AppHeader, NavLink } from '@/components/ui'
+import { AppHeader } from '@/components/ui'
 
 // Same header as every signed-in area: the person always sees who is signed in,
 // in which role and team.
@@ -19,7 +19,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-screen bg-ground">
       <AppHeader name={name} detail={detail} area={admin ? 'Admin' : undefined}
-        nav={admin ? <NavLink href="/admin">Admin home</NavLink> : undefined} />
+        items={admin ? [{ href: '/admin', label: 'Admin home', icon: 'home' }] : [{ href: '/team', label: 'Count', icon: 'search' }]} />
       {children}
     </div>
   )

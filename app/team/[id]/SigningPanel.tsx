@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { cancelTeamSigning, confirmTeamClose, formalizeCounterAbsence, recordIndependentAbsence, signWithPin, witnessIndependentAbsence } from '@/actions/team-signing'
 import type { TeamSigning } from '@/lib/team-count-types'
 import { Button, Label } from '@/components/ui'
+import { useConfirm } from '@/components/confirm'
 
 type Run = (action: () => Promise<{ error?: string }>, done: string) => void
 type Form = { membershipId: string; mode: 'sign' | 'absent' | 'witness' }
@@ -15,6 +16,7 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
   teamId: string; signing: TeamSigning; isAdmin: boolean; pending: boolean; run: Run
 }) {
   const [form, setForm] = useState<Form | null>(null)
+  const [confirm, confirmDialog] = useConfirm()
   const [pin, setPin] = useState('')
   const [reason, setReason] = useState('')
   const [witnessId, setWitnessId] = useState('')
@@ -46,6 +48,7 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
   </label>
 
   return <div className="flex flex-col gap-3" data-signing={signing.versionId}>
+    {confirmDialog}
     <h2 className="m-0 font-display text-2xl font-bold uppercase tracking-[0.03em]">Sign the result</h2>
     <p className="m-0 text-[15px] leading-snug text-ink-2">{signing.frozen
       ? 'Result frozen: a confirmation was received. Only the remaining confirmations can be completed.'
@@ -83,8 +86,8 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
         {c && p.role === 'independent' && !c.witnessed && !active && <div className="flex flex-wrap gap-2">
           {presentCounters.length > 0 && <Button variant="quiet" size="sm" disabled={pending}
             onClick={() => open({ membershipId: p.membershipId, mode: 'witness' })}>Witness by counter PIN</Button>}
-          {isAdmin && <Button variant="quiet" size="sm" disabled={pending} onClick={() => {
-            if (window.confirm('Confirm as witness that the Independent is absent?'))
+          {isAdmin && <Button variant="quiet" size="sm" disabled={pending} onClick={async () => {
+            if (await confirm({ title: 'Witness the absence?', text: 'Confirm as witness that the Independent is absent?', confirm: 'Confirm as witness' }))
               done(() => witnessIndependentAbsence(teamId, signing.versionId, command('witness:admin'), null), 'Absence witnessed.')
           }}>Witness as admin</Button>}
         </div>}
@@ -122,13 +125,13 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
     })}
     {complete && !isAdmin && <p role="status" className="m-0 rounded-xl bg-ok p-4 text-[17px] font-medium text-white">All signatures received. Waiting for the admin to close the team.</p>}
     {complete && isAdmin && <Button variant="primary" size="lg" full disabled={pending}
-      onClick={() => {
-        if (window.confirm('Close this team? Its results become permanent and every team login stops working.'))
+      onClick={async () => {
+        if (await confirm({ title: 'Close this team?', text: 'Its results become permanent and every team login stops working.', confirm: 'Close team' }))
           run(() => confirmTeamClose(teamId, signing.versionId, command('close')), 'Team closed.')
       }}>Confirm and close team</Button>}
     {isAdmin && !signing.frozen && <Button variant="outline" size="md" full disabled={pending}
-      onClick={() => {
-        if (window.confirm('Cancel signature collection? The result goes back to admin review.'))
+      onClick={async () => {
+        if (await confirm({ title: 'Cancel signature collection?', text: 'The result goes back to admin review.', confirm: 'Cancel collection', tone: 'alert' }))
           run(() => cancelTeamSigning(teamId, signing.versionId, command('cancel')), 'Signature collection cancelled.')
       }}>Cancel signature collection</Button>}
   </div>

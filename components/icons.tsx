@@ -13,6 +13,8 @@ const PATHS = {
   upload: <><path d="M12 15V3M7 8l5-5 5 5" /><path d="M4 15v5h16v-5" /></>,
   edit: <path d="M4 20h4L19 9l-4-4L4 16z" />,
   check: <path d="M5 12l5 5 9-10" />,
+  search: <><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></>,
+  logout: <><path d="M10 4H4v16h6" /><path d="M15 8l4 4-4 4M19 12H9" /></>,
   spreadsheet: <><path d="M6 2h9l5 5v15H6z" /><path d="M14 2v6h6M9 12l5 5M14 12l-5 5" /></>,
 }
 
