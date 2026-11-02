@@ -93,13 +93,7 @@ export function AppHeader({ name, detail, nav, area, status }: {
   </header>
 }
 
-// Header navigation link; `current` marks the page the person is on.
-export function NavLink({ href, current, children }: { href: string; current?: boolean; children: React.ReactNode }) {
-  return <Link href={href} aria-current={current ? 'page' : undefined}
-    className={'rounded-md px-3 py-2 text-sm no-underline ' + (current ? 'bg-safety font-semibold text-ink' : 'text-ground hover:bg-white/10')}>
-    {children}
-  </Link>
-}
+export { NavLink } from './nav-link'
 
 // Top of every inner screen, always in the same place: back link on the left
 // (where it leads, in words), then the title, with secondary actions on the right.

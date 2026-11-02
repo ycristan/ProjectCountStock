@@ -195,3 +195,18 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Padronização visual de todo o app (2026-10-30)
 - Yuri aprovou o plano completo: cantos de 4px em tudo (também nas telas de equipe), ícone sempre com texto, 5 tipos de botão, amarelo só para a ação principal, cabeçalho único para todos os usuários. Admin em partes: painel e menu novo; Inventory; Sessões e Ajustes. Abas por warehouse ficam para depois porque mudam o download.
 - Tela do Solo aprovada após o teste de Yuri: o cabeçalho mostrava o login (os dois PINs) no lugar do nome. Regra: o cabeçalho nunca mostra login; o Solo mostra o nome digitado. "Finish count" pede confirmação.
+
+## Contagem ao vivo consolidada no fluxo novo (2026-10-30)
+- O fluxo novo trocou, sem decisão registrada, a tela única do admin do fluxo antigo (todas as equipes, colunas por pessoa, linha piscando) por um monitor por equipe. Yuri apontou a regressão e aprovou a tela 5b: todas as equipes numa tabela ao vivo, com placas por equipe, totais e filtros por equipe, status e produto. Prioridade antes do Inventory.
+- Sem coluna de hora da última entrada: a leitura das contagens não traz a hora; incluir exigiria mudar função do banco. As contagens que chegam com a tela aberta sobem para o topo e piscam.
+
+## Teste de Yuri no preview: início, assinaturas e navegação (2026-11-02)
+- O admin inicia a sessão de equipes inteira com um botão; uma equipe criada depois do início ainda pode ser iniciada sozinha (raro).
+- Assinatura no próprio aparelho, com o PIN pessoal: contadores ao mesmo tempo, Independente depois, admin confirma e encerra. Substitui a assinatura de todos num único aparelho (R11 de 29/10). Botão "Sign with Personal PIN Code", para não confundir com o PIN da equipe. Motivo: cada um confirma o encerramento da própria contagem, sem aglomerar todos num aparelho.
+- Barra de navegação inferior no celular: proposta visual primeiro, aprovação de Yuri antes do código.
+
+## Assinatura desenhada descartada (2026-11-02)
+- Com a assinatura no próprio aparelho, a assinatura oficial é o PIN pessoal. A assinatura desenhada (dedo/caneta), antes melhoria futura, sai do backlog.
+
+## PIN do Solo mantido (2026-11-02)
+- Yuri decidiu não trocar o PIN do Solo que apareceu no cabeçalho do preview em 30/10: só ele viu. O cabeçalho já não mostra login (#101).

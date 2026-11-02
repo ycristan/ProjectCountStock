@@ -1,4 +1,4 @@
-# Estado — 2026-10-30
+# Estado — 2026-11-02
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -10,14 +10,10 @@ Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar ant
 Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a correção do Independente).
 
 ## Em produção
-`main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), ordem de assinatura de 29/10 (migration `team_flow_admin_close` aplicada), busca por qualquer parte do nome, código ou BIN (#104). Backup diário desde 28/10. Solo é usado quase todo dia.
+`main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), ordem de assinatura de 29/10 (migration `team_flow_admin_close` aplicada), busca por qualquer parte do nome, código ou BIN (#104), visual "Chão de armazém" nas telas de equipe e Solo (#101) e, com esta PR, painel do admin, contagem ao vivo consolidada e Inventory (#105). Backup diário desde 28/10. Solo é usado quase todo dia.
 
-## Em andamento: visual "Chão de armazém" (DECISOES 30/10)
-Yuri aprovou o plano completo: mesmo padrão em todas as telas e para todos os usuários (cantos 4px, ícones com texto, 5 botões, amarelo = uma ação principal). Quadro: artefato "Count Stock — identidade visual".
-- A (esta PR): base visual, cabeçalho único (Log out visível, quem está logado embaixo no celular, nunca o login com PINs), login, telas de equipe e Independente, busca com ajuda por ícones, Solo aprovado (nome digitado no cabeçalho, "Finish count" amarelo embaixo com confirmação).
-- B: painel do admin com menu novo (Home, Sessions, Inventory, Audit Count, Settings).
-- C: Inventory no visual novo (download como hoje); D: Sessões e Ajustes. Abas por warehouse ficam para depois (mudam o download).
-- Depois do merge desta PR: Yuri gera novo PIN do Solo (o atual apareceu na tela no teste de 30/10).
+## Em andamento
+- Próximo: itens 2 a 6 de TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11", em PRs pequenas (iniciar a sessão inteira; tabela depois do encerramento; assinatura no próprio aparelho; proposta da barra inferior; teste com 9 usuários).
 
 ## Também em andamento
 - Agente: teste automático com 9 usuários; Sentry nos erros mostrados nas telas de equipe.
@@ -25,6 +21,7 @@ Yuri aprovou o plano completo: mesmo padrão em todas as telas e para todos os u
 - O conector da Vercel não grava variáveis (403): produção é republicada por merge na `main`.
 
 ## Decisões pendentes de Yuri
+- Aprovar a proposta visual da barra de navegação inferior, quando entregue.
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 
 ## A verificar
@@ -33,4 +30,4 @@ Yuri aprovou o plano completo: mesmo padrão em todas as telas e para todos os u
 - Peso: teste de 100/98 precisa de produto com peso médio pequeno (ex.: 10 g).
 
 ## Backlog aprovado, não iniciado
-- Bloqueio do login após PINs errados; aprovação dupla de BPU; itens desconhecidos com foto; código de barras; assinatura desenhada; ajuste pós-assinatura; substituição e Independente compartilhado.
+- Bloqueio do login após PINs errados; aprovação dupla de BPU; itens desconhecidos com foto; código de barras; ajuste pós-assinatura; substituição e Independente compartilhado.

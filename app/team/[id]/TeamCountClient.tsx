@@ -1,9 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
+import { useCallback, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { decideTeamFinish, decideTeamItem, readLastFinishAction, readTeamComparison, readTeamCount, readTeamInventory, readTeamReviews, requestTeamFinish, reviewTeamResult, saveTeamCount, saveTeamReconciliation, startTeamCount, submitTeamReconciliation } from '@/actions/team-count'
-import { createClient } from '@/lib/supabase-client'
+import { useTeamLive } from '@/lib/use-team-live'
 import type { ItemBusca, LancarContagemPayload } from '@/actions/contagem'
 import type { TeamComparisonItem, TeamCountState, TeamReview, TeamSigning } from '@/lib/team-count-types'
 import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
@@ -79,45 +79,7 @@ export function TeamCountClient({ initial, inventory, back }: {
     if (next) setCatalog(next)
   }, [teamId])
 
-  useEffect(() => {
-    const db = createClient()
-    let disposed = false
-    let running = false
-    let again = false
-    // Serialise reads: a slow older response cannot overwrite a newer snapshot.
-    const reload = async () => {
-      if (running) { again = true; return }
-      running = true
-      do {
-        again = false
-        if (!disposed) await refresh()
-      } while (again && !disposed)
-      running = false
-    }
-    const channel = db.channel('team-count-' + teamId)
-    for (const table of ['team_count_records', 'team_flows', 'team_memberships', 'team_item_decisions', 'team_reconciliations', 'team_admin_reviews', 'team_confirmations'])
-      channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: 'team_id=eq.' + teamId }, reload)
-    void db.auth.getSession().then(({ data }) => {
-      if (disposed) return
-      void db.realtime.setAuth(data.session?.access_token).then(() => {
-        if (!disposed) channel.subscribe(status => {
-          if (status === 'SUBSCRIBED') void reload()
-          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setUnavailable(true)
-        })
-      })
-    })
-    // Fallback recovers missed events, including access revocation filtered by RLS.
-    const timer = window.setInterval(reload, 15000)
-    window.addEventListener('online', reload)
-    window.addEventListener('focus', reload)
-    return () => {
-      disposed = true
-      window.clearInterval(timer)
-      window.removeEventListener('online', reload)
-      window.removeEventListener('focus', reload)
-      void db.removeChannel(channel)
-    }
-  }, [teamId, refresh])
+  useTeamLive([teamId], refresh, setUnavailable)
 
   const canCount = !unavailable && state.role === 'counter' && state.phase === 'counting' && state.finishState === 'counting'
   const own = new Map(state.records.filter(r => r.membershipId === state.membershipId).map(r => [r.brandCode, r]))
