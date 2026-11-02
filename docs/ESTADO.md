@@ -13,7 +13,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 `main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), ordem de assinatura de 29/10 (migration `team_flow_admin_close` aplicada), busca por qualquer parte do nome, código ou BIN (#104), visual "Chão de armazém" (amarelo) nas telas de equipe e Solo (#101) e, com esta PR, painel do admin, contagem ao vivo consolidada e Inventory (#105). Backup diário desde 28/10. Solo é usado quase todo dia.
 
 ## Em andamento
-- Paleta Next Chain (grafite, azul Yale, teal) aplicada em branch; aguarda teste visual de Yuri no preview (só warehouse TESTE) e a PR.
+- Paleta Next Chain e padronização de todas as telas (admin e contador) em branch; aguarda teste visual de Yuri no preview (só warehouse TESTE), CI dos testes de navegador e a PR.
 - Próximo: itens 2 a 6 de TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11", em PRs pequenas (iniciar a sessão inteira; tabela depois do encerramento; assinatura no próprio aparelho; proposta da barra inferior; teste com 9 usuários).
 
 ## Também em andamento

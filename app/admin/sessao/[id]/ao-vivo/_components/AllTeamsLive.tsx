@@ -7,7 +7,7 @@ import { readTeamComparison, readTeamCount } from '@/actions/team-count'
 import { PHASE_LABEL, type TeamComparisonItem, type TeamCountState } from '@/lib/team-count-types'
 import { filterItems } from '@/lib/inventory-search'
 import { useTeamLive } from '@/lib/use-team-live'
-import { PageTop, Tag, buttonClass } from '@/components/ui'
+import { PageTop, Tag, buttonClass, segmentClass } from '@/components/ui'
 import { Icon } from '@/components/icons'
 
 type Status = 'equal' | 'tolerance' | 'different' | 'reconciled' | 'waiting'
@@ -91,7 +91,7 @@ export function AllTeamsLive({ sessionId, teamIds, initial, inventory }: {
     .sort((a, b) => (changed.get(b.key) ?? 0) - (changed.get(a.key) ?? 0)
       || a.team.teamName.localeCompare(b.team.teamName) || (a.item?.brand_name ?? a.brand).localeCompare(b.item?.brand_name ?? b.brand))
 
-  const segment = (pressed: boolean) => 'min-h-11 rounded-sm border-2 px-3.5 text-sm ' + (pressed ? 'border-ink bg-surface font-semibold' : 'border-transparent')
+  const segment = segmentClass
   const head = 'px-3 py-2.5 font-display text-[13px] font-bold uppercase tracking-[0.08em]'
 
   return <div className="flex flex-col gap-4">

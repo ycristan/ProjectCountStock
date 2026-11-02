@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import type { Credencial } from '@/actions/sessao'
+import { Notice, PageTop, buttonClass, tableWrapClass, thClass } from '@/components/ui'
 
 const ROLE_LABEL: Record<string, string> = {
   contador_1: 'Counter 1',
@@ -10,59 +11,44 @@ const ROLE_LABEL: Record<string, string> = {
 }
 
 export function LoginCards({ credentials, sessionId, setupOnly = false }: { credentials: Credencial[]; sessionId: string; setupOnly?: boolean }) {
-    return (
-      <div>
-        <div className="flex justify-between items-center mb-4 print:hidden">
-          <h2 className="text-xl font-semibold text-slate-900">Logins Generated</h2>
-          <div className="flex items-center gap-3">
-            {!setupOnly && <Link
-              href={`/admin/sessao/${sessionId}/equipes`}
-              className="px-4 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl hover:bg-slate-50 text-sm"
-            >
-              Manage Teams
-            </Link>}
-            <Link
-              href={`/admin/sessao/${sessionId}/imprimir`}
-              className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-sm font-semibold"
-            >
-              Print login cards
-            </Link>
-            {!setupOnly && <Link
-              href={`/admin/sessao/${sessionId}/combinacao`}
-              className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-sm font-semibold"
-            >
-              Live Count →
-            </Link>}
-          </div>
-        </div>
-        {setupOnly && <p className="mb-4 text-amber-800">Setup saved. New teams must be started individually from their monitor.</p>}
+  const cell = 'px-3 py-2.5'
+  return (
+    <div>
+      <div className="print:hidden">
+        <PageTop back={{ href: '/admin/sessoes', label: 'Sessions' }} title="Logins Generated" actions={<>
+          {!setupOnly && <Link href={`/admin/sessao/${sessionId}/equipes`} className={buttonClass('outline', 'sm') + ' no-underline'}>Manage Teams</Link>}
+          <Link href={`/admin/sessao/${sessionId}/imprimir`} className={buttonClass(setupOnly ? 'primary' : 'outline', 'sm') + ' no-underline'}>Print login cards</Link>
+          {!setupOnly && <Link href={`/admin/sessao/${sessionId}/combinacao`} className={buttonClass('primary', 'sm') + ' no-underline'}>Live Count →</Link>}
+        </>} />
+      </div>
+      {setupOnly && <div className="mb-4"><Notice tone="warn">Setup saved. New teams must be started individually from their monitor.</Notice></div>}
+      <div className={tableWrapClass}>
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="bg-slate-100">
-              <th className="border border-slate-200 px-3 py-2 text-left">Team</th>
-              <th className="border border-slate-200 px-3 py-2 text-left">Team Code</th>
-              <th className="border border-slate-200 px-3 py-2 text-left">Role</th>
-              <th className="border border-slate-200 px-3 py-2 text-left">Name</th>
-              <th className="border border-slate-200 px-3 py-2 text-left">Personal PIN</th>
+            <tr className="bg-ink text-ground">
+              <th className={thClass}>Team</th>
+              <th className={thClass}>Team Code</th>
+              <th className={thClass}>Role</th>
+              <th className={thClass}>Name</th>
+              <th className={thClass}>Personal PIN</th>
             </tr>
           </thead>
           <tbody>
             {credentials.map((c, i) => (
-              <tr key={i} className="even:bg-slate-50">
-                <td className="border border-slate-200 px-3 py-2">{c.team}</td>
-                <td className="border border-slate-200 px-3 py-2 font-mono font-bold text-blue-700">
-                  {c.team_pin}
-                </td>
-                <td className="border border-slate-200 px-3 py-2">{ROLE_LABEL[c.role] ?? c.role}</td>
-                <td className="border border-slate-200 px-3 py-2">{c.name ?? '—'}</td>
-                <td className="border border-slate-200 px-3 py-2 font-mono font-bold">{c.user_pin}</td>
+              <tr key={i} className="border-t border-ground-2 even:bg-ground">
+                <td className={cell}>{c.team}</td>
+                <td className={cell + ' font-mono text-base font-semibold'}>{c.team_pin}</td>
+                <td className={cell}>{ROLE_LABEL[c.role] ?? c.role}</td>
+                <td className={cell}>{c.name ?? '—'}</td>
+                <td className={cell + ' font-mono text-base font-semibold'}>{c.user_pin}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p className="mt-4 text-xs text-slate-500 print:hidden">
-          Team Code is shared by all team members. PIN is individual.
-        </p>
       </div>
-    )
+      <p className="mt-4 text-[13px] text-ink-2 print:hidden">
+        Team Code is shared by all team members. PIN is individual.
+      </p>
+    </div>
+  )
 }

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
-import { AppHeader, NavLink } from '@/components/ui'
+import { AppHeader, NavLink, cardClass } from '@/components/ui'
 
 export default async function CounterLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -65,9 +65,9 @@ export default async function CounterLayout({ children }: { children: React.Reac
       </> : undefined} />
       {sessionClosed ? (
         <main className="px-4 py-6 max-w-lg mx-auto">
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-lg font-semibold text-slate-800">Count session closed</p>
-            <p className="text-sm text-slate-500 mt-2">
+          <div className={cardClass + ' p-6 text-center'}>
+            <p className="m-0 font-display text-2xl font-bold uppercase">Count session closed</p>
+            <p className="m-0 mt-2 text-[15px] text-ink-2">
               This session has been finalised by the admin. Access to counting and reconciliation is no longer available.
             </p>
           </div>
@@ -77,7 +77,7 @@ export default async function CounterLayout({ children }: { children: React.Reac
           {bannerType === 'pending' && (
             <Link
               href="/reconciliacao"
-              className="block px-4 py-3 text-center text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600"
+              className="block px-4 py-3 text-center text-[15px] font-semibold text-white no-underline bg-diff hover:bg-diff/90"
             >
               ⚠️ {pendingCount} {pendingCount === 1 ? 'item needs' : 'items need'} reconciliation → View list
             </Link>
@@ -85,7 +85,7 @@ export default async function CounterLayout({ children }: { children: React.Reac
           {bannerType === 'confirm' && (
             <Link
               href="/reconciliacao"
-              className="block px-4 py-3 text-center text-sm font-semibold text-white bg-green-600 hover:bg-green-700"
+              className="block px-4 py-3 text-center text-[15px] font-semibold text-white no-underline bg-ok hover:bg-ok/90"
             >
               ✓ All items reconciled — click here to confirm
             </Link>
@@ -93,7 +93,7 @@ export default async function CounterLayout({ children }: { children: React.Reac
           {bannerType === 'reconciliando' && (
             <Link
               href="/reconciliacao"
-              className="block px-4 py-3 text-center text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
+              className="block px-4 py-3 text-center text-[15px] font-semibold text-white no-underline bg-info hover:bg-info/90"
             >
               ℹ️ {pendingCount} {pendingCount === 1 ? 'item needs' : 'items need'} reconciliation → View list
             </Link>

@@ -1,5 +1,5 @@
 import { listWarehouses } from '@/lib/warehouse-access'
-import Link from 'next/link'
+import { PageTop } from '@/components/ui'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 import type { ItemBusca } from '@/actions/contagem'
@@ -37,10 +37,7 @@ export default async function SessaoSoloPage() {
 
   return (
     <div>
-      <Link href="/admin/sessao" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
-        ← New Session
-      </Link>
-      <h2 className="text-xl font-semibold text-slate-900 mb-4">New Solo Count Session</h2>
+      <PageTop back={{ href: '/admin/sessao', label: 'New Session' }} title="New Solo Count Session" />
       <div className="max-w-md">
         <SoloSessionWizard warehouses={warehouses} inventory={inventory} soloCounterActive={active} />
       </div>

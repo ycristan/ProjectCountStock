@@ -216,3 +216,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Uso: Graphite no cabeçalho, texto e painéis escuros; Yale Blue na ação principal e no passo atual; Stormy Teal como destaque sobre o Graphite (menu atual, avatar, selo); Dust Grey em bordas e chips de BIN. Tons de apoio (fundo `#F1F3F3`, cinzas de texto) derivados, fora da paleta.
 - Cores de status (verde, laranja, azul, vermelho) não mudam. Sobre o Graphite só entram como etiqueta com texto branco: texto colorido direto no fundo escuro fica abaixo de 3:1.
 - Mercado da marca: Irlanda e União Europeia (consulta do nome em IPOI e EUIPO ainda pendente).
+
+## Todas as telas no padrão novo (2026-11-02)
+- Yuri apontou que Solo do admin, Sessions, Audit e Settings ainda estavam no visual antigo (cinzas e azuis padrão do Tailwind). Foram migradas todas as telas que ainda usavam esse estilo: admin (Solo, Sessions, Audit, Settings, nova sessão, equipes, reconciliação, Combinação, impressão, recuperação) e contador (monitor, reconciliação, finalizar).
+- Regra: tela nova ou antiga usa só `components/ui.tsx` (`PageTop`, `Button`, `Tag`, `Notice`, `cardClass`, `inputClass`, tabela com cabeçalho grafite, controle segmentado). Cor de classe numerada do Tailwind (`slate`, `blue`...) não se usa mais.
+- Textos, papéis e campos que os testes de navegador leem foram mantidos (`Next →`, `← Back`, `Logins Generated`...). O cartão de impressão A4 continua preto e branco de propósito.

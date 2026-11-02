@@ -3,6 +3,7 @@ import { readTeamSetup } from '@/actions/team-setup'
 import { headers } from 'next/headers'
 import qrcode from 'qrcode'
 import Link from 'next/link'
+import { buttonClass } from '@/components/ui'
 import { PrintButton } from './_components/PrintButton'
 
 type Card = { key: string; team: string; role: string; name: string; team_pin: string; user_pin: string }
@@ -53,15 +54,10 @@ export default async function ImprimirPage({
         @page { size: A4 portrait; margin: 1.5cm; }
       `}</style>
 
-      <div className="no-print flex items-center gap-3 px-6 py-3 border-b border-slate-200 bg-white sticky top-0 z-10">
-        <Link
-          href={`/admin/sessao/${id}/equipes`}
-          className="text-sm text-slate-500 hover:text-slate-700"
-        >
-          ← Teams
-        </Link>
+      <div className="no-print sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-3">
+        <Link href={`/admin/sessao/${id}/equipes`} className={buttonClass('outline', 'sm') + ' no-underline'}>← Teams</Link>
         <PrintButton />
-        <span className="text-xs text-slate-400 ml-1">
+        <span className="text-[13px] text-ink-2">
           {teams.length} team{teams.length !== 1 ? 's' : ''} · {contadores.length} cards
         </span>
       </div>
@@ -96,16 +92,16 @@ export default async function ImprimirPage({
                         {c.name || '—'}
                       </div>
                       <div className="flex gap-4 mt-4">
-                        <div className="border-2 border-slate-400 rounded-lg px-4 py-2 bg-slate-50">
-                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                        <div className="border-2 border-line-2 rounded-lg px-4 py-2 bg-ground">
+                          <div className="text-[10px] font-bold text-ink-3 uppercase tracking-widest mb-1">
                             Team PIN
                           </div>
                           <div className="font-black font-mono tracking-[0.25em]" style={{ fontSize: '1.6rem' }}>
                             {c.team_pin}
                           </div>
                         </div>
-                        <div className="border-2 border-slate-400 rounded-lg px-4 py-2 bg-slate-50">
-                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                        <div className="border-2 border-line-2 rounded-lg px-4 py-2 bg-ground">
+                          <div className="text-[10px] font-bold text-ink-3 uppercase tracking-widest mb-1">
                             Personal PIN
                           </div>
                           <div className="font-black font-mono tracking-[0.25em]" style={{ fontSize: '1.6rem' }}>
@@ -140,7 +136,7 @@ export default async function ImprimirPage({
         })}
 
         {teams.length === 0 && (
-          <p className="text-center text-slate-400 py-20">No teams found.</p>
+          <p className="text-center text-ink-3 py-20">No teams found.</p>
         )}
       </div>
     </>

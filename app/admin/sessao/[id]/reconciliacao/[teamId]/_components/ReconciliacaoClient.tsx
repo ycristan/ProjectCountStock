@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { Notice, PageTop, Tag, cardClass, segmentClass, segmentGroupClass, tableWrapClass, thClass } from '@/components/ui'
 import { createClient } from '@/lib/supabase-client'
 
 type ReconcItem = {
@@ -69,139 +69,73 @@ export function ReconciliacaoClient({
 
   const tabItems = activeTab === 'discrepancias' ? [...discrepancias, ...resolvidos] : combinados
 
+  const stat = (value: number, label: string, color = '') => (
+    <div className={cardClass + ' flex flex-1 flex-col p-3.5'}>
+      <span className={'font-display text-[34px] leading-none font-bold ' + color}>{value}</span>
+      <span className="text-[13px] text-ink-2">{label}</span>
+    </div>
+  )
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-900">Reconciliation — {teamName}</h2>
-          <div className="text-sm text-slate-500 mt-0.5">Independent: {counterNames.independente}</div>
-        </div>
-        {isReconciliada && (
-          <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-100 text-green-700">
-            ✓ Reconciled
-          </span>
-        )}
-      </div>
+      <PageTop back={{ href: `/admin/sessao/${sessionId}/progresso`, label: 'Progress' }}
+        kicker={`Independent: ${counterNames.independente}`}
+        title={<span className="flex flex-wrap items-center gap-3">Reconciliation — {teamName}{isReconciliada && <Tag tone="ok">Reconciled</Tag>}</span>} />
 
-      <Link
-        href={`/admin/sessao/${sessionId}/progresso`}
-        className="text-sm text-blue-600 hover:underline"
-      >
-        ← Back to Progress
-      </Link>
-
-      <div className="flex gap-3 mt-5 mb-5">
-        <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4">
-          <div className="text-3xl font-bold text-green-600">{combinados.length}</div>
-          <div className="text-xs text-slate-500 mt-1">Matched</div>
-        </div>
-        <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4">
-          <div
-            className={`text-3xl font-bold ${
-              discrepancias.length > 0 ? 'text-red-600' : 'text-slate-300'
-            }`}
-          >
-            {discrepancias.length}
-          </div>
-          <div className="text-xs text-slate-500 mt-1">Remaining Discrepancies</div>
-        </div>
-        <div className="flex-1 bg-white border border-slate-200 rounded-xl p-4">
-          <div className="text-3xl font-bold text-indigo-600">{resolvidos.length}</div>
-          <div className="text-xs text-slate-500 mt-1">Reconciled</div>
-        </div>
+      <div className="mb-4 flex gap-3">
+        {stat(combinados.length, 'Matched', 'text-ok')}
+        {stat(discrepancias.length, 'Remaining discrepancies', discrepancias.length > 0 ? 'text-alert' : '')}
+        {stat(resolvidos.length, 'Reconciled', 'text-info')}
       </div>
 
       {!isReconciliada && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800 mb-5">
-          ℹ️ <strong>{counterNames.independente}</strong> is carrying out reconciliation of discrepancy items on their device.
-        </div>
+        <div className="mb-4"><Notice tone="warn"><strong>{counterNames.independente}</strong> is carrying out reconciliation of discrepancy items on their device.</Notice></div>
       )}
 
-      <div className="flex border-b border-slate-200 mb-4">
-        <button
-          onClick={() => setActiveTab('discrepancias')}
-          className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${
-            activeTab === 'discrepancias'
-              ? 'text-slate-900 border-slate-900'
-              : 'text-slate-500 border-transparent hover:text-slate-700'
-          }`}
-        >
+      <div role="group" aria-label="Items" className={segmentGroupClass + ' mb-4 w-fit'}>
+        <button type="button" aria-pressed={activeTab === 'discrepancias'} onClick={() => setActiveTab('discrepancias')} className={segmentClass(activeTab === 'discrepancias')}>
           Discrepancies ({discrepancias.length} remaining)
         </button>
-        <button
-          onClick={() => setActiveTab('combinados')}
-          className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${
-            activeTab === 'combinados'
-              ? 'text-slate-900 border-slate-900'
-              : 'text-slate-500 border-transparent hover:text-slate-700'
-          }`}
-        >
+        <button type="button" aria-pressed={activeTab === 'combinados'} onClick={() => setActiveTab('combinados')} className={segmentClass(activeTab === 'combinados')}>
           Matched ({combinados.length})
         </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className={tableWrapClass}>
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 w-48">Item</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">
-                {counterNames.contador_1} (C1)
-              </th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">
-                {counterNames.contador_2} (C2)
-              </th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">
-                {counterNames.independente} (Ind)
-              </th>
-              {activeTab === 'discrepancias' && (
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">
-                  Reconciled
-                </th>
-              )}
+            <tr className="bg-ink text-ground">
+              <th className={thClass}>Item</th>
+              <th className={thClass + ' text-right'}>{counterNames.contador_1} (C1)</th>
+              <th className={thClass + ' text-right'}>{counterNames.contador_2} (C2)</th>
+              <th className={thClass + ' text-right'}>{counterNames.independente} (Ind)</th>
+              {activeTab === 'discrepancias' && <th className={thClass + ' text-right'}>Reconciled</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {tabItems.map((item) => (
-              <tr key={item.id}>
-                <td className="px-4 py-3">
-                  <div className="font-semibold text-slate-900 text-sm">{item.brand_code}</div>
-                  <div className="text-xs text-slate-500">{item.brand_name}</div>
-                  {item.bin_location && (
-                    <div className="text-xs text-slate-400">{item.bin_location}</div>
-                  )}
+              <tr key={item.id} className={'border-t border-ground-2 ' + (item.status === 'discrepancia' ? 'bg-diff/10' : '')}>
+                <td className="px-3 py-2.5">
+                  <span className="font-mono text-xs font-semibold text-ink-2">{item.brand_code}</span><br />
+                  <strong>{item.brand_name}</strong>
+                  {item.bin_location && <><br /><span className="text-xs text-ink-2">{item.bin_location}</span></>}
                 </td>
-                <td className="text-center px-4 py-3 font-medium text-slate-700">
-                  {formatVal(item.contador_1_cases, item.contador_1_units)}
-                </td>
-                <td className="text-center px-4 py-3 font-medium text-slate-700">
-                  {formatVal(item.contador_2_cases, item.contador_2_units)}
-                </td>
-                <td className="text-center px-4 py-3 font-medium text-slate-700">
-                  {formatVal(item.independente_cases, item.independente_units)}
-                </td>
+                <td className="px-3 py-2.5 text-right font-display text-xl font-bold">{formatVal(item.contador_1_cases, item.contador_1_units)}</td>
+                <td className="px-3 py-2.5 text-right font-display text-xl font-bold">{formatVal(item.contador_2_cases, item.contador_2_units)}</td>
+                <td className="px-3 py-2.5 text-right font-display text-xl font-bold">{formatVal(item.independente_cases, item.independente_units)}</td>
                 {activeTab === 'discrepancias' && (
-                  <td className="text-center px-4 py-3">
-                    {item.status === 'resolvido' ? (
-                      <span className="font-bold text-green-700 text-sm">
-                        {formatVal(item.reconciliated_cases, item.reconciliated_units)}
-                      </span>
-                    ) : (
-                      <span className="text-amber-500 text-xs">Pending</span>
-                    )}
+                  <td className="px-3 py-2.5 text-right">
+                    {item.status === 'resolvido'
+                      ? <span className="font-display text-xl font-bold text-ok">{formatVal(item.reconciliated_cases, item.reconciliated_units)}</span>
+                      : <Tag tone="diff">Pending</Tag>}
                   </td>
                 )}
               </tr>
             ))}
             {tabItems.length === 0 && (
               <tr>
-                <td
-                  colSpan={activeTab === 'discrepancias' ? 5 : 4}
-                  className="px-4 py-8 text-center text-slate-400 text-sm"
-                >
-                  {activeTab === 'discrepancias'
-                    ? 'No pending discrepancies.'
-                    : 'No matched items.'}
+                <td colSpan={activeTab === 'discrepancias' ? 5 : 4} className="px-3 py-6 text-center text-[15px] text-ink-2">
+                  {activeTab === 'discrepancias' ? 'No pending discrepancies.' : 'No matched items.'}
                 </td>
               </tr>
             )}

@@ -4,7 +4,7 @@ import { logout } from '@/actions/auth'
 // Shared building blocks of the "warehouse floor" visual. Every screen uses these
 // instead of its own classes, so buttons always look like buttons and screens match.
 
-type Variant = 'primary' | 'dark' | 'outline' | 'success' | 'danger' | 'quiet'
+type Variant = 'primary' | 'dark' | 'outline' | 'success' | 'alert' | 'danger' | 'quiet'
 type Size = 'lg' | 'md' | 'sm'
 
 const VARIANT: Record<Variant, string> = {
@@ -13,6 +13,7 @@ const VARIANT: Record<Variant, string> = {
   dark: 'bg-ink text-white border-2 border-ink',
   outline: 'bg-surface text-ink border-2 border-ink',
   success: 'bg-ok text-white border-2 border-ok',
+  alert: 'bg-alert text-white border-2 border-alert',
   danger: 'bg-surface text-alert border-2 border-alert',
   quiet: 'bg-transparent text-ink-2 border border-line-2 font-sans normal-case tracking-normal font-semibold',
 }
@@ -43,6 +44,21 @@ type Tone = 'ok' | 'diff' | 'info' | 'alert' | 'brand' | 'dark' | 'neutral'
 const TONE: Record<Tone, string> = {
   ok: 'bg-ok text-white', diff: 'bg-diff text-white', info: 'bg-info text-white', alert: 'bg-alert text-white',
   brand: 'bg-brand text-white', dark: 'bg-ink text-white', neutral: 'bg-surface text-ink border border-line-2',
+}
+
+// Shared plain pieces, so lists, forms and tables look the same on every screen.
+export const cardClass = 'rounded-md border border-line bg-surface'
+export const inputClass = 'min-h-12 w-full rounded-md border-2 border-ink bg-surface px-3 text-base outline-none focus-visible:outline-3 focus-visible:outline-info placeholder:text-ink-3 disabled:bg-ground disabled:text-ink-3'
+export const tableWrapClass = 'overflow-x-auto rounded-md border border-line bg-surface'
+// Choose-one switch (Myself / Solo counter): wrap the buttons in `segmentGroupClass`.
+export const segmentGroupClass = 'flex flex-wrap rounded-md bg-ground-2 p-[3px]'
+export const segmentClass = (pressed: boolean) => 'min-h-11 rounded-sm border-2 px-3.5 text-sm ' + (pressed ? 'border-ink bg-surface font-semibold' : 'border-transparent')
+export const thClass = 'px-3 py-2.5 text-left font-display text-[13px] font-bold uppercase tracking-[0.08em]'
+
+// Message banner: alert for errors, warn for things that need attention.
+export function Notice({ tone = 'alert', children }: { tone?: 'alert' | 'warn'; children: React.ReactNode }) {
+  return <p role={tone === 'alert' ? 'alert' : undefined}
+    className={'m-0 rounded-md px-3 py-2 text-[15px] ' + (tone === 'alert' ? 'bg-alert font-medium text-white' : 'border border-diff/40 bg-diff/10 text-ink')}>{children}</p>
 }
 
 // Short status word on a colored plate (Equal, Different, Waiting...).

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import { sessionHref } from '@/lib/session-href'
+import { PageTop } from '@/components/ui'
 import { SessoesClient } from './_components/SessoesClient'
 
 export default async function SessoesPage() {
@@ -12,7 +13,7 @@ export default async function SessoesPage() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900 mb-6">Count Sessions</h2>
+      <PageTop back={{ href: '/admin', label: 'Home' }} title="Count Sessions" />
       <SessoesClient sessoes={(sessoes ?? []).map(({ teams, ...s }) => ({ ...s, href: sessionHref(s.id, teams) }))} />
     </div>
   )

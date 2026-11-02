@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ItemBusca } from '@/actions/contagem'
+import { Button, Label, Notice, cardClass, inputClass, segmentClass, segmentGroupClass } from '@/components/ui'
 import { criarSoloSessaoCompleta } from '@/actions/solo'
 import { SoloItemListStep } from './SoloItemListStep'
 
@@ -13,6 +14,11 @@ type Props = {
   warehouses: { id: string; name: string }[]
   inventory: ItemBusca[]
   soloCounterActive: boolean
+}
+
+// Step titles stay real h3 headings (the browser test reads them).
+function Heading({ children }: { children: React.ReactNode }) {
+  return <h3 className="m-0"><Label>{children}</Label></h3>
 }
 
 export function SoloSessionWizard({ inventory, soloCounterActive, warehouses }: Props) {
@@ -40,63 +46,51 @@ export function SoloSessionWizard({ inventory, soloCounterActive, warehouses }: 
     })
   }
 
+  const card = cardClass + ' flex flex-col gap-4 p-4'
+  const nav = (back: Step, next: React.ReactNode) => (
+    <div className="flex gap-2">
+      <Button variant="quiet" onClick={() => setStep(back)}>← Back</Button>
+      {next}
+    </div>
+  )
+  const choose = (pressedFirst: boolean) => 'flex-1 ' + segmentClass(pressedFirst)
+
   if (step === 'title') {
     return (
-      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-        <label className="block text-sm font-medium">Warehouse
-          <select value={warehouseId} onChange={e => { setWarehouseId(e.target.value); setItemCodes([]) }} required className="mt-2 w-full rounded-xl border p-3">
+      <div className={card}>
+        <label className="flex flex-col gap-1.5">
+          <Label>Warehouse</Label>
+          <select value={warehouseId} onChange={e => { setWarehouseId(e.target.value); setItemCodes([]) }} required className={inputClass}>
             <option value="" disabled>Choose a warehouse</option>
             {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
           </select>
         </label>
-        <h3 className="font-semibold text-slate-900">Title</h3>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Aisle 3 spot check"
-          autoFocus
-          className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-slate-900"
-        />
-        <button
-          onClick={() => setStep('who')}
-          disabled={!title.trim() || !warehouseId}
-          className="w-full bg-slate-900 text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-40"
-        >
-          Next →
-        </button>
+        <label className="flex flex-col gap-1.5">
+          <Label>Title</Label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Aisle 3 spot check" autoFocus className={inputClass} />
+        </label>
+        <Button variant="primary" size="lg" full onClick={() => setStep('who')} disabled={!title.trim() || !warehouseId}>Next →</Button>
       </div>
     )
   }
 
   if (step === 'who') {
     return (
-      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-        <h3 className="font-semibold text-slate-900">Who counts</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => { setAssignedToCounter(false); setRestrictToList(false); setItemCodes([]) }}
-            className={`flex-1 rounded-xl py-3 text-sm font-semibold border-2 ${!assignedToCounter ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600'}`}
-          >
-            Myself
-          </button>
-          <button
-            onClick={() => soloCounterActive && setAssignedToCounter(true)}
-            disabled={!soloCounterActive}
-            title={soloCounterActive ? undefined : 'No solo counter configured — set one up in System Settings'}
-            className={`flex-1 rounded-xl py-3 text-sm font-semibold border-2 disabled:opacity-40 disabled:cursor-not-allowed ${assignedToCounter ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600'}`}
-          >
-            Solo counter
-          </button>
+      <div className={card}>
+        <Heading>Who counts</Heading>
+        <div role="group" aria-label="Who counts" className={segmentGroupClass}>
+          <button type="button" aria-pressed={!assignedToCounter} className={choose(!assignedToCounter)}
+            onClick={() => { setAssignedToCounter(false); setRestrictToList(false); setItemCodes([]) }}>Myself</button>
+          <button type="button" aria-pressed={assignedToCounter} className={choose(assignedToCounter) + ' disabled:opacity-40'}
+            onClick={() => soloCounterActive && setAssignedToCounter(true)} disabled={!soloCounterActive}
+            title={soloCounterActive ? undefined : 'No solo counter configured — set one up in System Settings'}>Solo counter</button>
         </div>
         {!soloCounterActive && (
-          <p className="text-xs text-amber-600">
-            No solo counter configured yet. <a href="/admin/settings" className="underline">Set one up in System Settings</a> or continue counting yourself.
-          </p>
+          <Notice tone="warn">
+            No solo counter configured yet. <a href="/admin/settings" className="font-semibold underline">Set one up in System Settings</a> or continue counting yourself.
+          </Notice>
         )}
-        <div className="flex gap-2">
-          <button onClick={() => setStep('title')} className="px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-500">← Back</button>
-          <button onClick={() => setStep('list')} className="flex-1 bg-slate-900 text-white font-semibold py-3 rounded-xl text-sm">Next →</button>
-        </div>
+        {nav('title', <Button variant="primary" className="flex-1" onClick={() => setStep('list')}>Next →</Button>)}
       </div>
     )
   }
@@ -104,70 +98,42 @@ export function SoloSessionWizard({ inventory, soloCounterActive, warehouses }: 
   if (step === 'list') {
     if (!assignedToCounter) {
       return (
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-          <h3 className="font-semibold text-slate-900">Item list</h3>
-          <p className="text-sm text-slate-500">
+        <div className={card}>
+          <Heading>Item list</Heading>
+          <p className="m-0 text-[15px] text-ink-2">
             Item list restriction only applies when the session is assigned to the solo counter. You&apos;ll be able to count any item.
           </p>
-          <div className="flex gap-2">
-            <button onClick={() => setStep('who')} className="px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-500">← Back</button>
-            <button onClick={() => setStep('review')} className="flex-1 bg-slate-900 text-white font-semibold py-3 rounded-xl text-sm">Next →</button>
-          </div>
+          {nav('who', <Button variant="primary" className="flex-1" onClick={() => setStep('review')}>Next →</Button>)}
         </div>
       )
     }
     return (
-      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-        <h3 className="font-semibold text-slate-900">Item list</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setRestrictToList(false)}
-            className={`flex-1 rounded-xl py-3 text-sm font-semibold border-2 ${!restrictToList ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600'}`}
-          >
-            Free add
-          </button>
-          <button
-            onClick={() => setRestrictToList(true)}
-            className={`flex-1 rounded-xl py-3 text-sm font-semibold border-2 ${restrictToList ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600'}`}
-          >
-            Restricted list
-          </button>
+      <div className={card}>
+        <Heading>Item list</Heading>
+        <div role="group" aria-label="Item list" className={segmentGroupClass}>
+          <button type="button" aria-pressed={!restrictToList} className={choose(!restrictToList)} onClick={() => setRestrictToList(false)}>Free add</button>
+          <button type="button" aria-pressed={restrictToList} className={choose(restrictToList)} onClick={() => setRestrictToList(true)}>Restricted list</button>
         </div>
         {restrictToList && <SoloItemListStep inventory={inventory.filter(i => i.warehouse_id === warehouseId)} items={itemCodes} onChange={setItemCodes} />}
-        <div className="flex gap-2">
-          <button onClick={() => setStep('who')} className="px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-500">← Back</button>
-          <button
-            onClick={() => setStep('review')}
-            disabled={restrictToList && itemCodes.length === 0}
-            className="flex-1 bg-slate-900 text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-40"
-          >
-            Next →
-          </button>
-        </div>
+        {nav('who', <Button variant="primary" className="flex-1" onClick={() => setStep('review')} disabled={restrictToList && itemCodes.length === 0}>Next →</Button>)}
       </div>
     )
   }
 
+  const row = (label: string, value: React.ReactNode) => (
+    <div className="flex justify-between gap-3 border-b border-ground-2 pb-2 last:border-b-0 last:pb-0"><dt className="text-ink-2">{label}</dt><dd className="m-0 text-right font-semibold">{value}</dd></div>
+  )
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-      <h3 className="font-semibold text-slate-900">Review &amp; Confirm</h3>
-      <dl className="text-sm space-y-2">
-        <div className="flex justify-between"><dt>Warehouse</dt><dd>{warehouses.find(w => w.id === warehouseId)?.name}</dd></div>
-        <div className="flex justify-between"><dt className="text-slate-500">Title</dt><dd className="font-semibold text-slate-900">{title}</dd></div>
-        <div className="flex justify-between"><dt className="text-slate-500">Who counts</dt><dd className="font-semibold text-slate-900">{assignedToCounter ? 'Solo counter' : 'Myself'}</dd></div>
-        <div className="flex justify-between"><dt className="text-slate-500">Item list</dt><dd className="font-semibold text-slate-900">{restrictToList ? `Restricted (${itemCodes.length} items)` : 'Free add'}</dd></div>
+    <div className={card}>
+      <Heading>Review &amp; Confirm</Heading>
+      <dl className="m-0 flex flex-col gap-2 text-[15px]">
+        {row('Warehouse', warehouses.find(w => w.id === warehouseId)?.name)}
+        {row('Title', title)}
+        {row('Who counts', assignedToCounter ? 'Solo counter' : 'Myself')}
+        {row('Item list', restrictToList ? `Restricted (${itemCodes.length} items)` : 'Free add')}
       </dl>
-      {erro && <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">{erro}</div>}
-      <div className="flex gap-2">
-        <button onClick={() => setStep('list')} className="px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-500">← Back</button>
-        <button
-          onClick={handleConfirm}
-          disabled={isPending}
-          className="flex-1 bg-slate-900 text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-40"
-        >
-          {isPending ? 'Creating...' : 'Confirm & Create Session'}
-        </button>
-      </div>
+      {erro && <Notice>{erro}</Notice>}
+      {nav('list', <Button variant="primary" className="flex-1" onClick={handleConfirm} disabled={isPending}>{isPending ? 'Creating...' : 'Confirm & Create Session'}</Button>)}
     </div>
   )
 }

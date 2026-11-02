@@ -2,8 +2,8 @@
 
 import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
+import { Button, Label, Notice, PageTop, Tag, cardClass } from '@/components/ui'
 import { weightUnits } from '@/lib/weight-count'
 import type { ReconcItemLista } from '@/actions/reconciliacao'
 import { resolverItemReconciliacao, confirmarReconciliacao } from '@/actions/reconciliacao'
@@ -128,17 +128,15 @@ export function ReconciliacaoCounterClient({ items, teamId, readOnly = false }: 
     })
   }
 
+  const bigInput = 'w-full min-h-14 rounded-md border-2 border-ink bg-surface px-2 text-center font-display text-2xl font-bold outline-none focus-visible:outline-3 focus-visible:outline-info placeholder:text-ink-3 disabled:cursor-not-allowed disabled:border-ground-2 disabled:bg-ground-2 disabled:text-ink-3'
+  const field = (label: string, input: React.ReactNode) => (
+    <label className="flex flex-1 flex-col items-center gap-1"><span className="text-[13px] font-semibold">{label}</span>{input}</label>
+  )
+
   return (
     <div>
-      <Link
-        href="/busca"
-        className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4"
-      >
-        ← Back
-      </Link>
-
-      <h2 className="text-xl font-semibold text-slate-900 mb-1">Reconciliation</h2>
-      <p className="text-sm text-slate-500 mb-5">
+      <PageTop back={{ href: '/busca', label: 'Search' }} title="Reconciliation" />
+      <p className="m-0 mb-4 text-[15px] text-ink-2">
         {readOnly
           ? `${items.length} ${items.length === 1 ? 'item is' : 'items are'} being reconciled by the independent counter.`
           : pendingCount > 0
@@ -146,13 +144,9 @@ export function ReconciliacaoCounterClient({ items, teamId, readOnly = false }: 
           : 'All items have been reconciled. Confirm to finalise.'}
       </p>
 
-      {erro && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700 mb-4">
-          {erro}
-        </div>
-      )}
+      {erro && <div className="mb-4"><Notice>{erro}</Notice></div>}
 
-      <div className="space-y-3 mb-6">
+      <div className="mb-6 flex flex-col gap-3">
         {items.map((item) => {
           const resolved = item.status === 'resolvido'
           const noBpu = item.bpu === 1
@@ -163,196 +157,76 @@ export function ReconciliacaoCounterClient({ items, teamId, readOnly = false }: 
             : null
 
           return (
-            <div
-              key={item.id}
-              className={`bg-white border rounded-xl overflow-hidden ${
-                resolved ? 'border-green-200' : 'border-amber-200'
-              }`}
-            >
-              <div
-                className={`px-4 py-3 flex items-start justify-between ${
-                  resolved ? 'bg-green-50' : 'bg-amber-50'
-                }`}
-              >
-                <div>
-                  <div className="font-semibold text-slate-900 text-sm">{item.brand_code}</div>
-                  <div className="text-xs text-slate-500">{item.brand_name}</div>
-                  {item.bin_location && (
-                    <div className="text-xs text-slate-400">{item.bin_location}</div>
-                  )}
+            <div key={item.id} className={cardClass + ' overflow-hidden ' + (resolved ? '' : 'border-2 border-ink')}>
+              <div className={'flex items-start justify-between gap-2 px-3.5 py-3 ' + (resolved ? 'bg-ok/10' : 'bg-diff/10')}>
+                <div className="flex min-w-0 flex-col">
+                  <span className="font-mono text-xs font-semibold text-ink-2">{item.brand_code}</span>
+                  <strong>{item.brand_name}</strong>
+                  {item.bin_location && <span className="mt-1 w-fit rounded-sm border-[1.5px] border-ink bg-line px-1.5 font-mono text-[13px] font-semibold">{item.bin_location}</span>}
                 </div>
-                <div className="flex items-center gap-2">
-                  {item.is_weight_count && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                      ⚖️ Weight
-                    </span>
-                  )}
-                  {resolved && (
-                    <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                      ✓ Reconciled
-                    </span>
-                  )}
+                <div className="flex flex-wrap justify-end gap-1.5">
+                  {item.is_weight_count && <Tag tone="info">Weight</Tag>}
+                  {resolved && <Tag tone="ok">✓ Reconciled</Tag>}
                 </div>
               </div>
 
               {/* C1 vs C2 comparison */}
-              <div className="grid grid-cols-2 divide-x divide-slate-100 border-b border-slate-100">
+              <div className="grid grid-cols-2 divide-x divide-ground-2 border-b border-ground-2">
                 {[
                   { label: 'C1', cases: item.contador_1_cases, units: item.contador_1_units },
                   { label: 'C2', cases: item.contador_2_cases, units: item.contador_2_units },
                 ].map(({ label, cases, units }) => (
-                  <div key={label} className="px-3 py-2 text-center">
-                    <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-0.5">
-                      {label}
-                    </div>
-                    <div className="text-sm font-semibold text-slate-700">
-                      {cases === null ? '—' : `${cases}+${units}`}
-                    </div>
+                  <div key={label} className="flex flex-col items-center px-3 py-2">
+                    <Label>{label}</Label>
+                    <span className="font-display text-2xl font-bold">{cases === null ? '—' : `${cases}+${units}`}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="px-4 py-3">
+              <div className="flex flex-col gap-3 px-3.5 py-3">
                 {resolved ? (
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">Reconciled Count</span>
-                    <span className="font-bold text-green-700 text-sm">
-                      {item.reconciliated_cases} cases + {item.reconciliated_units} units
-                    </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label>Reconciled Count</Label>
+                    <span className="font-display text-xl font-bold text-ok">{item.reconciliated_cases} cases + {item.reconciliated_units} units</span>
                   </div>
                 ) : readOnly ? (
-                  <div className="text-xs text-slate-400 italic">
-                    Pending — the independent counter is reviewing this item.
-                  </div>
+                  <p className="m-0 text-[15px] text-ink-2">Pending — the independent counter is reviewing this item.</p>
                 ) : item.is_weight_count ? (
-                  <div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 mb-3">
-                      📦 Tare: <strong className="text-slate-700">{item.box_tare_g.toLocaleString('en-GB')} g/box</strong>
-                      <span className="text-slate-300">·</span>
-                      ⚖️ <strong className="text-slate-700">{item.weight_avg} g/unit</strong>
-                    </div>
-                    <div className="text-xs text-slate-500 mb-2">Agreed value after recount</div>
+                  <>
+                    <p className="m-0 rounded-md border border-line bg-ground px-3 py-2 text-[13px] text-ink-2">
+                      Tare: <strong className="text-ink">{item.box_tare_g.toLocaleString('en-GB')} g/box</strong> · <strong className="text-ink">{item.weight_avg} g/unit</strong>
+                    </p>
+                    <Label>Agreed value after recount</Label>
                     <div className="flex items-end gap-2">
-                      <div className="flex-1">
-                        <div className="text-[10px] text-slate-400 mb-1">No. of Boxes</div>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min="0"
-                          value={wi.caixas}
-                          onChange={(e) =>
-                            setWeightInputs((prev) => ({
-                              ...prev,
-                              [item.id]: { ...getWeightInput(item.id), caixas: e.target.value },
-                            }))
-                          }
-                          placeholder="0"
-                          className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-[10px] text-slate-400 mb-1">Weight (g)</div>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          value={wi.pesoFmt}
-                          onChange={(e) =>
-                            setWeightInputs((prev) => ({
-                              ...prev,
-                              [item.id]: {
-                                ...getWeightInput(item.id),
-                                pesoFmt: formatGrams(e.target.value),
-                              },
-                            }))
-                          }
-                          placeholder="0"
-                          className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      <button
-                        onClick={() =>
-                          handleSalvarPeso(item.id, item.weight_avg, item.box_tare_g, item.bpu)
-                        }
-                        disabled={savingId === item.id || !wCalc?.valid}
-                        className="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-60 whitespace-nowrap"
-                      >
-                        {savingId === item.id ? '...' : 'Save'}
-                      </button>
+                      {field('No. of Boxes', <input type="number" inputMode="numeric" min="0" value={wi.caixas} placeholder="0" className={bigInput}
+                        onChange={(e) => setWeightInputs((prev) => ({ ...prev, [item.id]: { ...getWeightInput(item.id), caixas: e.target.value } }))} />)}
+                      {field('Weight (g)', <input type="text" inputMode="numeric" value={wi.pesoFmt} placeholder="0" className={bigInput}
+                        onChange={(e) => setWeightInputs((prev) => ({ ...prev, [item.id]: { ...getWeightInput(item.id), pesoFmt: formatGrams(e.target.value) } }))} />)}
                     </div>
                     {wCalc && wCalc.valid && (
-                      <div className="mt-2 text-xs text-green-700 font-medium">
-                        → {wCalc.units_total} units ({wCalc.final_cases} cases + {wCalc.final_units} units)
-                      </div>
+                      <p className="m-0 text-[15px] font-semibold text-ok">→ {wCalc.units_total} units ({wCalc.final_cases} cases + {wCalc.final_units} units)</p>
                     )}
-                  </div>
-                ) : (
-                  <div>
-                    <div className="text-xs text-slate-500 mb-2">Agreed value after recount</div>
-                    <div className="flex items-end gap-1 mb-2">
-                      <div className="flex-1">
-                        <div className="text-[10px] text-slate-400 mb-1">Pallets</div>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min="0"
-                          value={inp.pallets}
-                          onChange={(e) =>
-                            setInputs((prev) => ({
-                              ...prev,
-                              [item.id]: { ...getInput(item.id), pallets: e.target.value },
-                            }))
-                          }
-                          placeholder="0"
-                          disabled={noBpu}
-                          className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500 disabled:opacity-40 disabled:bg-slate-50"
-                        />
-                      </div>
-                      <span className="text-slate-400 text-sm pb-2.5">×</span>
-                      <div className="flex-1">
-                        <div className="text-[10px] text-slate-400 mb-1">Cases</div>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min="0"
-                          value={inp.cases}
-                          onChange={(e) =>
-                            setInputs((prev) => ({
-                              ...prev,
-                              [item.id]: { ...getInput(item.id), cases: e.target.value },
-                            }))
-                          }
-                          placeholder="0"
-                          disabled={noBpu}
-                          className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500 disabled:opacity-40 disabled:bg-slate-50"
-                        />
-                      </div>
-                      <span className="text-slate-400 text-sm pb-2.5">+</span>
-                      <div className="flex-1">
-                        <div className="text-[10px] text-slate-400 mb-1">Units</div>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min="0"
-                          value={inp.units}
-                          onChange={(e) =>
-                            setInputs((prev) => ({
-                              ...prev,
-                              [item.id]: { ...getInput(item.id), units: e.target.value },
-                            }))
-                          }
-                          placeholder="0"
-                          className="w-full text-center text-lg font-bold px-2 py-2 rounded-xl border-[1.5px] border-slate-200 bg-white focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleSalvar(item)}
-                      disabled={savingId === item.id}
-                      className="w-full px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-60"
-                    >
+                    <Button variant="dark" full onClick={() => handleSalvarPeso(item.id, item.weight_avg, item.box_tare_g, item.bpu)} disabled={savingId === item.id || !wCalc?.valid}>
                       {savingId === item.id ? '...' : 'Save'}
-                    </button>
-                  </div>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Label>Agreed value after recount</Label>
+                    <div className="flex items-end gap-2">
+                      {field('Pallets', <input type="number" inputMode="numeric" min="0" value={inp.pallets} placeholder="0" disabled={noBpu} className={bigInput}
+                        onChange={(e) => setInputs((prev) => ({ ...prev, [item.id]: { ...getInput(item.id), pallets: e.target.value } }))} />)}
+                      <span className="pb-4 text-ink-2">×</span>
+                      {field('Cases', <input type="number" inputMode="numeric" min="0" value={inp.cases} placeholder="0" disabled={noBpu} className={bigInput}
+                        onChange={(e) => setInputs((prev) => ({ ...prev, [item.id]: { ...getInput(item.id), cases: e.target.value } }))} />)}
+                      <span className="pb-4 text-ink-2">+</span>
+                      {field('Units', <input type="number" inputMode="numeric" min="0" value={inp.units} placeholder="0" className={bigInput}
+                        onChange={(e) => setInputs((prev) => ({ ...prev, [item.id]: { ...getInput(item.id), units: e.target.value } }))} />)}
+                    </div>
+                    <Button variant="dark" full onClick={() => handleSalvar(item)} disabled={savingId === item.id}>
+                      {savingId === item.id ? '...' : 'Save'}
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -360,18 +234,12 @@ export function ReconciliacaoCounterClient({ items, teamId, readOnly = false }: 
         })}
       </div>
 
-      {items.length === 0 && (
-        <div className="text-center text-slate-400 py-12 text-sm">No items to reconcile.</div>
-      )}
+      {items.length === 0 && <p className="m-0 py-12 text-center text-[15px] text-ink-2">No items to reconcile.</p>}
 
       {!readOnly && (
-        <button
-          onClick={handleConfirmar}
-          disabled={!canConfirm || isPending}
-          className="w-full py-4 rounded-xl text-base font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
+        <Button variant="primary" size="lg" full onClick={handleConfirmar} disabled={!canConfirm || isPending}>
           {isPending ? 'Confirming...' : 'Finalise and Confirm Reconciliation'}
-        </button>
+        </Button>
       )}
     </div>
   )

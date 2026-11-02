@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import type { ItemBusca } from '@/actions/contagem'
+import { Notice, cardClass, inputClass, segmentClass, segmentGroupClass } from '@/components/ui'
 import { atribuirSoloContador, adicionarItemListaSolo, removerItemListaSolo } from '@/actions/solo'
 
 type ListItem = { brand_code: string; brand_name: string }
@@ -88,84 +89,58 @@ export function AssignmentPanel({
     })
   }
 
+  const rowLabel = 'text-[15px] font-semibold'
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 mb-4 space-y-4">
-      {erro && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">{erro}</div>
-      )}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <span className="text-sm font-semibold text-slate-700">Who counts</span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setAssigned(false)}
-            disabled={isPending}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-lg border ${!assignedToCounter ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200 text-slate-500'}`}
-          >
-            Myself
-          </button>
-          <button
-            onClick={() => setAssigned(true)}
-            disabled={isPending}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-lg border ${assignedToCounter ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200 text-slate-500'}`}
-          >
-            Solo counter
-          </button>
+    <div className={cardClass + ' mb-4 flex flex-col gap-4 p-3.5'}>
+      {erro && <Notice>{erro}</Notice>}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className={rowLabel}>Who counts</span>
+        <div role="group" aria-label="Who counts" className={segmentGroupClass}>
+          <button type="button" aria-pressed={!assignedToCounter} onClick={() => setAssigned(false)} disabled={isPending} className={segmentClass(!assignedToCounter)}>Myself</button>
+          <button type="button" aria-pressed={assignedToCounter} onClick={() => setAssigned(true)} disabled={isPending} className={segmentClass(assignedToCounter)}>Solo counter</button>
         </div>
       </div>
 
       {assignedToCounter && (
         <>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-sm font-semibold text-slate-700">Item list</span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setRestrict(false)}
-                disabled={isPending}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-lg border ${!restrictToList ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200 text-slate-500'}`}
-              >
-                Free add
-              </button>
-              <button
-                onClick={() => setRestrict(true)}
-                disabled={isPending}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-lg border ${restrictToList ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200 text-slate-500'}`}
-              >
-                Restricted list
-              </button>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className={rowLabel}>Item list</span>
+            <div role="group" aria-label="Item list" className={segmentGroupClass}>
+              <button type="button" aria-pressed={!restrictToList} onClick={() => setRestrict(false)} disabled={isPending} className={segmentClass(!restrictToList)}>Free add</button>
+              <button type="button" aria-pressed={restrictToList} onClick={() => setRestrict(true)} disabled={isPending} className={segmentClass(restrictToList)}>Restricted list</button>
             </div>
           </div>
 
           {restrictToList && (
-            <div>
+            <div className="flex flex-col gap-3">
               <input
                 value={termo}
                 onChange={(e) => setTermo(e.target.value)}
+                aria-label="Search item to add to the list"
                 placeholder="Search item to add to the list..."
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-slate-900"
+                className={inputClass}
               />
               {matches.length > 0 && (
-                <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden">
+                <div className="overflow-hidden rounded-md border border-line">
                   {matches.map((item) => (
                     <button
                       key={item.brand_code}
                       onClick={() => addItem(item)}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
+                      className="min-h-11 w-full border-b border-ground-2 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-ground"
                     >
-                      <span className="font-semibold">{item.brand_code}</span> — {item.brand_name}
+                      <span className="font-mono text-[13px] font-semibold">{item.brand_code}</span> — {item.brand_name}
                     </button>
                   ))}
                 </div>
               )}
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
                 {listItems.map((i) => (
-                  <span key={i.brand_code} className="inline-flex items-center gap-1.5 bg-slate-100 rounded-full px-3 py-1 text-xs">
+                  <span key={i.brand_code} className="inline-flex items-center gap-1.5 rounded-sm border border-line-2 bg-ground-2 py-1 pl-2 pr-1 font-mono text-[13px] font-semibold">
                     {i.brand_code}
-                    <button onClick={() => removeItem(i.brand_code)} className="text-slate-400 hover:text-red-500">
-                      ✕
-                    </button>
+                    <button onClick={() => removeItem(i.brand_code)} aria-label={'Remove ' + i.brand_code} className="inline-flex size-7 items-center justify-center rounded-sm text-ink-2 hover:text-alert">✕</button>
                   </span>
                 ))}
-                {listItems.length === 0 && <span className="text-xs text-slate-400">No items added yet.</span>}
+                {listItems.length === 0 && <span className="text-[13px] text-ink-2">No items added yet.</span>}
               </div>
             </div>
           )}

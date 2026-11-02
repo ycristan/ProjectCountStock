@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { criarEquipes } from '@/actions/sessao'
 import type { EquipeInput, Credencial } from '@/actions/sessao'
-import Link from 'next/link'
+import { Button, Label, Notice, PageTop, cardClass, inputClass } from '@/components/ui'
 import { LoginCards } from './LoginCards'
 
 export function EquipesForm({
@@ -41,52 +41,29 @@ export function EquipesForm({
 
   return (
     <div>
-      <Link
-        href="/admin"
-        className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4"
-      >
-        ← Dashboard
-      </Link>
-      <h2 className="text-xl font-semibold text-slate-900 mb-6">Configure Teams</h2>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <PageTop back={{ href: '/admin', label: 'Home' }} title="Configure Teams" />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {Array.from({ length: numEquipes }, (_, i) => (
-          <div key={i} className="border border-slate-200 rounded-xl p-4">
-            <h3 className="font-medium text-slate-900 mb-3">Team {i + 1}</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Team Name</label>
-                <input
-                  name={`team_${i}_name`}
-                  defaultValue={`Team ${i + 1}`}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {(['c1', 'c2', 'ind'] as const).map((role, j) => (
-                  <div key={role}>
-                    <label className="block text-sm text-slate-600 mb-1">
-                      {['Counter 1', 'Counter 2', 'Independent'][j]}
-                    </label>
-                    <input
-                      name={`team_${i}_${role}`}
-                      required
-                      placeholder="Name"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                ))}
-              </div>
+          <div key={i} className={cardClass + ' flex flex-col gap-3 p-4'}>
+            <h3 className="m-0 font-display text-xl font-bold uppercase">Team {i + 1}</h3>
+            <label className="flex flex-col gap-1.5">
+              <Label>Team Name</Label>
+              <input name={`team_${i}_name`} defaultValue={`Team ${i + 1}`} className={inputClass} />
+            </label>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {(['c1', 'c2', 'ind'] as const).map((role, j) => (
+                <label key={role} className="flex flex-col gap-1.5">
+                  <Label>{['Counter 1', 'Counter 2', 'Independent'][j]}</Label>
+                  <input name={`team_${i}_${role}`} required placeholder="Name" className={inputClass} />
+                </label>
+              ))}
             </div>
           </div>
         ))}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 disabled:opacity-50"
-        >
+        {error && <Notice>{error}</Notice>}
+        <Button type="submit" variant="primary" size="lg" full disabled={loading}>
           {loading ? 'Creating teams...' : 'Create Teams and Generate Logins'}
-        </button>
+        </Button>
       </form>
     </div>
   )

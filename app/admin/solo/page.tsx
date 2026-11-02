@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { PageTop, Tag, buttonClass, cardClass } from '@/components/ui'
 
 export default async function AdminSoloPage() {
   const admin = createAdminClient()
@@ -10,51 +11,25 @@ export default async function AdminSoloPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-slate-900">Solo Count</h2>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin/sessao/solo"
-            className="text-sm font-semibold text-blue-700 border border-blue-200 rounded-lg px-3 py-1.5 hover:bg-blue-50"
-          >
-            + New Solo Count
-          </Link>
-          <Link href="/admin" className="text-sm text-slate-400 hover:text-slate-900">← Dashboard</Link>
-        </div>
-      </div>
+      <PageTop back={{ href: '/admin', label: 'Home' }} title="Solo Count"
+        actions={<Link href="/admin/sessao/solo" className={buttonClass('primary', 'sm') + ' no-underline'}>New Solo Count</Link>} />
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         {(sessions ?? []).map((s) => (
-          <div
-            key={s.id}
-            className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-4"
-          >
-            <div>
-              <div className="font-semibold text-slate-900">{s.title}</div>
-              <div className="text-xs text-slate-400 mt-1">
-                {new Date(s.created_at).toLocaleDateString('en-GB')}
-              </div>
+          <div key={s.id} className={cardClass + ' flex flex-wrap items-center justify-between gap-3 p-3.5'}>
+            <div className="flex min-w-0 flex-col gap-1">
+              <strong className="text-base">{s.title}</strong>
+              <span className="text-[13px] text-ink-2">{new Date(s.created_at).toLocaleDateString('en-GB')}</span>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span
-                className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                  s.status === 'open' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
-                }`}
-              >
-                {s.status}
-              </span>
-              <Link
-                href={`/admin/solo/${s.id}`}
-                className="text-xs font-semibold text-blue-700 border border-blue-200 rounded-lg px-3 py-1.5 hover:bg-blue-50"
-              >
-                {s.status === 'open' ? 'Count →' : 'View →'}
+            <div className="flex items-center gap-3">
+              <Tag tone={s.status === 'open' ? 'ok' : 'neutral'}>{s.status}</Tag>
+              <Link href={`/admin/solo/${s.id}`} className={buttonClass('outline', 'sm') + ' no-underline'}>
+                {s.status === 'open' ? 'Count' : 'View'}
               </Link>
             </div>
           </div>
         ))}
-        {!(sessions ?? []).length && (
-          <p className="text-sm text-slate-400 text-center py-8">No solo counts yet.</p>
-        )}
+        {!(sessions ?? []).length && <p className="m-0 py-8 text-center text-[15px] text-ink-2">No solo counts yet.</p>}
       </div>
     </div>
   )

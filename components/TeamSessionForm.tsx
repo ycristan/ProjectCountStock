@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 import { criarSessao } from '@/actions/sessao'
 import Link from 'next/link'
+import { Button, Label, Notice, PageTop, inputClass } from '@/components/ui'
 
 type SessaoState = { error?: string } | null
 
@@ -11,44 +12,27 @@ export function TeamSessionForm({ warehouses }: { warehouses: { id: string; name
 
   return (
     <div>
-      <Link href="/admin/sessao" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
-        ← New Session
-      </Link>
-      <h2 className="text-xl font-semibold text-slate-900 mb-4">New Team Count Session</h2>
-      <form action={formAction} className="space-y-6 max-w-sm">
-        <label className="block text-sm font-medium">Warehouse
-          <select name="warehouse_id" required defaultValue="" className="mt-2 w-full rounded-xl border p-3">
+      <PageTop back={{ href: '/admin/sessao', label: 'New Session' }} title="New Team Count Session" />
+      <form action={formAction} className="flex max-w-sm flex-col gap-5">
+        <label className="flex flex-col gap-1.5">
+          <Label>Warehouse</Label>
+          <select name="warehouse_id" required defaultValue="" className={inputClass}>
             <option value="" disabled>Choose a warehouse</option>
             {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
           </select>
         </label>
-        <div>
-          <label htmlFor="num_equipes" className="block text-sm font-medium text-slate-700 mb-1">
-            Number of Teams
-          </label>
-          <input
-            id="num_equipes"
-            name="num_equipes"
-            type="number"
-            min={1}
-            max={20}
-            defaultValue={1}
-            required
-            className="w-full px-4 py-3 text-lg border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
-          />
-        </div>
-        <p className="text-xs text-slate-400">
+        <label htmlFor="num_equipes" className="flex flex-col gap-1.5">
+          <Label>Number of Teams</Label>
+          <input id="num_equipes" name="num_equipes" type="number" min={1} max={20} defaultValue={1} required className={inputClass} />
+        </label>
+        <p className="m-0 text-[13px] text-ink-2">
           Box tare and weight tolerance use the defaults from{' '}
-          <Link href="/admin/settings" className="text-blue-600 hover:underline">System Settings</Link>.
+          <Link href="/admin/settings" className="font-semibold text-ink underline underline-offset-2">System Settings</Link>.
         </p>
-        {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full py-3 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 disabled:opacity-50"
-        >
+        {state?.error && <Notice>{state.error}</Notice>}
+        <Button type="submit" variant="primary" size="lg" full disabled={pending}>
           {pending ? 'Creating...' : 'Create Session'}
-        </button>
+        </Button>
       </form>
     </div>
   )

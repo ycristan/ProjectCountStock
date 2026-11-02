@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
+import { Button, Notice, PageTop, Tag, tableWrapClass, thClass } from '@/components/ui'
 import { confirmarIndependente } from '@/actions/sessao'
 
 type Entry = {
@@ -130,103 +131,80 @@ export function MonitorClient({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900 mb-1">Live Count Monitor</h2>
-      <p className="text-sm text-slate-500 mb-4">Tracking Counter 1 and Counter 2 in real time.</p>
+      <PageTop title="Live Count Monitor" kicker="Tracking Counter 1 and Counter 2 in real time." />
 
-      <div className="flex gap-2 mb-5">
+      <div className="mb-4 flex flex-wrap gap-2">
         {[
           { label: 'Counter 1', c: c1 },
           { label: 'Counter 2', c: c2 },
         ].map(({ label, c }) => (
-          <span
-            key={label}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
-              c?.finalized_at ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
-            }`}
-          >
+          <Tag key={label} tone={c?.finalized_at ? 'ok' : 'neutral'}>
             {label} {c?.finalized_at ? '✓ Finalised' : '…'}
-          </span>
+          </Tag>
         ))}
       </div>
 
       {bothFinalized && !indConfirmed && (
-        <div className="mb-5 bg-amber-50 border-2 border-amber-300 rounded-2xl p-6 text-center">
-          <p className="text-amber-900 font-semibold text-base mb-1">
-            Both counters have finalised their count.
-          </p>
-          <p className="text-amber-700 text-sm mb-4">
-            Review the results below, then confirm the count is complete.
-          </p>
-          {confirmError && <p role="alert" className="text-red-700 text-sm mb-3">Could not confirm the count. Please try again.</p>}
-          <button
-            onClick={handleConfirm}
-            disabled={confirming}
-            className="bg-slate-900 text-white font-bold px-8 py-3 rounded-xl text-base hover:bg-slate-700 disabled:opacity-50"
-          >
+        <div className="mb-4 flex flex-col gap-3 rounded-md border-2 border-ink bg-diff/10 p-4">
+          <p className="m-0 text-base font-semibold">Both counters have finalised their count.</p>
+          <p className="m-0 text-[15px] text-ink-2">Review the results below, then confirm the count is complete.</p>
+          {confirmError && <Notice>Could not confirm the count. Please try again.</Notice>}
+          <Button variant="primary" size="lg" full onClick={handleConfirm} disabled={confirming}>
             {confirming ? '…' : '✓ Confirm Count Complete →'}
-          </button>
+          </Button>
         </div>
       )}
 
       {indConfirmed && (
-        <div className="mb-5 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 font-semibold">
+        <p className="m-0 mb-4 rounded-md border border-ok/30 bg-ok/10 px-3 py-2 text-[15px] font-semibold text-ok">
           ✓ Count confirmed. Admin has been notified to check for discrepancies.
-        </div>
+        </p>
       )}
 
       {!bothFinalized && (
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+        <p className="m-0 mb-4 rounded-md border border-info/30 bg-info/10 px-3 py-2 text-[15px] text-info">
           Waiting for Counter 1 and Counter 2 to finalise their counts…
-        </div>
+        </p>
       )}
 
       {codes.length === 0 ? (
-        <p className="text-sm text-slate-400 text-center py-12">Waiting for first counts…</p>
+        <p className="m-0 py-12 text-center text-[15px] text-ink-2">Waiting for first counts…</p>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className={tableWrapClass}>
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Item
-                </th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">C1</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500">C2</th>
+              <tr className="bg-ink text-ground">
+                <th className={thClass}>Item</th>
+                <th className={thClass + ' text-right'}>C1</th>
+                <th className={thClass + ' text-right'}>C2</th>
                 <th className="w-8" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {codes.map((code) => {
                 const c1v = getVal(code, 'contador_1')
                 const c2v = getVal(code, 'contador_2')
                 const both = c1v !== '—' && c2v !== '—'
                 const match = both && c1v === c2v
                 return (
-                  <tr key={code} className={both ? (match ? 'bg-green-50' : 'bg-amber-50') : ''}>
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-900 text-sm">{code}</div>
-                      <div className="text-xs text-slate-400">{invMap[code] ?? ''}</div>
+                  <tr key={code} className={'border-t border-ground-2 ' + (both ? (match ? 'bg-ok/10' : 'bg-diff/10') : '')}>
+                    <td className="px-3 py-2.5">
+                      <span className="font-mono text-xs font-semibold text-ink-2">{code}</span><br />
+                      <strong>{invMap[code] ?? ''}</strong>
                     </td>
-                    <td className="px-4 py-3 text-center font-mono text-sm text-slate-700">{c1v}</td>
-                    <td className="px-4 py-3 text-center font-mono text-sm text-slate-700">{c2v}</td>
-                    <td className="px-3 py-3 text-center text-base">
-                      {both && (match ? (
-                        <span className="text-green-500">✓</span>
-                      ) : (
-                        <span className="text-amber-500">⚠</span>
-                      ))}
+                    <td className="px-3 py-2.5 text-right font-display text-xl font-bold">{c1v}</td>
+                    <td className="px-3 py-2.5 text-right font-display text-xl font-bold">{c2v}</td>
+                    <td className="px-3 py-2.5 text-center text-base">
+                      {both && (match ? <span className="text-ok">✓</span> : <span className="text-diff">⚠</span>)}
                     </td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
-          <div className="px-4 py-2 border-t border-slate-100 text-xs text-slate-400 flex justify-between">
+          <div className="flex justify-between border-t border-ground-2 px-3 py-2 text-[13px] text-ink-2">
             <span>{codes.length} {codes.length === 1 ? 'item' : 'items'} counted</span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse inline-block" />
-              Live
-            </span>
+            <span className="flex items-center gap-2 font-semibold text-ok"><span className="cs-live size-2.5 rounded-full bg-ok" />Live</span>
           </div>
         </div>
       )}

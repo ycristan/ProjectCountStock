@@ -1,8 +1,10 @@
 'use client'
 
+import { Button, Notice } from '@/components/ui'
+
 export default function ErrorPage({ reset }: { reset: () => void }) {
-  return <div role="alert" className="border rounded-xl p-4">
-    <p>Não foi possível carregar a conferência. Nenhum dado foi alterado.</p>
-    <button type="button" onClick={reset} className="border rounded-lg px-4 py-2 mt-3">Tentar novamente</button>
+  return <div className="flex flex-col items-start gap-3">
+    <Notice>Não foi possível carregar a conferência. Nenhum dado foi alterado.</Notice>
+    <Button type="button" variant="outline" size="sm" onClick={reset}>Tentar novamente</Button>
   </div>
 }
