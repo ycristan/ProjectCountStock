@@ -254,14 +254,14 @@ export function TeamCountClient({ initial, inventory, back }: {
 
     <div className="flex flex-col gap-2 rounded-xl bg-ink p-4 text-ground">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Label className="text-[#C9C6BE]">{PHASE_LABEL[state.phase] ?? state.phase}</Label>
+        <Label className="text-on-ink-2">{PHASE_LABEL[state.phase] ?? state.phase}</Label>
         {state.role === 'counter' && state.finishState && <span data-finish={state.finishState}>
           <Tag tone={statusTone[state.finishState] ?? 'neutral'}>{statusLabel[state.finishState] ?? state.finishState}</Tag></span>}
       </div>
       <p className="m-0 text-[17px] leading-snug font-medium">{guidance}</p>
-      {state.role === 'counter' && <p className="m-0 text-[13px] text-[#C9C6BE]">
+      {state.role === 'counter' && <p className="m-0 text-[13px] text-on-ink-2">
         Your count status: {statusLabel[state.finishState ?? ''] ?? state.finishState}</p>}
-      {state.role === 'counter' && state.phase === 'counting' && <p className="m-0 text-[13px] text-[#C9C6BE]">Blind count: you only see your own quantities.</p>}
+      {state.role === 'counter' && state.phase === 'counting' && <p className="m-0 text-[13px] text-on-ink-2">Blind count: you only see your own quantities.</p>}
     </div>
 
     {unavailable && <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-[15px] font-medium text-white">Connection or access unavailable. Counts are blocked until refreshed.</p>}

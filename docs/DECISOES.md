@@ -210,3 +210,9 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 
 ## PIN do Solo mantido (2026-11-02)
 - Yuri decidiu não trocar o PIN do Solo que apareceu no cabeçalho do preview em 30/10: só ele viu. O cabeçalho já não mostra login (#101).
+
+## Paleta Next Chain (2026-11-02)
+- Yuri escolheu a paleta da marca NEXT CHAIN, a mesma para toda a suíte de aplicativos (CountStock é o primeiro módulo): Graphite `#353535`, Yale Blue `#284B63`, Stormy Teal `#3C6E71`, Dust Grey `#D9D9D9`, White. Substitui o amarelo de segurança de 30/10; cantos, botões, cabeçalho e fontes seguem iguais.
+- Uso: Graphite no cabeçalho, texto e painéis escuros; Yale Blue na ação principal e no passo atual; Stormy Teal como destaque sobre o Graphite (menu atual, avatar, selo); Dust Grey em bordas e chips de BIN. Tons de apoio (fundo `#F1F3F3`, cinzas de texto) derivados, fora da paleta.
+- Cores de status (verde, laranja, azul, vermelho) não mudam. Sobre o Graphite só entram como etiqueta com texto branco: texto colorido direto no fundo escuro fica abaixo de 3:1.
+- Mercado da marca: Irlanda e União Europeia (consulta do nome em IPOI e EUIPO ainda pendente).

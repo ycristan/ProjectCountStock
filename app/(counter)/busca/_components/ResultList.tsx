@@ -26,7 +26,7 @@ export function ResultList({ items, onSelect }: Props) {
               // ponytail: content-visibility:auto skips off-screen paint — handles 500+ rows without a JS virtualiser
               style={{ contentVisibility: 'auto', containIntrinsicSize: '0 72px' }}
               className={'flex min-h-16 w-full items-center gap-3 rounded-md p-3 text-left '
-                + (active ? 'border border-line bg-surface' : 'border border-dashed border-line-2 bg-[#ECE9E1]')}
+                + (active ? 'border border-line bg-surface' : 'border border-dashed border-line-2 bg-ground-2')}
             >
               <span className="flex min-w-0 flex-grow flex-col gap-0.5">
                 <span className="font-mono text-[13px] font-semibold text-ink-2">

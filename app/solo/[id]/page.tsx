@@ -65,7 +65,7 @@ export default async function SoloCounterPage({ params }: { params: Promise<{ id
 
   return <>
     <AppHeader name={session.counter_name ?? 'Solo counter'} detail={'Solo count, ' + session.title}
-      status={<Tag tone="safety">Counting</Tag>} />
+      status={<Tag tone="brand">Counting</Tag>} />
     <main className="mx-auto max-w-lg px-4 pt-4">
       <SoloCounterClient
         sessionId={id}

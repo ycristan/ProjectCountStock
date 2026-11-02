@@ -35,11 +35,11 @@ export function SuccessScreen({ brandCode, brandName, finalCases, finalUnits, on
 
       <div className="flex items-center justify-between gap-3 rounded-xl bg-ink p-4 text-ground">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="font-mono text-[13px] font-semibold text-[#C9C6BE]">{brandCode}</span>
+          <span className="font-mono text-[13px] font-semibold text-on-ink-2">{brandCode}</span>
           <span className="font-semibold">{brandName}</span>
-          <span className="text-sm text-[#C9C6BE]">{finalCases} cases · {finalUnits} units</span>
+          <span className="text-sm text-on-ink-2">{finalCases} cases · {finalUnits} units</span>
         </div>
-        <span className="font-display text-4xl font-bold text-safety">{finalCases}+{finalUnits}</span>
+        <span className="font-display text-4xl font-bold text-white">{finalCases}+{finalUnits}</span>
       </div>
 
       <p className="m-0 text-center text-[15px] text-ink-2">Back to search in {seconds} s</p>

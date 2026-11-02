@@ -9,8 +9,8 @@ import { LocalTime } from '@/components/local-time'
 function Sign({ href, icon, title, text, figure, unit }: {
   href: string; icon: IconName; title: string; text: string; figure?: number | null; unit?: string
 }) {
-  return <Link href={href} className="flex items-center gap-3.5 rounded-md border-2 border-ink bg-surface p-3.5 text-ink no-underline hover:bg-[#FFFBEA] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-info">
-    <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-ink text-safety"><Icon name={icon} size={26} /></span>
+  return <Link href={href} className="flex items-center gap-3.5 rounded-md border-2 border-ink bg-surface p-3.5 text-ink no-underline hover:bg-ground focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-info">
+    <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-ink text-white"><Icon name={icon} size={26} /></span>
     <span className="flex min-w-0 flex-grow flex-col gap-0.5">
       <span className="font-display text-2xl leading-tight font-bold uppercase">{title}</span>
       <span className="text-sm text-ink-2">{text}</span>
@@ -41,7 +41,7 @@ export default async function AdminPage() {
     <h1 className="m-0 font-display text-[44px] leading-none font-extrabold uppercase">Home</h1>
 
     {live ? <section aria-label="Count in progress" className="overflow-hidden rounded-md border-2 border-ink bg-surface">
-      <div aria-hidden="true" className="h-2.5 bg-[repeating-linear-gradient(135deg,var(--color-safety)_0_14px,var(--color-ink)_14px_28px)]" />
+      <div aria-hidden="true" className="h-2.5 bg-[repeating-linear-gradient(135deg,var(--color-accent)_0_14px,var(--color-ink)_14px_28px)]" />
       <div className="flex flex-wrap items-center gap-x-7 gap-y-4 p-5">
         <div className="flex min-w-64 flex-grow flex-col gap-1">
           <span className="flex items-center gap-2 text-sm font-semibold text-ok"><span className="cs-live size-2.5 rounded-full bg-ok" />Count in progress</span>

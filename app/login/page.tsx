@@ -17,10 +17,10 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col bg-ground">
       <div className="bg-ink px-4 py-8 text-ground">
         <div className="mx-auto flex max-w-sm items-center gap-3">
-          <span aria-hidden="true" className="flex size-12 items-center justify-center bg-safety font-display text-2xl font-bold text-ink">CS</span>
+          <span aria-hidden="true" className="flex size-12 items-center justify-center bg-accent font-display text-2xl font-bold text-white">CS</span>
           <div className="flex flex-col">
             <h1 className="m-0 font-display text-3xl font-bold uppercase tracking-[0.04em]">Count Stock</h1>
-            <span className="text-sm text-[#C9C6BE]">{adminMode ? 'Admin access' : 'Use the PINs on your login card'}</span>
+            <span className="text-sm text-on-ink-2">{adminMode ? 'Admin access' : 'Use the PINs on your login card'}</span>
           </div>
         </div>
       </div>
