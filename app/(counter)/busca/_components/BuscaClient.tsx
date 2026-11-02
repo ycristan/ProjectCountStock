@@ -31,12 +31,14 @@ type Props = {
   // ponytail: solo count injeta submit próprio + header; padrão = fluxo de equipe
   onSubmit?: (payload: LancarContagemPayload) => Promise<LancarContagemResult>
   headerSlot?: React.ReactNode
+  // Shown only with the product list, never over a count form (Finish must not sit next to Confirm Count).
+  footerSlot?: React.ReactNode
   // ponytail: quando true, items já é a lista pré-selecionada (pequena) do admin —
   // mostra ela direto em vez de exigir que o contador já saiba o que procurar
   restrictToList?: boolean
 }
 
-export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restrictToList, readOnly = false }: Props) {
+export function BuscaClient({ items: initialItems, onSubmit, headerSlot, footerSlot, restrictToList, readOnly = false }: Props) {
   const [tela, setTela] = useState<Tela>('busca')
   const [termo, setTermo] = useState('')
   const [itemSelecionado, setItemSelecionado] = useState<ItemBusca | null>(null)
@@ -207,6 +209,7 @@ export function BuscaClient({ items: initialItems, onSubmit, headerSlot, restric
           </div>
         </div>
       )}
+      {footerSlot}
     </div>
   )
 }
