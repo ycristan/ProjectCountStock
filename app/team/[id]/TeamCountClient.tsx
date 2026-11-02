@@ -373,7 +373,16 @@ export function TeamCountClient({ initial, inventory, back }: {
     </div>}
 
     {state.phase !== 'setup' && <div className={monitor ? 'mx-auto w-full max-w-lg' : ''}><BuscaClient key={canCount ? 'count' : 'consult'}
-      items={items} readOnly={!canCount} onSubmit={submit} /></div>}
+      items={items} readOnly={!canCount} onSubmit={submit}
+      footerSlot={state.role === 'counter' && canCount && state.membershipId && <div className="sticky bottom-0 -mx-4 border-t border-line bg-ground px-4 py-3">
+        <Button variant="primary" size="lg" full disabled={pending}
+          onClick={() => {
+            if (!window.confirm('Finish your count? You will not be able to add or edit counts unless the Independent rejects it.')) return
+            const membershipId = state.membershipId!
+            finish(() => requestTeamFinish(teamId, membershipId, state.revision, crypto.randomUUID()),
+              'Finish requested. Waiting for the Independent.')
+          }}><FlagIcon />Finish my count</Button>
+      </div>} /></div>}
 
     {monitor && !unavailable && !['setup', 'counting'].includes(state.phase) && <div className="flex flex-col gap-3">
       <h2 className="m-0 font-display text-lg font-bold uppercase tracking-[0.04em]">Comparison</h2>
@@ -461,14 +470,5 @@ export function TeamCountClient({ initial, inventory, back }: {
     {state.phase === 'signing' && signing && !unavailable && <div className="mx-auto w-full max-w-lg"><SigningPanel teamId={teamId} signing={signing}
       isAdmin={state.role === 'admin'} pending={pending} run={finish} /></div>}
 
-    {state.role === 'counter' && canCount && state.membershipId && <div className="sticky bottom-0 -mx-4 border-t border-line bg-ground px-4 py-3">
-      <Button variant="primary" size="lg" full disabled={pending}
-        onClick={() => {
-          if (!window.confirm('Finish your count? You will not be able to add or edit counts unless the Independent rejects it.')) return
-          const membershipId = state.membershipId!
-          finish(() => requestTeamFinish(teamId, membershipId, state.revision, crypto.randomUUID()),
-            'Finish requested. Waiting for the Independent.')
-        }}><FlagIcon />Finish my count</Button>
-    </div>}
   </section>
 }

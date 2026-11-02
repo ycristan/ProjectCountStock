@@ -69,10 +69,10 @@ export function SoloCounterClient({ sessionId, title, counterName, items, restri
   }
 
   return <>
-    <BuscaClient items={items} onSubmit={onSubmit} headerSlot={alert} restrictToList={restrictToList} />
-    <div className="sticky bottom-0 -mx-4 mt-4 flex flex-col gap-1 border-t-2 border-ink bg-ground px-4 py-3">
-      <Button variant="primary" size="lg" full disabled={isPending} onClick={handleFinish}><FlagIcon />Finish count</Button>
-      <span className="text-center text-[13px] text-ink-2">Asks you to confirm before closing the count.</span>
-    </div>
+    <BuscaClient items={items} onSubmit={onSubmit} headerSlot={alert} restrictToList={restrictToList}
+      footerSlot={<div className="sticky bottom-0 -mx-4 mt-4 flex flex-col gap-1 border-t-2 border-ink bg-ground px-4 py-3">
+        <Button variant="primary" size="lg" full disabled={isPending} onClick={handleFinish}><FlagIcon />Finish count</Button>
+        <span className="text-center text-[13px] text-ink-2">Asks you to confirm before closing the count.</span>
+      </div>} />
   </>
 }
