@@ -1,4 +1,4 @@
-# Estado — 2026-10-30
+# Estado — 2026-11-02
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -12,13 +12,10 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 ## Em produção
 `main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), ordem de assinatura de 29/10 (migration `team_flow_admin_close` aplicada), busca por qualquer parte do nome, código ou BIN (#104). Backup diário desde 28/10. Solo é usado quase todo dia.
 
-## Em andamento: visual "Chão de armazém" (DECISOES 30/10)
-Yuri aprovou o plano completo: mesmo padrão em todas as telas e para todos os usuários (cantos 4px, ícones com texto, 5 botões, amarelo = uma ação principal). Quadro: artefato "Count Stock — identidade visual".
-- A (esta PR): base visual, cabeçalho único (Log out visível, quem está logado embaixo no celular, nunca o login com PINs), login, telas de equipe e Independente, busca com ajuda por ícones, Solo aprovado (nome digitado no cabeçalho, "Finish count" amarelo embaixo com confirmação).
-- B (PR empilhada sobre a A): painel do admin com contagem em andamento no topo e placas com números reais; menu novo que destaca a tela atual; contagem ao vivo consolidada de todas as equipes (tela 5b, `/admin/sessao/<id>/ao-vivo`), aberta pelo painel e pela tela de equipes.
-- C (na mesma PR da B): Inventory com busca por código, nome ou BIN e tabela no padrão novo; importação em tela própria com passos 1-2-3. Download como hoje. Filtro ativos/inativos e abas por warehouse ficam para depois (exigem mudar a consulta e o download).
-- D: Sessões e Ajustes.
-- Depois do merge desta PR: Yuri gera novo PIN do Solo (o atual apareceu na tela no teste de 30/10).
+## Em andamento
+- PR #101 (visual das telas de equipe e Solo) e PR #105 (painel, contagem ao vivo consolidada, Inventory): CI verde, ainda sem merge. Teste de Yuri em 02/11 no preview achou o Finish cobrindo o Confirm: corrigir antes do merge da #101.
+- Próximos passos e decisões pendentes: lista em TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11".
+- Depois do merge da #101: Yuri gera novo PIN do Solo (o atual apareceu na tela no teste de 30/10).
 
 ## Também em andamento
 - Agente: teste automático com 9 usuários; Sentry nos erros mostrados nas telas de equipe.
@@ -26,6 +23,7 @@ Yuri aprovou o plano completo: mesmo padrão em todas as telas e para todos os u
 - O conector da Vercel não grava variáveis (403): produção é republicada por merge na `main`.
 
 ## Decisões pendentes de Yuri
+- Iniciar a sessão inteira de uma vez; assinatura no aparelho de cada um (muda R11); barra de navegação inferior. Detalhes em TEAM_COUNT_PLAN.md (02/11).
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 
 ## A verificar
