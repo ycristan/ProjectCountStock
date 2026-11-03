@@ -15,6 +15,7 @@ const PATHS = {
   check: <path d="M5 12l5 5 9-10" />,
   search: <><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></>,
   logout: <><path d="M10 4H4v16h6" /><path d="M15 8l4 4-4 4M19 12H9" /></>,
+  filter: <path d="M3 4h18l-7 8v7l-4 2v-9z" />,
   spreadsheet: <><path d="M6 2h9l5 5v15H6z" /><path d="M14 2v6h6M9 12l5 5M14 12l-5 5" /></>,
 }
 

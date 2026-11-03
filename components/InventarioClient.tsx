@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRouter } from 'next/navigation'
 import type { ItemInventario } from '@/actions/inventario'
@@ -8,6 +8,8 @@ import { editarItemInventario } from '@/actions/inventario'
 import { filterItems } from '@/lib/inventory-search'
 import { Tag, buttonClass, thClass } from '@/components/ui'
 import { Icon } from '@/components/icons'
+import { ColumnFilterPopover } from '@/components/ColumnFilterPopover'
+import { COLUMNS, EMPTY_FILTERS, activeFilterKeys, applyFilters, distinctValues, type ColumnKey, type FilterState } from '@/lib/inventory-filters'
 
 const inp = 'min-h-10 w-full min-w-0 rounded-md border-2 border-ink bg-surface px-2 text-[15px] outline-none focus-visible:outline-3 focus-visible:outline-info'
 
@@ -38,8 +40,6 @@ function toEdit(item: ItemInventario): EditRow {
 const COLS = [80, 80, 220, 110, 110, 52, 64, 72, 72, 72, 72, 72, 140]
 const MIN_WIDTH = COLS.reduce((a, b) => a + b, 0)
 const ROW_HEIGHT = 56
-const HEADERS = ['Status', 'Brand Code', 'Brand Name', 'Category', 'Category1', 'BPU', 'Pallet Size', 'Weight AVG',
-  'BIN Location 1', 'BIN Location 2', 'BIN Location 3', 'BIN Location 4']
 
 export function InventarioClient({ items }: { items: ItemInventario[] }) {
   const router = useRouter()
@@ -47,7 +47,10 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
   const [edit, setEdit] = useState<EditRow | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
+  const [open, setOpen] = useState<{ key: ColumnKey; rect: DOMRect } | null>(null)
   const [isPending, startTransition] = useTransition()
+  const filtersOn = activeFilterKeys(filters).length > 0
   const scrollRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState<number>()
 
@@ -60,7 +63,7 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
     fit()
     window.addEventListener('resize', fit)
     return () => window.removeEventListener('resize', fit)
-  }, [query, erro])
+  }, [query, erro, filtersOn])
 
   function startEdit(item: ItemInventario) {
     setEditingCode(item.brand_code)
@@ -109,7 +112,11 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
     })
   }
 
-  const shown = query.trim() ? filterItems(items, query) : items
+  const searched = useMemo(() => (query.trim() ? filterItems(items, query) : items), [items, query])
+  const shown = useMemo(() => applyFilters(searched, filters), [searched, filters])
+  const closeFilter = useCallback(() => setOpen(null), [])
+  const anyActive = filtersOn || filters.sort !== null
+  const openValues = useMemo(() => (open ? distinctValues(searched, filters, open.key) : []), [open, searched, filters])
   // TanStack Virtual is not memoisable; nothing here is passed to memoised children.
   // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
@@ -134,14 +141,34 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
         <input value={query} onChange={(e) => { setQuery(e.target.value); scrollRef.current?.scrollTo({ top: 0 }) }} placeholder="Code, name or BIN"
           className="min-w-0 flex-grow bg-transparent text-base outline-none placeholder:text-ink-3" />
       </label>
-      {query.trim() && <span className="text-sm text-ink-2">{shown.length} of {items.length} products</span>}
+      {(query.trim() || filtersOn || anyActive) && (
+        <div className="flex flex-wrap items-center gap-3">
+          {(query.trim() || filtersOn) && <span className="text-sm text-ink-2">{shown.length} of {items.length} products</span>}
+          {anyActive && <button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setOpen(null); scrollRef.current?.scrollTo({ top: 0 }) }}
+            className="min-h-10 px-1 text-sm font-semibold underline underline-offset-4">Clear all filters</button>}
+        </div>
+      )}
       {erro && <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-[15px] font-medium text-white">{erro}</p>}
       <div ref={scrollRef} data-testid="inventory-scroll" style={{ height }} className="h-[calc(100dvh-300px)] min-h-80 overflow-auto rounded-md border border-line bg-surface">
         <table className="w-full table-fixed border-collapse text-[15px]" style={{ minWidth: MIN_WIDTH }}>
           <colgroup>{COLS.map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
           <thead className="sticky top-0 z-10">
             <tr className="bg-ink text-ground">
-              {HEADERS.map((h, i) => <th key={h} className={thClass + ' px-2 align-bottom leading-tight' + (i >= 5 && i <= 7 ? ' text-right' : '')}>{h}</th>)}
+              {COLUMNS.map((c, i) => {
+                const active = filters.selected[c.key] !== undefined || filters.sort?.key === c.key
+                return (
+                  <th key={c.key} className={thClass + ' px-2 align-bottom leading-tight' + (i >= 5 && i <= 7 ? ' text-right' : '')}>
+                    <div className={'flex flex-col gap-1 ' + (i >= 5 && i <= 7 ? 'items-end' : 'items-start')}>
+                      <span>{c.label}</span>
+                      <button type="button" data-filter-button aria-label={`Filter ${c.label}`} aria-haspopup="dialog" aria-expanded={open?.key === c.key}
+                        onClick={(e) => setOpen(open?.key === c.key ? null : { key: c.key, rect: e.currentTarget.getBoundingClientRect() })}
+                        className={'inline-flex h-7 w-7 items-center justify-center rounded-sm border focus-visible:outline-3 focus-visible:outline-info ' + (active ? 'border-ground bg-ground text-ink' : 'border-transparent text-ground hover:border-ground')}>
+                        <Icon name="filter" size={16} />
+                      </button>
+                    </div>
+                  </th>
+                )
+              })}
               <th className={thClass + ' px-2'}><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
@@ -193,13 +220,30 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
             {shown.length === 0 && (
               <tr>
                 <td colSpan={COLS.length} className="px-4 py-10 text-center text-[15px] text-ink-2">
-                  {items.length ? 'No products match this search.' : 'No items in inventory. Import an .xlsx file.'}
+                  {items.length ? 'No products match this search or these filters.' : 'No items in inventory. Import an .xlsx file.'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      {open && (
+        <ColumnFilterPopover key={open.key} column={open.key} anchor={open.rect} values={openValues}
+          selected={filters.selected[open.key] ?? null} sortDir={filters.sort?.key === open.key ? filters.sort.dir : null}
+          onClose={closeFilter}
+          onApply={(sel) => {
+            const key = open.key
+            setFilters((f) => {
+              const selected = { ...f.selected }
+              if (sel) selected[key] = sel
+              else delete selected[key]
+              return { ...f, selected }
+            })
+            setOpen(null)
+            scrollRef.current?.scrollTo({ top: 0 })
+          }}
+          onSort={(dir) => { setFilters((f) => ({ ...f, sort: { key: open.key, dir } })); setOpen(null); scrollRef.current?.scrollTo({ top: 0 }) }} />
+      )}
     </div>
   )
 }

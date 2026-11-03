@@ -89,6 +89,30 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     await page.getByText(/^10 of 2310 products$/).waitFor()
     console.log(`TIMING: search filter on 2310 rows, CPU 4x: ${Math.round(performance.now()-t)} ms`)
 
+    // Excel-style column filters on the big warehouse: Status AND BPU combine, clearing restores everything.
+    await page.getByPlaceholder('Code, name or BIN').fill('')
+    await page.getByText(/ of 2310 products$/).waitFor({state:'detached'})
+    await page.getByRole('button',{name:'Filter Status'}).click()
+    const filterBox=page.getByRole('dialog',{name:'Filter Status'})
+    await filterBox.getByRole('button',{name:'Clear all'}).click()
+    await filterBox.getByLabel('Inactive').check()
+    t=performance.now()
+    await filterBox.getByRole('button',{name:'Apply'}).click()
+    await page.getByText('462 of 2310 products').waitFor()
+    console.log(`TIMING: apply column filter on 2310 rows, CPU 4x: ${Math.round(performance.now()-t)} ms`)
+    await page.getByRole('button',{name:'Filter BPU'}).click()
+    const bpuBox=page.getByRole('dialog',{name:'Filter BPU'})
+    await bpuBox.getByRole('button',{name:'Clear all'}).click()
+    await bpuBox.getByLabel('Search values').fill('24')
+    await bpuBox.getByLabel('24',{exact:true}).check()
+    await bpuBox.getByRole('button',{name:'Apply'}).click()
+    let both=0
+    for(let i=0;i<2310;i++) if(i%5===0&&i%24===23) both++
+    await page.getByText(`${both} of 2310 products`).waitFor()
+    await page.getByRole('button',{name:'Clear all filters'}).click()
+    await page.getByText(/ of 2310 products$/).waitFor({state:'detached'})
+    assert.equal(await page.getByRole('button',{name:'Clear all filters'}).count(),0,'clear button gone once nothing is filtered')
+
     t=performance.now()
     await tabs.getByRole('link',{name:'Tabs Small synthetic'}).click()
     await page.getByText('240 items in Tabs Small synthetic').waitFor()
