@@ -61,3 +61,7 @@ input, select, textarea {
 }
 html[data-keyboard] .bottom-bar { display: none; }
 html[data-keyboard] body { --bottom-bar: 0px; }
+
+/* Inventory: the app header scrolls away so the table header can stick to the very top
+ * and the list gets the whole screen (Yuri, 03/11). */
+body:has([data-full-width]) header.sticky { position: static; }

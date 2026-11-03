@@ -46,32 +46,25 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     await page.getByRole('button',{name:'Edit TB00000'}).waitFor()
     console.log(`TIMING: big tab (2310 rows) load to full table, CPU 4x: ${Math.round(performance.now()-t)} ms`)
 
-    // Virtualised: only the visible rows are in the DOM; scrolling the table container brings in the last one.
+    // Virtualised on the page scroll: only the visible rows are in the DOM; scrolling brings in the last one.
     assert.ok(await page.locator('tbody tr').count()<100,'virtualised table renders few rows')
     assert.equal(await page.getByRole('button',{name:'Edit TB02309'}).count(),0,'last row not rendered before scrolling')
-    await page.getByTestId('inventory-scroll').evaluate(el=>{el.scrollTop=el.scrollHeight})
+    await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight))
     await page.getByRole('button',{name:'Edit TB02309'}).waitFor()
     assert.ok(await page.locator('tbody tr').count()<100,'virtualised table renders few rows after scrolling')
-    await page.getByTestId('inventory-scroll').evaluate(el=>{el.scrollTop=0})
 
-    // Layout: page never scrolls sideways at 1366px, header stays put, editing does not move columns.
-    const pageOverflow=await page.evaluate(()=>({x:document.documentElement.scrollWidth-document.documentElement.clientWidth,y:document.documentElement.scrollHeight-window.innerHeight}))
-    assert.ok(pageOverflow.x<=0,'no page horizontal scroll at 1366px: '+pageOverflow.x)
-    assert.ok(pageOverflow.y<=2,'page does not scroll vertically, only the table: '+pageOverflow.y)
-    const scroller=page.getByTestId('inventory-scroll')
-    assert.ok(await scroller.evaluate(el=>el.scrollWidth<=el.clientWidth),'no table horizontal scroll at 1366px')
-    const headTop=async()=>page.locator('thead').evaluate(el=>el.getBoundingClientRect().top)
-    const before=await headTop()
-    await scroller.evaluate(el=>{el.scrollTop=5000})
-    assert.ok(Math.abs(await headTop()-before)<1,'sticky header stays in place while the table scrolls')
-    await scroller.evaluate(el=>{el.scrollTop=0})
+    // Layout: the title and tabs scroll away and the table header sticks to the very top of the screen.
+    assert.ok(Math.abs(await page.locator('thead').evaluate(el=>el.getBoundingClientRect().top))<1,'table header sticks to the top of the screen')
+    await page.evaluate(()=>window.scrollTo(0,0))
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth),0,'no sideways scroll at 1366px')
+    assert.equal(await page.getByPlaceholder('Code, name or BIN').count(),0,'no generic search box: filters are per column')
     const widths=()=>page.locator('thead th').evaluateAll(ths=>ths.map(th=>Math.round(th.getBoundingClientRect().width)))
     const w0=await widths()
     await page.getByRole('button',{name:'Edit TB00000'}).click()
     await page.getByRole('textbox',{name:'Brand Name',exact:true}).fill('X'.repeat(200))
     assert.deepEqual(await widths(),w0,'editing a row never changes column widths')
-    assert.ok(await scroller.evaluate(el=>el.scrollWidth<=el.clientWidth),'editing causes no sideways scroll')
-    assert.deepEqual(await page.locator('thead th').allTextContents(),['Status','Brand Code','Brand Name','Category','Category1','BPU','Pallet Size','Weight AVG','BIN Location 1','BIN Location 2','BIN Location 3','BIN Location 4','Actions'])
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth),0,'editing causes no sideways scroll')
+    assert.deepEqual((await page.locator('thead th').allTextContents()).map(t=>t.trim()),['Status','Brand Code','Brand Name','Category','Category1','BPU','Pallet Size','Weight AVG','BIN Location','Actions','1','2','3','4'])
     if(process.env.SCREENSHOT_DIR){
       const {mkdirSync}=await import('node:fs');mkdirSync(process.env.SCREENSHOT_DIR,{recursive:true})
       await page.screenshot({path:process.env.SCREENSHOT_DIR+'/inventory-1366-editing.png'}).catch(()=>{})
@@ -84,17 +77,23 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     assert.equal(await page.getByRole('button',{name:'Edit TS00000'}).count(),0,'small warehouse items never in big tab')
     assert.equal(await tabs.getByRole('link',{name:/^(all|all warehouses|geral)$/i}).count(),0,'no combined tab')
 
+    // Excel-style filters. Brand Code: searching keeps only the ticked search results.
+    await page.getByRole('button',{name:'Filter Brand Code'}).click()
+    const codeBox=page.getByRole('dialog',{name:'Filter Brand Code'})
+    const cb=await codeBox.boundingBox()
+    assert.ok(cb.height>=400&&cb.y+cb.height<=900,'filter popover uses the screen height and fits: '+JSON.stringify(cb))
+    await codeBox.getByLabel('Search values').fill('TB0230')
     t=performance.now()
-    await page.getByPlaceholder('Code, name or BIN').fill('TB0230')
+    await codeBox.getByRole('button',{name:'Apply'}).click()
     await page.getByText(/^10 of 2310 products$/).waitFor()
-    console.log(`TIMING: search filter on 2310 rows, CPU 4x: ${Math.round(performance.now()-t)} ms`)
+    console.log(`TIMING: apply Brand Code search filter on 2310 rows, CPU 4x: ${Math.round(performance.now()-t)} ms`)
+    await page.getByRole('button',{name:'Clear all filters'}).click()
+    await page.getByText(/^2310 products$/).waitFor()
 
-    // Excel-style column filters on the big warehouse: Status AND BPU combine, clearing restores everything.
-    await page.getByPlaceholder('Code, name or BIN').fill('')
-    await page.getByText(/ of 2310 products$/).waitFor({state:'detached'})
+    // Status AND BPU combine; clearing restores everything.
     await page.getByRole('button',{name:'Filter Status'}).click()
     const filterBox=page.getByRole('dialog',{name:'Filter Status'})
-    await filterBox.getByRole('button',{name:'Clear all'}).click()
+    await filterBox.getByLabel('(Select all)').uncheck()
     await filterBox.getByLabel('Inactive').check()
     t=performance.now()
     await filterBox.getByRole('button',{name:'Apply'}).click()
@@ -102,17 +101,14 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     console.log(`TIMING: apply column filter on 2310 rows, CPU 4x: ${Math.round(performance.now()-t)} ms`)
     await page.getByRole('button',{name:'Filter BPU'}).click()
     const bpuBox=page.getByRole('dialog',{name:'Filter BPU'})
-    await bpuBox.getByRole('button',{name:'Clear all'}).click()
-    await bpuBox.getByLabel('Search values').fill('24')
+    await bpuBox.getByLabel('(Select all)').uncheck()
     await bpuBox.getByLabel('24',{exact:true}).check()
-    const box=await bpuBox.boundingBox()
-    assert.ok(box.y+box.height<=900,'filter popover fits in the window, Apply reachable without page scroll')
     await bpuBox.getByRole('button',{name:'Apply'}).click()
     let both=0
     for(let i=0;i<2310;i++) if(i%5===0&&i%24===23) both++
     await page.getByText(`${both} of 2310 products`).waitFor()
     await page.getByRole('button',{name:'Clear all filters'}).click()
-    await page.getByText(/ of 2310 products$/).waitFor({state:'detached'})
+    await page.getByText(/^2310 products$/).waitFor()
     assert.equal(await page.getByRole('button',{name:'Clear all filters'}).count(),0,'clear button gone once nothing is filtered')
 
     t=performance.now()
@@ -120,7 +116,7 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     await page.getByText('240 items in Tabs Small synthetic').waitFor()
     console.log(`TIMING: switch to small tab (240 rows), CPU 4x: ${Math.round(performance.now()-t)} ms`)
     assert.equal(await page.getByRole('button',{name:'Edit TB00000'}).count(),0,'big warehouse items never in small tab')
-    assert.equal(await page.getByPlaceholder('Code, name or BIN').inputValue(),'','search resets per tab')
+    await page.getByText(/^240 products$/).waitFor()
     assert.match(page.url(),new RegExp('wh='+small.id))
 
     // Unknown or missing tab id falls back to the first warehouse with products, never to "all".
