@@ -23,6 +23,7 @@ Ordem das PRs (contrato em INVENTORY_WAREHOUSES.md §1):
 6. Tela Audit Inventory com período e produtos selecionáveis, Excel com os mesmos filtros.
 
 ## Depois do Inventory
+- Varredura de idioma: todo texto da aplicação em inglês britânico (PRODUTO.md); ~60 textos em português achados por busca simples, mais grafia americana a conferir.
 - Itens 2, 3, 4 e 6 de TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11". Yuri assumiu o risco no prazo de 27/11.
 - Agente: teste automático com 9 usuários; Sentry nos erros mostrados nas telas de equipe.
 - O conector da Vercel não grava variáveis (403): produção é republicada por merge na `main`.

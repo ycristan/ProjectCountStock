@@ -237,3 +237,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Cadastro manual com Brand Code de outra warehouse é bloqueado com aviso; transferência fica para depois.
 - Audit Inventory (histórico aprovado em 28/10) gravado por trigger no banco, só de acréscimo, com período e produtos selecionáveis na tela e no Excel. Começa quando a migration for aplicada; o passado não existe no banco.
 - Prioridade: Inventory antes dos itens 2/3/4/6 de equipes. Yuri assume o risco no prazo de 27/11; Plano B continua valendo.
+
+## Idioma da aplicação (2026-11-03)
+- Yuri: a aplicação é exclusivamente em inglês britânico. Ele viu texto em português na tela Inventory (link da conferência de recuperação, só no preview). Regra nunca estava escrita em `docs/`, por isso escapou.
+- Varredura completa (português e grafia americana) é entrega própria, depois do Inventory. Todo texto novo a partir de agora já sai em inglês britânico.

@@ -32,3 +32,4 @@ Fonte normativa: [TEAM_COUNT_FLOW.md](./TEAM_COUNT_FLOW.md). Resumo, sem substit
 - BPU ≥ 1. Com BPU 1, Cases/Pallets ficam desativados; Units e peso (se Weight Avg > 0) continuam.
 - Inventário por warehouse: ver [INVENTORY_WAREHOUSES.md](./INVENTORY_WAREHOUSES.md).
 - Solo não segue as regras do novo fluxo de equipes (sem zero automático).
+- Todo texto que aparece na aplicação (telas, botões, mensagens de erro, e-mails, planilhas exportadas) é em inglês britânico (ex.: colour, cancelled, finalise). Documentos do projeto continuam em português.
