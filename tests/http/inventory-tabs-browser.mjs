@@ -68,7 +68,7 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     const widths=()=>page.locator('thead th').evaluateAll(ths=>ths.map(th=>Math.round(th.getBoundingClientRect().width)))
     const w0=await widths()
     await page.getByRole('button',{name:'Edit TB00000'}).click()
-    await page.getByLabel('Brand Name').fill('X'.repeat(200))
+    await page.getByRole('textbox',{name:'Brand Name',exact:true}).fill('X'.repeat(200))
     assert.deepEqual(await widths(),w0,'editing a row never changes column widths')
     assert.ok(await scroller.evaluate(el=>el.scrollWidth<=el.clientWidth),'editing causes no sideways scroll')
     assert.deepEqual(await page.locator('thead th').allTextContents(),['Status','Brand Code','Brand Name','Category','Category1','BPU','Pallet Size','Weight AVG','BIN Location 1','BIN Location 2','BIN Location 3','BIN Location 4','Actions'])
