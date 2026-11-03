@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { ItemBusca, LancarContagemPayload } from '@/actions/contagem'
 import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
 import { lancarSoloContagem, encerrarSoloSessao } from '@/actions/solo'
+import { Button, PageTop, Tag, buttonClass, tableWrapClass, thClass } from '@/components/ui'
 import { AssignmentPanel } from './AssignmentPanel'
 
 type Entry = { brand_code: string; brand_name: string | null; final_cases: number; final_units: number }
@@ -64,55 +64,38 @@ export function SoloCountClient({
   }, [assignedToCounter, isOpen, router])
 
   const header = (
-    <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-      <div className="flex items-center gap-3">
-        <Link href="/admin/solo" className="text-slate-400 hover:text-slate-900 text-sm">← Solo Count</Link>
-        <span className="text-slate-300">/</span>
-        <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
-        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${isOpen ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-          {status}
-        </span>
-      </div>
-      <div className="flex items-center gap-2">
-        <a
-          href={`/api/solo/${sessionId}/export`}
-          className="text-sm font-semibold text-slate-700 border border-slate-300 hover:bg-slate-50 rounded-xl px-4 py-2"
-        >
-          ↓ Export Excel
-        </a>
+    <PageTop back={{ href: '/admin/solo', label: 'Solo Count' }}
+      title={<span className="flex flex-wrap items-center gap-3">{title}<Tag tone={isOpen ? 'ok' : 'neutral'}>{status}</Tag></span>}
+      actions={<>
+        <a href={`/api/solo/${sessionId}/export`} className={buttonClass('outline', 'sm') + ' no-underline'}>Export Excel</a>
         {isOpen && !assignedToCounter && (
-          <button
-            onClick={handleFinalise}
-            disabled={finalising}
-            className="text-sm font-semibold bg-slate-900 text-white rounded-xl px-4 py-2 hover:bg-slate-700 disabled:opacity-40"
-          >
+          <Button variant="dark" size="sm" onClick={handleFinalise} disabled={finalising}>
             {finalising ? '...' : 'Finalise Solo Count'}
-          </button>
+          </Button>
         )}
-      </div>
-    </div>
+      </>} />
   )
 
   const sorted = [...entries].sort((a, b) => a.brand_code.localeCompare(b.brand_code))
   const resultsTable = (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <table className="w-full text-sm border-collapse">
+    <div className={tableWrapClass}>
+      <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b border-slate-200 bg-slate-50">
-            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Brand Code</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Brand Name</th>
-            <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Count</th>
+          <tr className="bg-ink text-ground">
+            <th className={thClass}>Brand Code</th>
+            <th className={thClass}>Brand Name</th>
+            <th className={thClass + ' text-right'}>Count</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody>
           {sorted.length === 0 ? (
-            <tr><td colSpan={3} className="px-4 py-12 text-center text-sm text-slate-400">No items counted.</td></tr>
+            <tr><td colSpan={3} className="px-3 py-6 text-center text-[15px] text-ink-2">No items counted.</td></tr>
           ) : (
             sorted.map((e) => (
-              <tr key={e.brand_code} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-bold text-slate-700">{e.brand_code}</td>
-                <td className="px-4 py-3 text-slate-600">{e.brand_name}</td>
-                <td className="px-4 py-3 text-center font-mono">{e.final_cases}+{e.final_units}</td>
+              <tr key={e.brand_code} className="border-t border-ground-2">
+                <td className="px-3 py-2.5 font-mono text-[13px] font-semibold">{e.brand_code}</td>
+                <td className="px-3 py-2.5">{e.brand_name}</td>
+                <td className="px-3 py-2.5 text-right font-display text-xl font-bold">{e.final_cases}+{e.final_units}</td>
               </tr>
             ))
           )}
@@ -138,9 +121,9 @@ export function SoloCountClient({
       <div>
         {header}
         {isOpen && assignmentPanel}
-        <div className="text-sm text-slate-500 mb-3">
+        <p className="m-0 mb-3 text-[15px] text-ink-2">
           {counterName ? `Counting by: ${counterName}` : 'Waiting for the counter to enter their name…'}
-        </div>
+        </p>
         {resultsTable}
       </div>
     )

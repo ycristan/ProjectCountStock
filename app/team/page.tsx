@@ -15,7 +15,7 @@ export default async function TeamPage() {
           className="mb-3 flex flex-col gap-3 rounded-xl border-2 border-ink bg-surface p-4">
         <div className="flex items-start justify-between gap-2">
           <h2 className="m-0 font-display text-2xl font-bold uppercase">{team.teamName} — {team.warehouseName}</h2>
-          <Tag tone={team.phase === 'setup' ? 'neutral' : 'safety'}>{PHASE_LABEL[team.phase] ?? team.phase}</Tag>
+          <Tag tone={team.phase === 'setup' ? 'neutral' : 'brand'}>{PHASE_LABEL[team.phase] ?? team.phase}</Tag>
         </div>
         <p className="m-0 text-[15px]">{team.displayName} — {team.role === 'independent' ? 'Independent' : 'Counter ' + team.displayOrder}</p>
         {team.phase === 'setup' && <p className="m-0 text-sm text-ink-2">The admin has not started the count yet. You can open the team and wait there.</p>}

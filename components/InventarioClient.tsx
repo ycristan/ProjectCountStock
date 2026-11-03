@@ -117,7 +117,7 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
             {shown.map((item) => {
               const isEditing = editingCode === item.brand_code && edit !== null
               return (
-                <tr key={item.brand_code} className={'border-t border-ground-2 ' + (isEditing ? 'bg-[#FFFBEA]' : '')}>
+                <tr key={item.brand_code} className={'border-t border-ground-2 ' + (isEditing ? 'bg-ground' : '')}>
                   {isEditing && edit ? (
                     <>
                       <td className={cell}><span className="font-mono text-[13px] font-semibold text-ink-2">{item.brand_code}</span><br />
@@ -130,7 +130,7 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
                       <td className={cell}>
                         <div className="flex gap-1">
                           {([0,1,2,3] as const).map((i) => (
-                            <input key={i} aria-label={`BIN ${i+1}`} className={inp + ' w-24 font-mono ' + (edit.bins[i] ? 'bg-safety' : 'border-dashed border-line-2')} value={edit.bins[i]} onChange={(e) => setBin(i, e.target.value)} placeholder={`BIN ${i+1}`} />
+                            <input key={i} aria-label={`BIN ${i+1}`} className={inp + ' w-24 font-mono ' + (edit.bins[i] ? 'bg-line' : 'border-dashed border-line-2')} value={edit.bins[i]} onChange={(e) => setBin(i, e.target.value)} placeholder={`BIN ${i+1}`} />
                           ))}
                         </div>
                       </td>
@@ -148,7 +148,7 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
                       <td className={cell + ' text-right'}>{item.pallet_size ? <span className={big}>{item.pallet_size}</span> : none}</td>
                       <td className={cell + ' text-right'}>{Number(item.weight_avg) > 0 ? <span className={big}>{item.weight_avg} g</span> : none}</td>
                       <td className={cell}>{item.bins.length > 0
-                        ? <span className="flex flex-wrap gap-1">{item.bins.map(b => <span key={b} className="rounded-sm border-[1.5px] border-ink bg-safety px-1.5 py-0.5 font-mono text-[13px] font-semibold">{b}</span>)}</span>
+                        ? <span className="flex flex-wrap gap-1">{item.bins.map(b => <span key={b} className="rounded-sm border-[1.5px] border-ink bg-line px-1.5 py-0.5 font-mono text-[13px] font-semibold">{b}</span>)}</span>
                         : <span className="text-sm font-semibold text-alert">No BIN</span>}</td>
                       <td className={cell + ' text-right'}>
                         <button type="button" onClick={() => startEdit(item)} aria-label={'Edit ' + item.brand_code} className={buttonClass('outline', 'sm')}><Icon name="edit" />Edit</button>

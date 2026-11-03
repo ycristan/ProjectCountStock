@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { Button, Label, Notice, cardClass } from '@/components/ui'
 import { criarContadorSoloFixo, deletarContadorSoloFixo } from '@/actions/settings'
 
 export function SoloCounterCard({ initialActive }: { initialActive: boolean }) {
@@ -33,71 +34,44 @@ export function SoloCounterCard({ initialActive }: { initialActive: boolean }) {
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-      <h3 className="font-semibold text-slate-900">Solo Counter</h3>
+    <div className={cardClass + ' flex flex-col gap-4 p-4'}>
+      <h2 className="m-0 font-display text-xl font-bold uppercase">Solo Counter</h2>
 
       {revealedPin ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-          <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
-            New credentials — write these down, they won&apos;t be shown again
-          </p>
-          <div className="flex gap-4 font-mono text-lg font-bold text-slate-900">
+        <div className="flex flex-col gap-3 rounded-md border-2 border-ink bg-ground p-4">
+          <Label>New credentials — write these down, they won&apos;t be shown again</Label>
+          <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-lg font-semibold">
             <span>Team: {revealedPin.team_pin}</span>
             <span>PIN: {revealedPin.user_pin}</span>
           </div>
-          <button onClick={() => setRevealedPin(null)} className="text-xs font-semibold text-amber-800 underline">
-            I&apos;ve saved it
-          </button>
+          <Button variant="dark" size="sm" className="w-fit" onClick={() => setRevealedPin(null)}>I&apos;ve saved it</Button>
         </div>
       ) : (
         <>
-          <p className="text-sm text-slate-500">
+          <p className="m-0 text-[15px] text-ink-2">
             {active
               ? 'Active — you can assign sessions to it.'
               : "No solo counter configured — sessions can't be assigned until you create one."}
           </p>
 
-          {erro && <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-700">{erro}</div>}
+          {erro && <Notice>{erro}</Notice>}
 
-          <div className="flex gap-2">
-            <button
-              onClick={handleCreate}
-              disabled={isPending}
-              className="text-sm font-semibold bg-slate-900 text-white rounded-xl px-4 py-2 disabled:opacity-40"
-            >
+          <div className="flex flex-wrap gap-2">
+            <Button variant={active ? 'outline' : 'primary'} size="sm" onClick={handleCreate} disabled={isPending}>
               {isPending ? '...' : active ? 'Create New Solo Counter' : 'Create Solo Counter'}
-            </button>
+            </Button>
             {active && !confirmingDelete && (
-              <button
-                onClick={() => setConfirmingDelete(true)}
-                className="text-sm font-semibold text-red-600 border border-red-200 rounded-xl px-4 py-2 hover:bg-red-50"
-              >
-                Delete
-              </button>
+              <Button variant="danger" size="sm" onClick={() => setConfirmingDelete(true)}>Delete</Button>
             )}
             {confirmingDelete && (
               <>
-                <button
-                  onClick={handleDelete}
-                  disabled={isPending}
-                  className="text-sm font-semibold bg-red-600 text-white rounded-xl px-4 py-2 disabled:opacity-40"
-                >
-                  Confirm delete
-                </button>
-                <button
-                  onClick={() => setConfirmingDelete(false)}
-                  disabled={isPending}
-                  className="text-sm text-slate-500 px-4 py-2 disabled:opacity-40"
-                >
-                  Cancel
-                </button>
+                <Button variant="alert" size="sm" onClick={handleDelete} disabled={isPending}>Confirm delete</Button>
+                <Button variant="quiet" size="sm" onClick={() => setConfirmingDelete(false)} disabled={isPending}>Cancel</Button>
               </>
             )}
           </div>
           {confirmingDelete && (
-            <p className="text-xs text-amber-600">
-              Anyone currently logged in or mid-count with this PIN will immediately lose access.
-            </p>
+            <Notice tone="warn">Anyone currently logged in or mid-count with this PIN will immediately lose access.</Notice>
           )}
         </>
       )}

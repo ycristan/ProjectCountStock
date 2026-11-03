@@ -195,7 +195,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
             {item.brand_code}{item.bins.length > 0 ? ' · BIN ' + item.bins.join(', ') : ''}
           </span>
           {isAdditive && <Tag tone="info">Adding</Tag>}
-          {isEdit && <Tag tone="safety">Editing</Tag>}
+          {isEdit && <Tag tone="brand">Editing</Tag>}
         </div>
         <span className="text-lg font-semibold">{item.brand_name}</span>
         <span className="text-[13px] text-ink-2">
@@ -213,7 +213,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
               { label: 'Cases', value: entry.cases },
               { label: 'Units', value: entry.units },
             ].map(({ label, value }) => (
-              <div key={label} className="rounded-md border border-line bg-[#ECE9E1] py-2 text-center">
+              <div key={label} className="rounded-md border border-line bg-ground-2 py-2 text-center">
                 <div className="font-display text-[26px] font-bold">{value}</div>
                 <div className="text-xs font-semibold text-ink-2">{label}</div>
               </div>
@@ -264,13 +264,13 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
           {/* Total preview — additive mode only */}
           {isAdditive && entry && (
             <div className="rounded-xl bg-ink p-4 text-ground">
-              <div className="flex justify-between text-sm"><span className="text-[#C9C6BE]">Registered</span>
+              <div className="flex justify-between text-sm"><span className="text-on-ink-2">Registered</span>
                 <span className="font-semibold">{entry.pallets}p · {entry.cases}c · {entry.units}u</span></div>
-              <div className="mt-1 flex justify-between text-sm"><span className="text-[#C9C6BE]">+ Adding</span>
+              <div className="mt-1 flex justify-between text-sm"><span className="text-on-ink-2">+ Adding</span>
                 <span className="font-semibold">{addP}p · {addC}c · {addU}u</span></div>
               <div className="mt-3 flex items-center justify-between border-t border-ink-2 pt-3">
-                <Label className="text-[#C9C6BE]">New total</Label>
-                <span className="font-display text-[34px] font-bold text-safety">{previewAddCases}+{previewAddUnits}</span>
+                <Label className="text-on-ink-2">New total</Label>
+                <span className="font-display text-[34px] font-bold text-white">{previewAddCases}+{previewAddUnits}</span>
               </div>
             </div>
           )}
@@ -335,15 +335,15 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
           </div>}
 
           <div className="rounded-xl bg-ink p-4 text-ground">
-            <div className="flex flex-col gap-1 text-sm text-[#C9C6BE]">
+            <div className="flex flex-col gap-1 text-sm text-on-ink-2">
               <div className="flex justify-between"><span>Total tare</span><span>{hasWeightData ? `${totalTara.toLocaleString('en-GB')} g` : '—'}</span></div>
               <div className="flex justify-between"><span>Net weight</span><span>{hasWeightData ? `${Math.max(0, liquido).toLocaleString('en-GB')} g` : '—'}</span></div>
               <div className="flex justify-between"><span>From the scale</span><span>{hasWeightData ? `${weightQty} units` : '—'}</span></div>
               {extraCases > 0 && <div className="flex justify-between"><span>Full cases ({extraCases} × {item.bpu})</span><span>+{extraCases * item.bpu} units</span></div>}
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-ink-2 pt-3">
-              <Label className="text-[#C9C6BE]">Result</Label>
-              <span className="font-display text-[34px] font-bold text-safety">
+              <Label className="text-on-ink-2">Result</Label>
+              <span className="font-display text-[34px] font-bold text-white">
                 {hasWeightData && weightQty > 0 ? `${previewCases}+${previewUnits}` : '—'}
               </span>
             </div>

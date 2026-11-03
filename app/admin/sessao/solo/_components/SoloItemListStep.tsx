@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { ItemBusca } from '@/actions/contagem'
 import { filterItems } from '@/lib/inventory-search'
+import { inputClass } from '@/components/ui'
 import { ResultList } from '@/app/(counter)/busca/_components/ResultList'
 
 type Item = { brand_code: string; brand_name: string }
@@ -28,26 +29,25 @@ export function SoloItemListStep({ inventory, items, onChange }: Props) {
   }
 
   return (
-    <div>
+    <div className="flex flex-col gap-3">
       <input
         value={termo}
         onChange={(e) => setTermo(e.target.value)}
+        aria-label="Search item to add to the list"
         placeholder="Search item to add to the list..."
-        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-slate-900"
+        className={inputClass}
       />
       <div className="max-h-80 overflow-y-auto">
         <ResultList items={matches} onSelect={addItem} />
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         {items.map((i) => (
-          <span key={i.brand_code} className="inline-flex items-center gap-1.5 bg-slate-100 rounded-full px-3 py-1 text-xs">
+          <span key={i.brand_code} className="inline-flex items-center gap-1.5 rounded-sm border border-line-2 bg-ground-2 py-1 pl-2 pr-1 font-mono text-[13px] font-semibold">
             {i.brand_code}
-            <button aria-label={`Remove ${i.brand_code}`} onClick={() => removeItem(i.brand_code)} className="text-slate-400 hover:text-red-500">
-              ✕
-            </button>
+            <button aria-label={`Remove ${i.brand_code}`} onClick={() => removeItem(i.brand_code)} className="inline-flex size-7 items-center justify-center rounded-sm text-ink-2 hover:text-alert">✕</button>
           </span>
         ))}
-        {items.length === 0 && <span className="text-xs text-slate-400">No items added yet.</span>}
+        {items.length === 0 && <span className="text-[13px] text-ink-2">No items added yet.</span>}
       </div>
     </div>
   )

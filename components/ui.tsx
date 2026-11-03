@@ -4,15 +4,16 @@ import { logout } from '@/actions/auth'
 // Shared building blocks of the "warehouse floor" visual. Every screen uses these
 // instead of its own classes, so buttons always look like buttons and screens match.
 
-type Variant = 'primary' | 'dark' | 'outline' | 'success' | 'danger' | 'quiet'
+type Variant = 'primary' | 'dark' | 'outline' | 'success' | 'alert' | 'danger' | 'quiet'
 type Size = 'lg' | 'md' | 'sm'
 
 const VARIANT: Record<Variant, string> = {
-  // The one main action of a screen: safety yellow with an ink edge.
-  primary: 'bg-safety text-ink border-2 border-ink shadow-[0_3px_0_var(--color-ink)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--color-ink)]',
+  // The one main action of a screen: Yale Blue with an ink edge.
+  primary: 'bg-brand text-white border-2 border-ink shadow-[0_3px_0_var(--color-ink)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--color-ink)]',
   dark: 'bg-ink text-white border-2 border-ink',
   outline: 'bg-surface text-ink border-2 border-ink',
   success: 'bg-ok text-white border-2 border-ok',
+  alert: 'bg-alert text-white border-2 border-alert',
   danger: 'bg-surface text-alert border-2 border-alert',
   quiet: 'bg-transparent text-ink-2 border border-line-2 font-sans normal-case tracking-normal font-semibold',
 }
@@ -39,10 +40,25 @@ export function FlagIcon() {
   return <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square"><path d="M5 21V4h11l-2 4 2 4H5" /></svg>
 }
 
-type Tone = 'ok' | 'diff' | 'info' | 'alert' | 'safety' | 'dark' | 'neutral'
+type Tone = 'ok' | 'diff' | 'info' | 'alert' | 'brand' | 'dark' | 'neutral'
 const TONE: Record<Tone, string> = {
   ok: 'bg-ok text-white', diff: 'bg-diff text-white', info: 'bg-info text-white', alert: 'bg-alert text-white',
-  safety: 'bg-safety text-ink', dark: 'bg-ink text-white', neutral: 'bg-surface text-ink border border-line-2',
+  brand: 'bg-brand text-white', dark: 'bg-ink text-white', neutral: 'bg-surface text-ink border border-line-2',
+}
+
+// Shared plain pieces, so lists, forms and tables look the same on every screen.
+export const cardClass = 'rounded-md border border-line bg-surface'
+export const inputClass = 'min-h-12 w-full rounded-md border-2 border-ink bg-surface px-3 text-base outline-none focus-visible:outline-3 focus-visible:outline-info placeholder:text-ink-3 disabled:bg-ground disabled:text-ink-3'
+export const tableWrapClass = 'overflow-x-auto rounded-md border border-line bg-surface'
+// Choose-one switch (Myself / Solo counter): wrap the buttons in `segmentGroupClass`.
+export const segmentGroupClass = 'flex flex-wrap rounded-md bg-ground-2 p-[3px]'
+export const segmentClass = (pressed: boolean) => 'min-h-11 rounded-sm border-2 px-3.5 text-sm ' + (pressed ? 'border-ink bg-surface font-semibold' : 'border-transparent')
+export const thClass = 'px-3 py-2.5 text-left font-display text-[13px] font-bold uppercase tracking-[0.08em]'
+
+// Message banner: alert for errors, warn for things that need attention.
+export function Notice({ tone = 'alert', children }: { tone?: 'alert' | 'warn'; children: React.ReactNode }) {
+  return <p role={tone === 'alert' ? 'alert' : undefined}
+    className={'m-0 rounded-md px-3 py-2 text-[15px] ' + (tone === 'alert' ? 'bg-alert font-medium text-white' : 'border border-diff/40 bg-diff/10 text-ink')}>{children}</p>
 }
 
 // Short status word on a colored plate (Equal, Different, Waiting...).
@@ -71,20 +87,20 @@ export function AppHeader({ name, detail, nav, area, status }: {
   return <header className="sticky top-0 z-50 bg-ink text-ground">
     <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
       <Link href="/" className="flex items-center gap-2 text-ground no-underline">
-        <span aria-hidden="true" className="flex size-7 items-center justify-center bg-safety font-display text-base font-bold text-ink">CS</span>
+        <span aria-hidden="true" className="flex size-7 items-center justify-center bg-accent font-display text-base font-bold text-white">CS</span>
         <span className="font-display text-xl font-bold uppercase tracking-[0.04em]">Count Stock{area ? ' · ' + area : ''}</span>
       </Link>
       {nav && <nav className="order-3 flex w-full flex-wrap gap-1 md:order-none md:ml-4 md:w-auto">{nav}</nav>}
-      <div className="order-4 flex w-full items-center gap-3 rounded-md bg-[#23262A] px-3 py-2 md:order-none md:ml-auto md:w-auto md:bg-transparent md:p-0">
-        <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-md bg-safety font-display text-lg font-bold text-ink">{initials(shown)}</span>
+      <div className="order-4 flex w-full items-center gap-3 rounded-md bg-white/10 px-3 py-2 md:order-none md:ml-auto md:w-auto md:bg-transparent md:p-0">
+        <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-md bg-accent font-display text-lg font-bold text-white">{initials(shown)}</span>
         <span className="flex min-w-0 flex-grow flex-col leading-tight">
           <span className="truncate text-base font-semibold">Hello, {shown}</span>
-          {detail && <span className="truncate text-[13px] text-[#C9C6BE]">{detail}</span>}
+          {detail && <span className="truncate text-[13px] text-on-ink-2">{detail}</span>}
         </span>
         {status}
       </div>
       <form action={logout} className="ml-auto md:ml-0">
-        <button type="submit" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border-[1.5px] border-ground px-3 font-display text-sm font-bold uppercase tracking-[0.06em] text-ground hover:bg-white/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-safety">
+        <button type="submit" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border-[1.5px] border-ground px-3 font-display text-sm font-bold uppercase tracking-[0.06em] text-ground hover:bg-white/10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-white">
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square"><path d="M10 4H4v16h6" /><path d="M15 8l4 4-4 4M19 12H9" /></svg>
           Log out
         </button>

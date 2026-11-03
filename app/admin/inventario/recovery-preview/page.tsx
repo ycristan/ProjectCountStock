@@ -3,6 +3,7 @@ import { isAdmin } from '@/lib/authorization'
 import { createClient } from '@/lib/supabase-server'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 import type { ItemBusca } from '@/actions/contagem'
+import { PageTop } from '@/components/ui'
 import { RecoverySearch } from './RecoverySearch'
 
 export const dynamic = 'force-dynamic'
@@ -44,13 +45,13 @@ export default async function RecoveryPreview({ searchParams }: {
   }))
   const moving = rows.filter(row => row.warehouse_id === source)
   return <div>
-    <h1 className="text-xl font-semibold mb-4">Conferência da recuperação do inventário</h1>
-    <div className="border border-amber-300 bg-amber-50 rounded-xl p-4 mb-5">
-      <strong>PREVIEW SOMENTE LEITURA — NÃO APLICADA</strong>
-      <p>Esta tela consulta os dados reais e projeta a recuperação. Não cria sessões, não registra contagens e não altera o banco.</p>
-      <p>{origin.name} → {destination.name}: {moving.length} produtos seriam reunidos no destino; {moving.filter(row => row.brand_active).length} ativos da origem passariam a inativos.</p>
-      <p>A origem vazia deixará de ser oferecida para novas contagens após a recuperação e publicação. Sessões e relatórios antigos serão preservados.</p>
-      <p>Esta conferência não substitui o teste de gravação, executado apenas no banco descartável do CI.</p>
+    <PageTop back={{ href: '/admin/inventario', label: 'Inventory' }} title="Conferência da recuperação do inventário" />
+    <div className="mb-5 flex flex-col gap-2 rounded-md border-2 border-ink bg-diff/10 p-4 text-[15px]">
+      <strong className="font-display text-xl font-bold uppercase">PREVIEW SOMENTE LEITURA — NÃO APLICADA</strong>
+      <p className="m-0">Esta tela consulta os dados reais e projeta a recuperação. Não cria sessões, não registra contagens e não altera o banco.</p>
+      <p className="m-0">{origin.name} → {destination.name}: {moving.length} produtos seriam reunidos no destino; {moving.filter(row => row.brand_active).length} ativos da origem passariam a inativos.</p>
+      <p className="m-0">A origem vazia deixará de ser oferecida para novas contagens após a recuperação e publicação. Sessões e relatórios antigos serão preservados.</p>
+      <p className="m-0">Esta conferência não substitui o teste de gravação, executado apenas no banco descartável do CI.</p>
     </div>
     <RecoverySearch items={items} sourceId={source} targetId={target} />
   </div>

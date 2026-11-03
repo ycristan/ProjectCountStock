@@ -7,7 +7,7 @@ import { readTeamComparison, readTeamCount } from '@/actions/team-count'
 import { PHASE_LABEL, type TeamComparisonItem, type TeamCountState } from '@/lib/team-count-types'
 import { filterItems } from '@/lib/inventory-search'
 import { useTeamLive } from '@/lib/use-team-live'
-import { PageTop, Tag, buttonClass } from '@/components/ui'
+import { PageTop, Tag, buttonClass, segmentClass } from '@/components/ui'
 import { Icon } from '@/components/icons'
 
 type Status = 'equal' | 'tolerance' | 'different' | 'reconciled' | 'waiting'
@@ -16,8 +16,8 @@ const STATUS: Record<Status, { label: string; tone: 'ok' | 'diff' | 'info' | 'ne
   different: { label: 'Different', tone: 'diff' }, reconciled: { label: 'Reconciled', tone: 'info' },
   waiting: { label: 'Waiting 2nd count', tone: 'neutral' },
 }
-const PHASE_TONE: Record<string, 'safety' | 'info' | 'dark' | 'ok' | 'neutral'> = {
-  setup: 'neutral', counting: 'safety', reconciling: 'info', admin_review: 'dark', signing: 'ok', closed: 'ok',
+const PHASE_TONE: Record<string, 'brand' | 'info' | 'dark' | 'ok' | 'neutral'> = {
+  setup: 'neutral', counting: 'brand', reconciling: 'info', admin_review: 'dark', signing: 'ok', closed: 'ok',
 }
 // Same display rule as the team monitor: cases+units, no labels.
 const format = (quantity: string, bpu: number) => Math.floor(Number(quantity) / (bpu || 1)) + '+' + (Number(quantity) % (bpu || 1))
@@ -91,7 +91,7 @@ export function AllTeamsLive({ sessionId, teamIds, initial, inventory }: {
     .sort((a, b) => (changed.get(b.key) ?? 0) - (changed.get(a.key) ?? 0)
       || a.team.teamName.localeCompare(b.team.teamName) || (a.item?.brand_name ?? a.brand).localeCompare(b.item?.brand_name ?? b.brand))
 
-  const segment = (pressed: boolean) => 'min-h-11 rounded-sm border-2 px-3.5 text-sm ' + (pressed ? 'border-ink bg-surface font-semibold' : 'border-transparent')
+  const segment = segmentClass
   const head = 'px-3 py-2.5 font-display text-[13px] font-bold uppercase tracking-[0.08em]'
 
   return <div className="flex flex-col gap-4">
@@ -165,7 +165,7 @@ export function AllTeamsLive({ sessionId, teamIds, initial, inventory }: {
             return <tr key={row.key + ':' + (changed.get(row.key) ?? 0)} className={'border-t border-ground-2 ' + (changed.has(row.key) ? 'cs-flash ' : '') + (row.status === 'different' ? 'bg-[#FFF4EC]' : '')}>
               <td className="px-3 py-2.5"><Tag tone="dark">{row.team.teamName}</Tag></td>
               <td className="px-3 py-2.5"><span className="font-mono text-xs font-semibold text-ink-2">{row.brand}</span><br /><strong>{row.item?.brand_name ?? '—'}</strong></td>
-              <td className="px-3 py-2.5">{row.item?.bins.map(b => <span key={b} className="mr-1 rounded-sm border-[1.5px] border-ink bg-safety px-1.5 py-0.5 font-mono text-[13px] font-semibold">{b}</span>)}</td>
+              <td className="px-3 py-2.5">{row.item?.bins.map(b => <span key={b} className="mr-1 rounded-sm border-[1.5px] border-ink bg-line px-1.5 py-0.5 font-mono text-[13px] font-semibold">{b}</span>)}</td>
               {Array.from({ length: maxCounters }, (_, i) => {
                 const q = row.quantities[i]
                 const odd = q !== undefined && row.status === 'different' && row.quantities[0] !== undefined && q !== row.quantities[0]

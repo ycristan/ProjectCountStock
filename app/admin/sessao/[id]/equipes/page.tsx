@@ -7,7 +7,7 @@ import { readTeamSessionClosing } from '@/actions/team-session'
 import { listarEquipes } from '@/actions/sessao'
 import { EquipesForm } from './_components/EquipesForm'
 import { EquipesGerenciar } from './_components/EquipesGerenciar'
-import { buttonClass } from '@/components/ui'
+import { Notice, buttonClass } from '@/components/ui'
 import { Icon } from '@/components/icons'
 
 export default async function EquipesPage({
@@ -23,21 +23,21 @@ export default async function EquipesPage({
 
   const db = await createClient()
   const { data: allTeams, error } = await db.from('teams').select('id,team_name,team_flows(team_id)').eq('session_id', id)
-  if (error || !allTeams) return <p role="alert">Teams are unavailable. Please reload.</p>
+  if (error || !allTeams) return <Notice>Teams are unavailable. Please reload.</Notice>
   const teams = allTeams.filter(t => t.team_flows)
   // New sessions use only the new flow while it is enabled; sessions with legacy teams stay legacy.
   // flow=1 keeps the legacy form reachable for its browser test.
   if (process.env.TEAM_SETUP_ENABLED === 'true' && flow !== '1' && teams.length === allTeams.length) {
     const saved = await readTeamSetup(id)
-    if (saved.error) return <p role="alert">{saved.error}</p>
+    if (saved.error) return <Notice>{saved.error}</Notice>
     const closing = teams.length ? await readTeamSessionClosing(id) : null
     return <>
       <TeamSetupForm sessionId={id} numberOfTeams={Number.isFinite(numEquipes) ? numEquipes : 1}
         savedDraft={saved.draft} credentials={saved.credenciais} />
       {teams.length > 0 && <Link href={'/admin/sessao/' + id + '/ao-vivo'} className={buttonClass('primary', 'md') + ' mt-4 no-underline'}>
         <Icon name="live" size={20} />Live count — all teams</Link>}
-      <nav className="mt-4 flex flex-col gap-2" aria-label="Team counting monitors">
-        {teams.map(team => <Link key={team.id} href={'/team/' + team.id}>Open monitor — {team.team_name}</Link>)}
+      <nav className="mt-4 flex flex-wrap gap-2" aria-label="Team counting monitors">
+        {teams.map(team => <Link key={team.id} href={'/team/' + team.id} className={buttonClass('outline', 'sm') + ' no-underline'}>Open monitor — {team.team_name}</Link>)}
       </nav>
       {closing && <TeamSessionClosing sessionId={id} initial={closing} />}
     </>

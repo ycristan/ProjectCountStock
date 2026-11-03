@@ -1,26 +1,20 @@
 import Link from 'next/link'
+import { PageTop, cardClass } from '@/components/ui'
+
+const choice = cardClass + ' flex flex-col gap-1 p-4 text-ink no-underline hover:border-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-info'
 
 export default function SessaoTypePickerPage() {
   return (
     <div>
-      <Link href="/admin" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-4">
-        ← Dashboard
-      </Link>
-      <h2 className="text-xl font-semibold text-slate-900 mb-6">New Session</h2>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Link
-          href="/admin/sessao/team"
-          className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all"
-        >
-          <h3 className="font-semibold text-slate-900 mb-1">Team Count Session</h3>
-          <p className="text-sm text-slate-500">Blind triple count with reconciliation across teams</p>
+      <PageTop back={{ href: '/admin', label: 'Home' }} title="New Session" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Link href="/admin/sessao/team" className={choice}>
+          <strong className="font-display text-2xl font-bold uppercase">Team Count Session</strong>
+          <span className="text-[15px] text-ink-2">Blind triple count with reconciliation across teams</span>
         </Link>
-        <Link
-          href="/admin/sessao/solo"
-          className="block p-6 bg-white border border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all"
-        >
-          <h3 className="font-semibold text-slate-900 mb-1">Solo Count Session</h3>
-          <p className="text-sm text-slate-500">Count yourself or assign to the solo counter — no reconciliation</p>
+        <Link href="/admin/sessao/solo" className={choice}>
+          <strong className="font-display text-2xl font-bold uppercase">Solo Count Session</strong>
+          <span className="text-[15px] text-ink-2">Count yourself or assign to the solo counter — no reconciliation</span>
         </Link>
       </div>
     </div>

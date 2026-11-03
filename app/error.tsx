@@ -20,23 +20,23 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
         minHeight: '100vh',
         placeItems: 'center',
         padding: '24px',
-        background: '#f1f5f9',
+        background: '#F1F3F3',
       }}
     >
       <section
         style={{
           width: 'min(100%, 480px)',
-          border: '1px solid #cbd5e1',
+          border: '1px solid #D9D9D9',
           borderRadius: '12px',
           padding: '32px',
           background: '#ffffff',
           textAlign: 'center',
         }}
       >
-        <h1 style={{ margin: 0, color: '#0f172a', fontSize: '24px' }}>
+        <h1 style={{ margin: 0, color: '#353535', fontSize: '24px' }}>
           Não foi possível carregar esta página
         </h1>
-        <p style={{ color: '#475569', lineHeight: 1.5 }}>
+        <p style={{ color: '#4D4D4D', lineHeight: 1.5 }}>
           O problema foi registrado para análise. Você pode tentar novamente.
         </p>
         <button
@@ -46,7 +46,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
             border: 0,
             borderRadius: '8px',
             padding: '10px 16px',
-            background: '#0f172a',
+            background: '#353535',
             color: '#ffffff',
             cursor: 'pointer',
             fontWeight: 600,

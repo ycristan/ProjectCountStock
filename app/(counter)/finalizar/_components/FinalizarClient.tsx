@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { Button, FlagIcon, Notice, buttonClass } from '@/components/ui'
 import { finalizarContagem } from '@/actions/finalizacao'
 
 type Props = {
@@ -28,45 +29,26 @@ export function FinalizarClient({ jaFinalizado, finalizadoEm }: Props) {
 
   if (done) {
     return (
-      <div className="text-center py-12 max-w-sm mx-auto">
-        <div className="text-5xl mb-4">✅</div>
-        <div className="text-xl font-bold text-slate-900 mb-2">Count Finalised!</div>
-        {finalizadoEm && (
-          <div className="text-sm text-slate-500 mb-2">
-            {new Date(finalizadoEm).toLocaleString('en-GB')}
-          </div>
-        )}
-        <div className="text-sm text-slate-500 mb-8">
-          The admin has been notified. You can still add more items if necessary.
-        </div>
-        <Link
-          href="/busca"
-          className="block w-full py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold text-center"
-        >
-          Continue Counting
-        </Link>
+      <div className="mx-auto flex max-w-sm flex-col items-center gap-3 py-10 text-center">
+        <span aria-hidden="true" className="flex size-16 items-center justify-center rounded-md bg-ok text-4xl font-bold text-white">✓</span>
+        <h1 className="m-0 font-display text-3xl font-bold uppercase">Count Finalised!</h1>
+        {finalizadoEm && <p className="m-0 text-[15px] text-ink-2">{new Date(finalizadoEm).toLocaleString('en-GB')}</p>}
+        <p className="m-0 mb-4 text-[15px] text-ink-2">The admin has been notified. You can still add more items if necessary.</p>
+        <Link href="/busca" className={buttonClass('primary', 'lg', true) + ' no-underline'}>Continue Counting</Link>
       </div>
     )
   }
 
   return (
-    <div className="text-center py-12 max-w-sm mx-auto">
-      <div className="text-5xl mb-4">🏁</div>
-      <div className="text-xl font-bold text-slate-900 mb-2">Finalise Count</div>
-      <div className="text-sm text-slate-500 mb-8">
-        Confirm that you have finished counting all items under your responsibility?
-      </div>
-      {error && <div className="text-sm text-red-600 mb-4">{error}</div>}
-      <button
-        onClick={handleFinalizar}
-        disabled={loading}
-        className="w-full py-4 bg-amber-500 text-white font-semibold rounded-xl text-base mb-3 disabled:opacity-50"
-      >
+    <div className="mx-auto flex max-w-sm flex-col items-center gap-3 py-10 text-center">
+      <span aria-hidden="true" className="flex size-16 items-center justify-center rounded-md bg-ink text-white"><FlagIcon /></span>
+      <h1 className="m-0 font-display text-3xl font-bold uppercase">Finalise Count</h1>
+      <p className="m-0 mb-4 text-[15px] text-ink-2">Confirm that you have finished counting all items under your responsibility?</p>
+      {error && <Notice>{error}</Notice>}
+      <Button variant="primary" size="lg" full onClick={handleFinalizar} disabled={loading}>
         {loading ? 'Finalising...' : "Confirm — I'm done!"}
-      </button>
-      <Link href="/busca" className="block text-sm text-slate-500">
-        ← Back to Search
-      </Link>
+      </Button>
+      <Link href="/busca" className="inline-flex min-h-11 items-center text-[15px] font-medium text-ink">← Back to Search</Link>
     </div>
   )
 }

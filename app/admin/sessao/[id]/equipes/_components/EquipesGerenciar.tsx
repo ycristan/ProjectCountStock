@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { renomearContador, deletarEquipe } from '@/actions/sessao'
 import type { ContadorComCredencial } from '@/actions/sessao'
 import Link from 'next/link'
+import { Button, Notice, PageTop, buttonClass, cardClass, inputClass, thClass } from '@/components/ui'
 
 const ROLE_LABEL: Record<string, string> = {
   contador_1: 'Counter 1',
@@ -68,143 +69,94 @@ export function EquipesGerenciar({
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <Link
-            href="/admin"
-            className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-1"
-          >
-            ← Dashboard
-          </Link>
-          <h2 className="text-xl font-semibold text-slate-900">Manage Teams</h2>
-          <p className="text-sm text-slate-500 mt-0.5">{contadores.length} counters · {teams.length} teams</p>
-        </div>
-        <div className="flex gap-2 print:hidden">
-          <Link
-            href={`/admin/sessao/${sessaoId}/imprimir`}
-            className="px-3 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 text-sm"
-          >
-            QR Cards
-          </Link>
-          <Link
-            href={`/admin/sessao/${sessaoId}/combinacao`}
-            className="px-3 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-sm"
-          >
-            Live Count →
-          </Link>
-        </div>
+      <div className="print:hidden">
+        <PageTop back={{ href: '/admin', label: 'Home' }} kicker={`${contadores.length} counters · ${teams.length} teams`} title="Manage Teams" actions={<>
+          <Link href={`/admin/sessao/${sessaoId}/imprimir`} className={buttonClass('outline', 'sm') + ' no-underline'}>QR Cards</Link>
+          <Link href={`/admin/sessao/${sessaoId}/combinacao`} className={buttonClass('primary', 'sm') + ' no-underline'}>Live Count →</Link>
+        </>} />
       </div>
 
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      {error && <div className="mb-4"><Notice>{error}</Notice></div>}
 
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         {teams.map((grupo) => {
           const first = grupo[0]
           return (
-            <div key={first.team_id} className="border border-slate-200 rounded-xl overflow-hidden">
-              <div className="bg-slate-50 px-4 py-3 flex items-center justify-between border-b border-slate-100">
-                <span className="font-semibold text-slate-900">{first.team_name}</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-blue-700 font-bold text-sm bg-blue-50 border border-blue-200 rounded-lg px-3 py-1">
+            <div key={first.team_id} className={cardClass + ' overflow-hidden'}>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+                <strong className="font-display text-2xl font-bold uppercase">{first.team_name}</strong>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-sm border-[1.5px] border-ink bg-line px-2 py-1 font-mono text-sm font-semibold">
                     Team Code: {first.team_pin}
                   </span>
                   {deletingTeamId === first.team_id ? (
                     <>
-                      <span className="text-xs text-slate-500">Delete team?</span>
-                      <button
-                        onClick={() => handleDeleteTeam(first.team_id)}
-                        disabled={isDeletingTeam}
-                        className="text-xs text-white bg-red-600 hover:bg-red-700 rounded-lg px-2 py-1 disabled:opacity-50"
-                      >
+                      <span className="text-[13px] text-ink-2">Delete team?</span>
+                      <Button variant="alert" size="sm" onClick={() => handleDeleteTeam(first.team_id)} disabled={isDeletingTeam}>
                         {isDeletingTeam ? '...' : 'Confirm'}
-                      </button>
-                      <button
-                        onClick={() => setDeletingTeamId(null)}
-                        disabled={isDeletingTeam}
-                        className="text-xs border border-slate-200 text-slate-600 rounded-lg px-2 py-1"
-                      >
-                        Cancel
-                      </button>
+                      </Button>
+                      <Button variant="quiet" size="sm" onClick={() => setDeletingTeamId(null)} disabled={isDeletingTeam}>Cancel</Button>
                     </>
                   ) : (
-                    <button
-                      onClick={() => setDeletingTeamId(first.team_id)}
-                      className="text-xs text-red-500 border border-red-200 rounded-lg px-2 py-1 hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
+                    <Button variant="danger" size="sm" onClick={() => setDeletingTeamId(first.team_id)}>Delete</Button>
                   )}
                 </div>
               </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-slate-400 text-xs uppercase tracking-wide border-b border-slate-100">
-                    <th className="px-4 py-2 text-left font-medium">Role</th>
-                    <th className="px-4 py-2 text-left font-medium">Name</th>
-                    <th className="px-4 py-2 text-left font-medium">Personal PIN</th>
-                    <th className="px-4 py-2 print:hidden" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {grupo
-                    .sort((a, b) => a.role.localeCompare(b.role))
-                    .map((c) => (
-                      <tr key={c.auth_user_id} className="border-t border-slate-100">
-                        <td className="px-4 py-3 text-slate-600">{ROLE_LABEL[c.role] ?? c.role}</td>
-                        <td className="px-4 py-3">
-                          {editingId === c.auth_user_id ? (
-                            <input
-                              autoFocus
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEdit(c.auth_user_id)
-                                if (e.key === 'Escape') cancelEdit()
-                              }}
-                              className="px-2 py-1 border border-blue-400 rounded-lg text-sm w-full max-w-[200px] focus:outline-none"
-                            />
-                          ) : (
-                            <span className="font-medium text-slate-900">{c.full_name || '—'}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 font-mono font-bold text-slate-700">{c.user_pin}</td>
-                        <td className="px-4 py-3 print:hidden">
-                          {editingId === c.auth_user_id ? (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => saveEdit(c.auth_user_id)}
-                                disabled={isPending || !editName.trim()}
-                                className="px-3 py-1 bg-slate-900 text-white rounded-lg text-xs disabled:opacity-50"
-                              >
-                                Save
-                              </button>
-                              <button
-                                onClick={cancelEdit}
-                                disabled={isPending}
-                                className="px-3 py-1 border border-slate-200 text-slate-600 rounded-lg text-xs"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => startEdit(c)}
-                              className="text-xs text-slate-500 hover:text-slate-800 border border-slate-200 rounded-lg px-2 py-1 hover:border-slate-400"
-                            >
-                              Rename
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-sm">
+                  <thead>
+                    <tr className="bg-ink text-ground">
+                      <th className={thClass}>Role</th>
+                      <th className={thClass}>Name</th>
+                      <th className={thClass}>Personal PIN</th>
+                      <th className={thClass + ' print:hidden'} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {grupo
+                      .sort((a, b) => a.role.localeCompare(b.role))
+                      .map((c) => (
+                        <tr key={c.auth_user_id} className="border-t border-ground-2">
+                          <td className="px-3 py-2.5 text-ink-2">{ROLE_LABEL[c.role] ?? c.role}</td>
+                          <td className="px-3 py-2.5">
+                            {editingId === c.auth_user_id ? (
+                              <input
+                                autoFocus
+                                aria-label="Name"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEdit(c.auth_user_id)
+                                  if (e.key === 'Escape') cancelEdit()
+                                }}
+                                className={inputClass + ' max-w-[220px]'}
+                              />
+                            ) : (
+                              <span className="font-semibold">{c.full_name || '—'}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-base font-semibold">{c.user_pin}</td>
+                          <td className="px-3 py-2.5 print:hidden">
+                            {editingId === c.auth_user_id ? (
+                              <div className="flex gap-2">
+                                <Button variant="dark" size="sm" onClick={() => saveEdit(c.auth_user_id)} disabled={isPending || !editName.trim()}>Save</Button>
+                                <Button variant="quiet" size="sm" onClick={cancelEdit} disabled={isPending}>Cancel</Button>
+                              </div>
+                            ) : (
+                              <Button variant="quiet" size="sm" onClick={() => startEdit(c)}>Rename</Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
         })}
       </div>
 
-      <p className="mt-4 text-xs text-slate-400 print:hidden">
+      <p className="mt-4 text-[13px] text-ink-2 print:hidden">
         Team Code is shared by all team members. PIN is individual per counter.
       </p>
     </div>

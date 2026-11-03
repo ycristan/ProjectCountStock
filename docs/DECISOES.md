@@ -210,3 +210,18 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 
 ## PIN do Solo mantido (2026-11-02)
 - Yuri decidiu não trocar o PIN do Solo que apareceu no cabeçalho do preview em 30/10: só ele viu. O cabeçalho já não mostra login (#101).
+
+## Paleta Next Chain (2026-11-02)
+- Yuri escolheu a paleta da marca NEXT CHAIN, a mesma para toda a suíte de aplicativos (CountStock é o primeiro módulo): Graphite `#353535`, Yale Blue `#284B63`, Stormy Teal `#3C6E71`, Dust Grey `#D9D9D9`, White. Substitui o amarelo de segurança de 30/10; cantos, botões, cabeçalho e fontes seguem iguais.
+- Uso: Graphite no cabeçalho, texto e painéis escuros; Yale Blue na ação principal e no passo atual; Stormy Teal como destaque sobre o Graphite (menu atual, avatar, selo); Dust Grey em bordas e chips de BIN. Tons de apoio (fundo `#F1F3F3`, cinzas de texto) derivados, fora da paleta.
+- Cores de status (verde, laranja, azul, vermelho) não mudam. Sobre o Graphite só entram como etiqueta com texto branco: texto colorido direto no fundo escuro fica abaixo de 3:1.
+- Mercado da marca: Irlanda e União Europeia (consulta do nome em IPOI e EUIPO ainda pendente).
+
+## Todas as telas no padrão novo (2026-11-02)
+- Yuri apontou que Solo do admin, Sessions, Audit e Settings ainda estavam no visual antigo (cinzas e azuis padrão do Tailwind). Foram migradas todas as telas que ainda usavam esse estilo: admin (Solo, Sessions, Audit, Settings, nova sessão, equipes, reconciliação, Combinação, impressão, recuperação) e contador (monitor, reconciliação, finalizar).
+- Regra: tela nova ou antiga usa só `components/ui.tsx` (`PageTop`, `Button`, `Tag`, `Notice`, `cardClass`, `inputClass`, tabela com cabeçalho grafite, controle segmentado). Cor de classe numerada do Tailwind (`slate`, `blue`...) não se usa mais.
+- Textos, papéis e campos que os testes de navegador leem foram mantidos (`Next →`, `← Back`, `Logins Generated`...). O cartão de impressão A4 continua preto e branco de propósito.
+
+## Tolerância de peso fora do Settings (2026-11-02)
+- Yuri confirmou os 2% fixos da R05 e mandou tirar do Settings o campo "Default Weight Tolerance (g)": o fluxo novo nunca o leu. O valor já salvo (`app_settings.default_tolerance_g`) fica intacto e continua sendo copiado para sessões novas, porque o fluxo antigo (Plano B de 02/01) ainda o usa.
+- Remover a coluna e o uso no fluxo antigo junto com a retirada dele, depois de 02/01.

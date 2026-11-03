@@ -67,7 +67,7 @@ export function InventoryUpload() {
             <button type="button" onClick={() => { setState({}); setChoices({}) }} className="ml-3 min-h-11 px-2 font-semibold underline underline-offset-4">Cancel</button>
           </dialog>}
           {!state.review && !state.success && <button type="submit" className={buttonClass('dark', 'md') + ' w-fit'}><Icon name="check" size={20} />{pending ? 'Checking...' : 'Check spreadsheet'}</button>}
-          {state.review && <div className="flex flex-col gap-3 rounded-md border-2 border-ink bg-[#FFFBEA] p-4">
+          {state.review && <div className="flex flex-col gap-3 rounded-md border-2 border-ink bg-ground p-4">
             <h2 className="m-0 font-display text-xl font-bold uppercase">3. Confirm: {state.review.warehouseName}</h2>
             <p>{state.review.count} products: {state.review.active} active, {state.review.inactive} inactive.</p>
             <p className="text-sm">Products missing from this file will become inactive only in this warehouse. Empty optional values replace previous values. Other warehouses are not replaced.</p>
