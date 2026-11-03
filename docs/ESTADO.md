@@ -1,4 +1,4 @@
-# Estado — 2026-11-03 (PR 3)
+# Estado — 2026-11-03 (fontes)
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -10,14 +10,12 @@ Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar ant
 Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a correção do Independente).
 
 ## Em produção
-`main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), painel do admin, contagem ao vivo consolidada, Inventory em lista única, paleta Next Chain, barra inferior no celular e Hold to finish (#107). Backup diário desde 28/10. Solo é usado quase todo dia.
+`main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), painel do admin, contagem ao vivo consolidada, Inventory com abas por warehouse, tabela virtualizada e filtros estilo Excel (#109, #110), paleta Next Chain, barra inferior no celular e Hold to finish (#107). Backup diário desde 28/10. Solo é usado quase todo dia.
 
 ## Em andamento — Inventory por warehouse (decisão de 03/11, antes de equipes)
 Ordem das PRs (contrato em INVENTORY_WAREHOUSES.md §1):
-1. Documentos (#108, feita).
-2. Abas por warehouse (#109, feita). Medição: banco 16 ms, navegador 10 s para desenhar 2.310 linhas.
-3. Esta PR: tabela nova (colunas da planilha, cabeçalho fixo, rolagem interna, edição sem deslocar colunas) com virtualização.
-4. Filtros por coluna: juntos nesta PR, a pedido de Yuri.
+1–4. Documentos, abas, tabela e filtros: feitos (#108, #109, #110).
+Antes da 5a, a pedido de Yuri: esta PR (fontes no projeto; o build baixava do Google e falhou 2 vezes em 03/11) e PR da região da Vercel (app em iad1/EUA, banco em eu-west-1/Irlanda: suspeito da demora de 3 a 4 s; medir antes e depois).
 5a. Audit Inventory no banco (trigger, só acréscimo). Migration: aplicação manual com autorização.
 5. Toggle de Status, cadastro manual, edição transacional, BPU travado também com sessão de equipes. Migration: aplicação manual com autorização.
 6. Tela Audit Inventory com período e produtos selecionáveis, Excel com os mesmos filtros.
