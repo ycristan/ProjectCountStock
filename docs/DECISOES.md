@@ -225,3 +225,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Tolerância de peso fora do Settings (2026-11-02)
 - Yuri confirmou os 2% fixos da R05 e mandou tirar do Settings o campo "Default Weight Tolerance (g)": o fluxo novo nunca o leu. O valor já salvo (`app_settings.default_tolerance_g`) fica intacto e continua sendo copiado para sessões novas, porque o fluxo antigo (Plano B de 02/01) ainda o usa.
 - Remover a coluna e o uso no fluxo antigo junto com a retirada dele, depois de 02/01.
+
+## Barra inferior, Hold to finish e confirmação do app (2026-11-02)
+- Yuri escolheu a proposta B: no celular, as telas viram abas numa barra embaixo e a última aba, "Me", mostra quem está logado, o Log out e (admin) Settings. No notebook o menu de cima continua. A barra some quando o teclado está aberto.
+- Finish da equipe e do Solo: "Hold to finish" (segurar 4 s, contagem 4-3-2-1; soltar antes cancela) e depois a confirmação. Substitui o botão com confirmação de 30/10 também no Solo.
+- Toda confirmação é uma janela do próprio app (`components/confirm.tsx`), nunca a caixa do navegador; as 8 que existiam foram trocadas. Motivo: a caixa do navegador quebra o visual e não segue o padrão das telas.

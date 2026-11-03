@@ -10,11 +10,11 @@ Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar ant
 Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a correção do Independente).
 
 ## Em produção
-`main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), ordem de assinatura de 29/10 (migration `team_flow_admin_close` aplicada), busca por qualquer parte do nome, código ou BIN (#104), visual "Chão de armazém" (amarelo) nas telas de equipe e Solo (#101) e, com esta PR, painel do admin, contagem ao vivo consolidada e Inventory (#105). Backup diário desde 28/10. Solo é usado quase todo dia.
+`main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), ordem de assinatura de 29/10 (migration `team_flow_admin_close` aplicada), busca por qualquer parte do nome, código ou BIN (#104), painel do admin, contagem ao vivo consolidada e Inventory (#105), paleta Next Chain com todas as telas no padrão novo e tolerância em gramas fora do Settings (#106) e, com esta PR, barra inferior no celular, Hold to finish e confirmação do próprio app (#107). Backup diário desde 28/10. Solo é usado quase todo dia.
 
 ## Em andamento
-- Paleta Next Chain e padronização de todas as telas (admin e contador) em branch; aguarda teste visual de Yuri no preview (só warehouse TESTE), CI dos testes de navegador e a PR.
-- Próximo: itens 2 a 6 de TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11", em PRs pequenas (iniciar a sessão inteira; tabela depois do encerramento; assinatura no próprio aparelho; proposta da barra inferior; teste com 9 usuários).
+- Próximo: investigar a demora de 3 a 4 s ao abrir os menus do admin (Inventory e outros), medindo antes de mudar (proxy, layout, consultas, região Vercel/Supabase, tamanho da lista). Virtualização e abas por warehouse são hipóteses, não diagnóstico.
+- Próximo: itens 2, 3, 4 e 6 de TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11", em PRs pequenas (iniciar a sessão inteira; tabela depois do encerramento; assinatura no próprio aparelho; teste com 9 usuários).
 
 ## Também em andamento
 - Agente: teste automático com 9 usuários; Sentry nos erros mostrados nas telas de equipe.
@@ -22,7 +22,6 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 - O conector da Vercel não grava variáveis (403): produção é republicada por merge na `main`.
 
 ## Decisões pendentes de Yuri
-- Aprovar a proposta visual da barra de navegação inferior, quando entregue.
 - Tolerância em gramas (`default_tolerance_g`, `tolerance_g`): só o fluxo antigo usa; remover com ele depois de 02/01.
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 

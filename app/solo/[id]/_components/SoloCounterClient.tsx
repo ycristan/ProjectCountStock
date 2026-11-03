@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import type { ItemBusca, LancarContagemPayload } from '@/actions/contagem'
 import { BuscaClient } from '@/app/(counter)/busca/_components/BuscaClient'
 import { lancarSoloContagemCounter, finalizarSoloContagemCounter, definirNomeContadorSolo } from '@/actions/solo'
-import { Button, FlagIcon, Label } from '@/components/ui'
+import { Button, Label } from '@/components/ui'
+import { useConfirm } from '@/components/confirm'
+import { HoldButton } from '@/components/hold-button'
 
 type Props = {
   sessionId: string
@@ -21,6 +23,7 @@ export function SoloCounterClient({ sessionId, title, counterName, items, restri
   const [isPending, startTransition] = useTransition()
   const [erro, setErro] = useState<string | null>(null)
   const router = useRouter()
+  const [confirm, confirmDialog] = useConfirm()
 
   const onSubmit = (payload: LancarContagemPayload) => lancarSoloContagemCounter(sessionId, payload)
 
@@ -36,8 +39,8 @@ export function SoloCounterClient({ sessionId, title, counterName, items, restri
     })
   }
 
-  function handleFinish() {
-    if (!window.confirm('Finish this count? You will not be able to add or edit counts in this session.')) return
+  async function handleFinish() {
+    if (!(await confirm({ title: 'Finish this count?', text: 'You will not be able to add or edit counts in this session.', confirm: 'Confirm finish' }))) return
     startTransition(async () => {
       const res = await finalizarSoloContagemCounter(sessionId)
       if (res.error) { setErro(res.error); return }
@@ -69,10 +72,10 @@ export function SoloCounterClient({ sessionId, title, counterName, items, restri
   }
 
   return <>
+    {confirmDialog}
     <BuscaClient items={items} onSubmit={onSubmit} headerSlot={alert} restrictToList={restrictToList}
-      footerSlot={<div className="sticky bottom-0 -mx-4 mt-4 flex flex-col gap-1 border-t-2 border-ink bg-ground px-4 py-3">
-        <Button variant="primary" size="lg" full disabled={isPending} onClick={handleFinish}><FlagIcon />Finish count</Button>
-        <span className="text-center text-[13px] text-ink-2">Asks you to confirm before closing the count.</span>
+      footerSlot={<div className="sticky bottom-[var(--bottom-bar)] -mx-4 mt-4 flex flex-col gap-1 border-t-2 border-ink bg-ground px-4 py-3">
+        <HoldButton label="Hold to finish" disabled={isPending} onHeld={handleFinish} />
       </div>} />
   </>
 }

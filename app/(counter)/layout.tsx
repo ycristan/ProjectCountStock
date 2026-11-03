@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
-import { AppHeader, NavLink, cardClass } from '@/components/ui'
+import { AppHeader, cardClass, type NavItem } from '@/components/ui'
 
 export default async function CounterLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -55,14 +55,14 @@ export default async function CounterLayout({ children }: { children: React.Reac
     }
   }
 
+  const items: NavItem[] = sessionClosed || !role ? []
+    : role === 'independente'
+      ? [{ href: '/monitor', label: 'Monitor', icon: 'live' }, { href: '/busca', label: 'Products', icon: 'search' }]
+      : [{ href: '/busca', label: 'Search', icon: 'search' }, { href: '/finalizar', label: 'Finalise', icon: 'check' }]
+
   return (
     <div className="min-h-screen bg-ground">
-      <AppHeader name={name} detail={role === 'independente' ? 'Independent' : role ? 'Counter' : undefined} nav={!sessionClosed && role ? <>
-        {role === 'independente' ? <>
-          <NavLink href="/monitor">Monitor</NavLink>
-          <NavLink href="/busca">Products</NavLink>
-        </> : <NavLink href="/finalizar">Finalise</NavLink>}
-      </> : undefined} />
+      <AppHeader name={name} detail={role === 'independente' ? 'Independent' : role ? 'Counter' : undefined} items={items} />
       {sessionClosed ? (
         <main className="px-4 py-6 max-w-lg mx-auto">
           <div className={cardClass + ' p-6 text-center'}>

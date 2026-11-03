@@ -331,7 +331,7 @@ export function CombinacaoClient({
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 flex flex-col bg-ground" style={{ top }}>
+      <div className="fixed inset-x-0 flex flex-col bg-ground" style={{ top, bottom: 'var(--bottom-bar)' }}>
 
         {/* ── Page header bar ───────────────────────────── */}
         <div className="flex min-h-14 flex-none flex-wrap items-center justify-between gap-3 bg-ink px-4 py-2 text-ground">

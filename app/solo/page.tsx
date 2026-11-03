@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { listarSoloSessoesAtribuidas } from '@/actions/solo'
 import { AppHeader, PageTop } from '@/components/ui'
+import { SOLO_NAV } from './nav'
 
 export default async function SoloListPage() {
   const sessions = await listarSoloSessoesAtribuidas()
 
   return <>
-    <AppHeader name="Solo counter" detail="Solo count" />
+    <AppHeader name="Solo counter" detail="Solo count" items={SOLO_NAV} />
     <main className="mx-auto max-w-lg px-4 py-6">
       <PageTop title="Your solo counts" />
       <div className="flex flex-col gap-3">

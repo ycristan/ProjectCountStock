@@ -355,7 +355,7 @@ export function CountForm({ item, onVoltar, onSucesso, isAdditive = false, onSub
         <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-sm font-medium text-white">{erro}</p>
       )}
 
-      <div className="sticky bottom-0 -mx-4 border-t border-line bg-ground px-4 py-3">
+      <div className="sticky bottom-[var(--bottom-bar)] -mx-4 border-t border-line bg-ground px-4 py-3">
         <Button variant="primary" size="lg" full onClick={handleSubmit}
           disabled={isPending || (modo === 'peso' && weightQty <= 0)}>
           {btnLabel}

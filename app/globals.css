@@ -52,3 +52,12 @@ input, select, textarea {
 @keyframes cs-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 .cs-live { animation: cs-pulse 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .cs-flash, .cs-live { animation: none; } }
+
+/* Phone bottom bar (components/bottom-bar.tsx): content and sticky footers keep clear of
+ * it through --bottom-bar; it steps aside while the keyboard is open. */
+:root { --bottom-bar: 0px; }
+@media (max-width: 767px) {
+  body:has(.bottom-bar) { --bottom-bar: calc(57px + env(safe-area-inset-bottom, 0px)); padding-bottom: var(--bottom-bar); }
+}
+html[data-keyboard] .bottom-bar { display: none; }
+html[data-keyboard] body { --bottom-bar: 0px; }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { Button, buttonClass, cardClass, tableWrapClass, thClass } from '@/components/ui'
+import { useConfirm } from '@/components/confirm'
 import { closeTeamSession, readTeamSessionClosing, type TeamSessionClosing as Closing } from '@/actions/team-session'
 
 // R13 (2026-10-07): uncounted actives mean not found. The admin acknowledges the
@@ -10,9 +11,11 @@ export function TeamSessionClosing({ sessionId, initial }: { sessionId: string; 
   const [state, setState] = useState(initial)
   const [notice, setNotice] = useState('')
   const [pending, startTransition] = useTransition()
+  const [confirm, confirmDialog] = useConfirm()
   const refresh = async () => { const next = await readTeamSessionClosing(sessionId); if (next) setState(next) }
 
   return <section className={cardClass + ' mt-6 flex flex-col gap-3 p-4'} data-closing={state.closed ? 'closed' : state.ready ? 'ready' : 'waiting'}>
+    {confirmDialog}
     <h2 className="m-0 font-display text-2xl font-bold uppercase">Close the count</h2>
     <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[15px]">{state.teams.map(t => <li key={t.teamId}><strong>{t.name}</strong>: {t.phase === 'closed' ? 'Closed' : t.phase ?? 'Legacy team'}</li>)}</ul>
     {notice && <p role="status" className="m-0 rounded-md border border-line-2 bg-ground-2 px-3 py-2 text-[15px]">{notice}</p>}
@@ -28,8 +31,8 @@ export function TeamSessionClosing({ sessionId, initial }: { sessionId: string; 
         </tr>)}</tbody>
       </table></div>}
       <Button variant="primary" size="lg" full disabled={pending}
-        onClick={() => {
-          if (!window.confirm('Acknowledge the list and close the count? Results will be frozen.')) return
+        onClick={async () => {
+          if (!(await confirm({ title: 'Close the count?', text: 'Acknowledge the list and close the count? Results will be frozen.', confirm: 'Close the count' }))) return
           startTransition(async () => {
             const result = await closeTeamSession(sessionId, state.uncounted.map(u => u.brandCode))
             setNotice(result.error ?? 'Count closed.')
