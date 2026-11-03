@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { BLANK, COLUMNS, searchValues, type ColumnKey } from '@/lib/inventory-filters'
 import { Icon } from '@/components/icons'
 
-const MAX_LISTED = 200
+const ROW = 36
 const WIDTH = 300
 
 // Excel-style column filter: sort, clear, search, (Select all) + values, Cancel / Apply.
@@ -27,6 +28,10 @@ export function ColumnFilterPopover({ column, anchor, values, selected, sortDir,
   const matching = useMemo(() => searchValues(values, search), [values, search])
   const ticked = matching.filter((v) => draft.has(v)).length
   const all = matching.length > 0 && ticked === matching.length
+  // Every value is listed (2,000+ Brand Codes); only the rows in view are drawn.
+  const listRef = useRef<HTMLDivElement>(null)
+  // eslint-disable-next-line react-hooks/incompatible-library -- not memoised; nothing here is passed to memoised children
+  const list = useVirtualizer({ count: matching.length, getScrollElement: () => listRef.current, estimateSize: () => ROW, overscan: 8 })
 
   useEffect(() => {
     const down = (e: PointerEvent) => {
@@ -71,7 +76,7 @@ export function ColumnFilterPopover({ column, anchor, values, selected, sortDir,
   const left = Math.max(8, Math.min(anchor.left, window.innerWidth - WIDTH - 8))
   // Up to 720px or the window height: opens below the button and moves up over the header when there is not room.
   const maxHeight = Math.min(720, window.innerHeight - 16)
-  const needed = Math.min(maxHeight, 320 + (Math.min(values.length, MAX_LISTED) + 1) * 36)
+  const needed = Math.min(maxHeight, 320 + (values.length + 1) * ROW)
   const top = Math.max(8, Math.min(anchor.bottom + 6, window.innerHeight - needed - 8))
   const row = 'flex min-h-10 w-full items-center gap-2.5 px-3 text-left text-[15px] hover:bg-ground'
   const [ascLabel, descLabel] = col.numeric ? ['Sort smallest to largest', 'Sort largest to smallest'] : ['Sort A to Z', 'Sort Z to A']
@@ -97,29 +102,34 @@ export function ColumnFilterPopover({ column, anchor, values, selected, sortDir,
       <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
         <label className="flex min-h-10 items-center gap-2 rounded-md border-2 border-ink px-2 focus-within:outline-3 focus-within:outline-info">
           <Icon name="search" size={16} />
-          <input type="search" aria-label="Search values" placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)}
+          <input type="search" aria-label="Search values" placeholder="Search" value={search} onChange={(e) => { setSearch(e.target.value); listRef.current?.scrollTo({ top: 0 }) }}
             className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-ink-3" />
         </label>
-        <ul className="m-0 min-h-20 flex-1 list-none overflow-y-auto rounded-sm border border-line p-0 py-1">
+        <div className="flex min-h-24 flex-1 flex-col rounded-sm border border-line">
           {matching.length > 0 && (
-            <li>
-              <label className="flex min-h-9 cursor-pointer items-center gap-2.5 px-2 font-semibold hover:bg-ground">
-                <input type="checkbox" checked={all} ref={(el) => { if (el) el.indeterminate = ticked > 0 && !all }} onChange={toggleAll} className="size-[18px] shrink-0 accent-brand" />
-                {search.trim() ? '(Select all search results)' : '(Select all)'}
-              </label>
-            </li>
+            <label className="flex min-h-9 shrink-0 cursor-pointer items-center gap-2.5 border-b border-line px-2 font-semibold hover:bg-ground">
+              <input type="checkbox" checked={all} ref={(el) => { if (el) el.indeterminate = ticked > 0 && !all }} onChange={toggleAll} className="size-[18px] shrink-0 accent-brand" />
+              {search.trim() ? `(Select all ${matching.length} results)` : '(Select all)'}
+            </label>
           )}
-          {matching.slice(0, MAX_LISTED).map((v) => (
-            <li key={v}>
-              <label className="flex min-h-9 cursor-pointer items-center gap-2.5 px-2 hover:bg-ground">
-                <input type="checkbox" checked={draft.has(v)} onChange={() => toggle(v)} className="size-[18px] shrink-0 accent-brand" />
-                <span className={'min-w-0 truncate ' + (v === BLANK ? 'italic text-ink-2' : '')} title={v}>{v}</span>
-              </label>
-            </li>
-          ))}
-          {matching.length === 0 && <li className="px-2 py-3 text-ink-2">No matches.</li>}
-        </ul>
-        {matching.length > MAX_LISTED && <p className="m-0 text-sm text-ink-2">Showing {MAX_LISTED} of {matching.length}. Search to narrow the list.</p>}
+          <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto">
+            {matching.length === 0 && <p className="m-0 px-2 py-3 text-ink-2">No matches.</p>}
+            <ul className="relative m-0 list-none p-0" style={{ height: list.getTotalSize() }}>
+              {list.getVirtualItems().map((r) => {
+                const v = matching[r.index]
+                return (
+                  <li key={v} className="absolute inset-x-0" style={{ top: r.start, height: ROW }}>
+                    <label className="flex h-full cursor-pointer items-center gap-2.5 px-2 hover:bg-ground">
+                      <input type="checkbox" checked={draft.has(v)} onChange={() => toggle(v)} className="size-[18px] shrink-0 accent-brand" />
+                      <span className={'min-w-0 truncate ' + (v === BLANK ? 'italic text-ink-2' : '')} title={v}>{v}</span>
+                    </label>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </div>
+        <p className="m-0 text-sm text-ink-2">{matching.length === values.length ? `${values.length} values` : `${matching.length} of ${values.length} values`}</p>
       </div>
       <div className="flex justify-end gap-2 border-t border-line bg-ground px-3 py-2">
         <button type="button" onClick={onClose} className="min-h-10 rounded-md border-2 border-ink bg-surface px-4 font-display text-[15px] font-bold">Cancel</button>

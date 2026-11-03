@@ -82,6 +82,10 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     const codeBox=page.getByRole('dialog',{name:'Filter Brand Code'})
     const cb=await codeBox.boundingBox()
     assert.ok(cb.height>=400&&cb.y+cb.height<=900,'filter popover uses the screen height and fits: '+JSON.stringify(cb))
+    // Every value is reachable: scrolling the list reaches the last of the 2,310 codes.
+    await codeBox.getByText('2310 values').waitFor()
+    await codeBox.locator('ul').evaluate(el=>el.parentElement.scrollTop=el.scrollHeight)
+    await codeBox.getByLabel('TB02309',{exact:true}).waitFor()
     await codeBox.getByLabel('Search values').fill('TB0230')
     t=performance.now()
     await codeBox.getByRole('button',{name:'Apply'}).click()
@@ -102,6 +106,7 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     await page.getByRole('button',{name:'Filter BPU'}).click()
     const bpuBox=page.getByRole('dialog',{name:'Filter BPU'})
     await bpuBox.getByLabel('(Select all)').uncheck()
+    await bpuBox.getByLabel('Search values').fill('24')
     await bpuBox.getByLabel('24',{exact:true}).check()
     await bpuBox.getByRole('button',{name:'Apply'}).click()
     let both=0
