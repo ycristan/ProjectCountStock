@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { BLANK, COLUMNS, type ColumnKey } from '@/lib/inventory-filters'
+import { BLANK, COLUMNS, searchValues, type ColumnKey } from '@/lib/inventory-filters'
 import { Icon } from '@/components/icons'
 
 const MAX_LISTED = 200
@@ -24,10 +24,7 @@ export function ColumnFilterPopover({ column, anchor, values, selected, sortDir,
   const [search, setSearch] = useState('')
   const [draft, setDraft] = useState<Set<string>>(() => new Set(selected ?? values))
   const col = COLUMNS.find((c) => c.key === column)!
-  const matching = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return q ? values.filter((v) => v.toLowerCase().includes(q)) : values
-  }, [values, search])
+  const matching = useMemo(() => searchValues(values, search), [values, search])
   const ticked = matching.filter((v) => draft.has(v)).length
   const all = matching.length > 0 && ticked === matching.length
 

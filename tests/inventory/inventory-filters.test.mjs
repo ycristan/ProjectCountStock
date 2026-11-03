@@ -53,3 +53,15 @@ test('select a subset then clear it: no filter returns every row', () => {
   assert.deepEqual([...f.activeFilterKeys(cleared)], [])
   assert.equal(f.applyFilters(items, cleared), items)
 })
+
+test('codes sort in natural order: 3 and 5 before 1111, leading zeros by value', () => {
+  const rows = ['1111', '5', '0017', '3', '100', 'AB2', 'AB10'].map((c) => mk(c))
+  assert.equal(f.applyFilters(rows, state({}, { key: 'brand_code', dir: 'asc' })).map((r) => r.brand_code).join(' '), '3 5 0017 100 1111 AB2 AB10')
+  assert.equal(f.applyFilters(rows, state({}, { key: 'brand_code', dir: 'desc' }))[0].brand_code, 'AB10')
+  assert.deepEqual([...f.distinctValues(rows, state(), 'brand_code')].slice(0, 3), ['3', '5', '0017'])
+})
+test('filter search puts the exact value first, then starts-with, then contains', () => {
+  const values = ['0031', '0130', '1038', '3', '30', '300', '113']
+  assert.deepEqual([...f.searchValues(values, '3')], ['3', '30', '300', '0031', '0130', '1038', '113'])
+  assert.deepEqual([...f.searchValues(values, '')], values)
+})

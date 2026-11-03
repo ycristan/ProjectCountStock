@@ -45,7 +45,26 @@ export function cellValue(item: ItemInventario, key: ColumnKey): string {
 
 function compareValues(key: ColumnKey, a: string, b: string): number {
   if (a === BLANK || b === BLANK) return a === b ? 0 : a === BLANK ? -1 : 1
-  return isNumeric(key) ? Number(a) - Number(b) : a.localeCompare(b)
+  if (isNumeric(key)) return Number(a) - Number(b)
+  // Natural order: digit runs compare by value, so 3 < 5 < 17 < 1111 (not 1111 < 3).
+  return NATURAL.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0)
+}
+
+const NATURAL = new Intl.Collator('en', { numeric: true, sensitivity: 'base' })
+
+// Search inside a filter's value list: exact match first, then values starting with the text,
+// then the rest that contain it; each group keeps the column order.
+export function searchValues(values: string[], query: string): string[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return values
+  const exact: string[] = [], starts: string[] = [], contains: string[] = []
+  for (const v of values) {
+    const l = v.toLowerCase()
+    if (l === q) exact.push(v)
+    else if (l.startsWith(q)) starts.push(v)
+    else if (l.includes(q)) contains.push(v)
+  }
+  return [...exact, ...starts, ...contains]
 }
 
 export function activeFilterKeys(state: FilterState): ColumnKey[] {
