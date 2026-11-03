@@ -1,4 +1,4 @@
-# Estado — 2026-11-03 (PR 2)
+# Estado — 2026-11-03 (PR 3)
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -15,9 +15,9 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 ## Em andamento — Inventory por warehouse (decisão de 03/11, antes de equipes)
 Ordem das PRs (contrato em INVENTORY_WAREHOUSES.md §1):
 1. Documentos (#108, feita).
-2. Esta PR: abas por warehouse e carregar só a warehouse da aba; tempos medidos no CI (descrição da PR).
-3. Tabela nova: colunas da planilha, cabeçalho fixo, rolagem interna, edição sem deslocar colunas; virtualização só se a medição pedir.
-4. Filtros por coluna.
+2. Abas por warehouse (#109, feita). Medição: banco 16 ms, navegador 10 s para desenhar 2.310 linhas.
+3. Esta PR: tabela nova (colunas da planilha, cabeçalho fixo, rolagem interna, edição sem deslocar colunas) com virtualização.
+4. Filtros por coluna: juntos nesta PR, a pedido de Yuri.
 5a. Audit Inventory no banco (trigger, só acréscimo). Migration: aplicação manual com autorização.
 5. Toggle de Status, cadastro manual, edição transacional, BPU travado também com sessão de equipes. Migration: aplicação manual com autorização.
 6. Tela Audit Inventory com período e produtos selecionáveis, Excel com os mesmos filtros.

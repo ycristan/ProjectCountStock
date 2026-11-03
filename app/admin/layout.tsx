@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-ground">
       <AppHeader name={name} detail="Admin" area="Admin" items={items} />
-      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6 has-[[data-full-width]]:max-w-none">{children}</main>
     </div>
   )
 }

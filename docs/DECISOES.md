@@ -241,3 +241,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Idioma da aplicação (2026-11-03)
 - Yuri: a aplicação é exclusivamente em inglês britânico. Ele viu texto em português na tela Inventory (link da conferência de recuperação, só no preview). Regra nunca estava escrita em `docs/`, por isso escapou.
 - Varredura completa (português e grafia americana) é entrega própria, depois do Inventory. Todo texto novo a partir de agora já sai em inglês britânico.
+
+## Inventory: tela revista por Yuri (2026-11-03)
+- Sai a busca geral: os filtros por coluna (estilo Excel: ordenar, limpar, buscar, "(Select all)", Apply) a substituem. "BIN Location" vira um cabeçalho só sobre as colunas 1–4.
+- A página rola: título, abas e menu saem de vista e o cabeçalho da tabela gruda no topo da tela, para a lista ter o máximo de espaço. A janela de filtro usa a altura da tela.
+- Motivo: a primeira versão (busca + filtro abaixo do nome + janela espremida) foi entregue sem conferência visual; agora toda mudança de tela é conferida em captura antes de ir para a PR.
