@@ -1,5 +1,6 @@
 import { verifyTeamSetupBrowser } from './team-setup-browser.mjs'
 import { verifySoloListBrowser } from './solo-list-browser.mjs'
+import { verifyInventoryTabs } from './inventory-tabs-browser.mjs'
 // Runs only in a disposable GitHub Actions runner. Never accepts production URLs.
 import { verifyRecoveryPreview } from './recovery-preview-browser.mjs'
 import { verifyRecoveredWarehouse } from './warehouse-recovery-browser.mjs'
@@ -105,6 +106,8 @@ try {
   await verifyRecoveredWarehouse({db,base,headers,cookies:[...jar].map(([name,value])=>({name,value}))})
 
   await verifySoloListBrowser({db,base,cookies:[...jar].map(([name,value])=>({name,value}))})
+
+  await verifyInventoryTabs({db,base,cookies:[...jar].map(([name,value])=>({name,value}))})
 
   await verifyRecoveryPreview({db,base,headers,cookies:[...jar].map(([name,value])=>({name,value}))})
 

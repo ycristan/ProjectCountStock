@@ -12,30 +12,29 @@ export type ItemInventario = {
   weight_avg: number
   category: string
   category1: string
+  brand_active: boolean
   bins: string[]
 }
 
-export async function listarInventario(): Promise<ItemInventario[]> {
+// One warehouse at a time: tabs never mix inventories (decision of 2026-11-03).
+export async function listarInventario(warehouseId: string): Promise<ItemInventario[]> {
   if (!(await isAdmin())) return []
   const supabase = await createClient()
   const [items, bins] = await Promise.all([
-    fetchAllRows<{
-      brand_code: string
-      brand_name: string
-      bpu: number
-      pallet_size: number
-      weight_avg: number
-      category: string
-      category1: string
-    }>((from, to) =>
+    fetchAllRows<Omit<ItemInventario, 'bins'>>((from, to) =>
       supabase
         .from('inventory_items')
-        .select('brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1')
+        .select('brand_code, brand_name, bpu, pallet_size, weight_avg, category, category1, brand_active')
+        .eq('warehouse_id', warehouseId)
         .order('brand_code')
         .range(from, to)
     ),
     fetchAllRows<{ brand_code: string; bin_location: string }>((from, to) =>
-      supabase.from('item_bin_locations').select('brand_code, bin_location').order('brand_code').range(from, to)
+      supabase.from('item_bin_locations')
+        .select('brand_code, bin_location, inventory_items!inner(warehouse_id)')
+        .eq('inventory_items.warehouse_id', warehouseId)
+        .order('brand_code').order('bin_location')
+        .range(from, to)
     ),
   ])
   const binMap: Record<string, string[]> = {}
