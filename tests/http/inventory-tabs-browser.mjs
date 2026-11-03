@@ -50,7 +50,7 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     assert.equal(await tabs.getByRole('link',{name:'Tabs Empty synthetic'}).count(),0,'empty warehouse gets no tab')
     assert.equal(await tabs.getByRole('link',{name:'Tabs Big synthetic'}).getAttribute('aria-current'),'page')
     assert.equal(await page.getByRole('button',{name:'Edit TS00000'}).count(),0,'small warehouse items never in big tab')
-    assert.equal(await tabs.getByRole('link',{name:/all/i}).count(),0,'no combined tab')
+    assert.equal(await tabs.getByRole('link',{name:/^(all|all warehouses|geral)$/i}).count(),0,'no combined tab')
 
     t=performance.now()
     await page.getByPlaceholder('Code, name or BIN').fill('TB0230')
