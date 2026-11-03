@@ -12,7 +12,7 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   const active = warehouses.find(w => w.id === wh) ?? warehouses[0]
   const items = active ? await listarInventario(active.id) : []
   return (
-    <div className="flex flex-col gap-4">
+    <div data-full-width className="flex flex-col gap-4">
       <PageTop back={{ href: '/admin', label: 'Home' }} title="Inventory"
         kicker={active ? items.length + (items.length === 1 ? ' item' : ' items') + ' in ' + active.name : 'No warehouses yet'}
         actions={<>

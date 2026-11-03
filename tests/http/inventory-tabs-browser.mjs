@@ -43,8 +43,40 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     let t=performance.now()
     await page.goto(base+'/admin/inventario?wh='+big.id)
     await page.getByText('2310 items in Tabs Big synthetic').waitFor()
-    await page.getByRole('button',{name:'Edit TB02309'}).waitFor({state:'attached'})
+    await page.getByRole('button',{name:'Edit TB00000'}).waitFor()
     console.log(`TIMING: big tab (2310 rows) load to full table, CPU 4x: ${Math.round(performance.now()-t)} ms`)
+
+    // Virtualised: only the visible rows are in the DOM; scrolling the table container brings in the last one.
+    assert.ok(await page.locator('tbody tr').count()<100,'virtualised table renders few rows')
+    assert.equal(await page.getByRole('button',{name:'Edit TB02309'}).count(),0,'last row not rendered before scrolling')
+    await page.getByTestId('inventory-scroll').evaluate(el=>{el.scrollTop=el.scrollHeight})
+    await page.getByRole('button',{name:'Edit TB02309'}).waitFor()
+    assert.ok(await page.locator('tbody tr').count()<100,'virtualised table renders few rows after scrolling')
+    await page.getByTestId('inventory-scroll').evaluate(el=>{el.scrollTop=0})
+
+    // Layout: page never scrolls sideways at 1366px, header stays put, editing does not move columns.
+    const pageOverflow=await page.evaluate(()=>({x:document.documentElement.scrollWidth-document.documentElement.clientWidth,y:document.documentElement.scrollHeight-window.innerHeight}))
+    assert.ok(pageOverflow.x<=0,'no page horizontal scroll at 1366px: '+pageOverflow.x)
+    assert.ok(pageOverflow.y<=2,'page does not scroll vertically, only the table: '+pageOverflow.y)
+    const scroller=page.getByTestId('inventory-scroll')
+    assert.ok(await scroller.evaluate(el=>el.scrollWidth<=el.clientWidth),'no table horizontal scroll at 1366px')
+    const headTop=async()=>page.locator('thead').evaluate(el=>el.getBoundingClientRect().top)
+    const before=await headTop()
+    await scroller.evaluate(el=>{el.scrollTop=5000})
+    assert.ok(Math.abs(await headTop()-before)<1,'sticky header stays in place while the table scrolls')
+    await scroller.evaluate(el=>{el.scrollTop=0})
+    const widths=()=>page.locator('thead th').evaluateAll(ths=>ths.map(th=>Math.round(th.getBoundingClientRect().width)))
+    const w0=await widths()
+    await page.getByRole('button',{name:'Edit TB00000'}).click()
+    await page.getByLabel('Brand Name').fill('X'.repeat(200))
+    assert.deepEqual(await widths(),w0,'editing a row never changes column widths')
+    assert.ok(await scroller.evaluate(el=>el.scrollWidth<=el.clientWidth),'editing causes no sideways scroll')
+    assert.deepEqual(await page.locator('thead th').allTextContents(),['Status','Brand Code','Brand Name','Category','Category1','BPU','Pallet Size','Weight AVG','BIN Location 1','BIN Location 2','BIN Location 3','BIN Location 4','Actions'])
+    if(process.env.SCREENSHOT_DIR){
+      const {mkdirSync}=await import('node:fs');mkdirSync(process.env.SCREENSHOT_DIR,{recursive:true})
+      await page.screenshot({path:process.env.SCREENSHOT_DIR+'/inventory-1366-editing.png'}).catch(()=>{})
+    }
+    await page.getByRole('button',{name:'Cancel'}).click()
 
     const tabs=page.getByRole('navigation',{name:'Warehouses'})
     assert.equal(await tabs.getByRole('link',{name:'Tabs Empty synthetic'}).count(),0,'empty warehouse gets no tab')
