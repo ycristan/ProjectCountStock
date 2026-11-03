@@ -68,10 +68,13 @@ export function ColumnFilterPopover({ column, anchor, values, selected, sortDir,
   }
 
   const left = Math.max(8, Math.min(anchor.left, window.innerWidth - WIDTH - 8))
+  // The page does not scroll, so the popover must fit below the header: the value list shrinks, Apply stays visible.
+  const top = Math.min(anchor.bottom + 4, window.innerHeight - 280)
+  const maxHeight = Math.min(480, window.innerHeight - top - 8)
   const small = 'min-h-10 px-2 text-sm font-semibold underline underline-offset-4'
   return createPortal(
-    <div ref={ref} role="dialog" aria-label={`Filter ${label}`} style={{ position: 'fixed', top: anchor.bottom + 4, left, width: WIDTH }}
-      className="z-50 flex max-h-[min(30rem,calc(100dvh-6rem))] flex-col gap-2 rounded-md border-2 border-ink bg-surface p-3 text-[15px] text-ink shadow-lg">
+    <div ref={ref} role="dialog" aria-label={`Filter ${label}`} style={{ position: 'fixed', top, left, width: WIDTH, maxHeight }}
+      className="z-50 flex flex-col gap-2 rounded-md border-2 border-ink bg-surface p-3 text-[15px] text-ink shadow-lg">
       <div className="grid grid-cols-2 gap-2">
         {(['asc', 'desc'] as const).map((dir) => (
           <button key={dir} type="button" onClick={() => onSort(dir)} aria-pressed={sortDir === dir}
@@ -86,7 +89,7 @@ export function ColumnFilterPopover({ column, anchor, values, selected, sortDir,
         <button type="button" className={small} onClick={() => setVisible(true)}>Select all</button>
         <button type="button" className={small} onClick={() => setVisible(false)}>Clear all</button>
       </div>
-      <ul className="m-0 min-h-24 flex-1 list-none overflow-y-auto rounded-sm border border-line p-0">
+      <ul className="m-0 min-h-16 flex-1 list-none overflow-y-auto rounded-sm border border-line p-0">
         {matching.slice(0, MAX_LISTED).map((v) => (
           <li key={v}>
             <label className="flex min-h-10 cursor-pointer items-center gap-2 px-2 hover:bg-ground">

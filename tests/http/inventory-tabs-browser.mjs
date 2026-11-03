@@ -105,6 +105,8 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     await bpuBox.getByRole('button',{name:'Clear all'}).click()
     await bpuBox.getByLabel('Search values').fill('24')
     await bpuBox.getByLabel('24',{exact:true}).check()
+    const box=await bpuBox.boundingBox()
+    assert.ok(box.y+box.height<=900,'filter popover fits in the window, Apply reachable without page scroll')
     await bpuBox.getByRole('button',{name:'Apply'}).click()
     let both=0
     for(let i=0;i<2310;i++) if(i%5===0&&i%24===23) both++
