@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { BLANK, COLUMNS, searchValues, type ColumnKey } from '@/lib/inventory-filters'
+import { BLANK, COLUMNS, codeList, pickCodes, searchValues, type ColumnKey } from '@/lib/inventory-filters'
 import { Icon } from '@/components/icons'
 
 const ROW = 36
@@ -25,7 +25,10 @@ export function ColumnFilterPopover({ column, anchor, values, selected, sortDir,
   const [search, setSearch] = useState('')
   const [draft, setDraft] = useState<Set<string>>(() => new Set(selected ?? values))
   const col = COLUMNS.find((c) => c.key === column)!
-  const matching = useMemo(() => searchValues(values, search), [values, search])
+  // Brand Code accepts a list of exact codes ("6323, 6324, 6400"); every other search is "contains".
+  const codes = column === 'brand_code' ? codeList(search) : null
+  const picked = useMemo(() => (codes ? pickCodes(values, codes) : null), [values, codes?.join(',')]) // eslint-disable-line react-hooks/exhaustive-deps
+  const matching = useMemo(() => picked ? picked.found : searchValues(values, search), [values, search, picked])
   const ticked = matching.filter((v) => draft.has(v)).length
   const all = matching.length > 0 && ticked === matching.length
   // Every value is listed (2,000+ Brand Codes); only the rows in view are drawn.
@@ -102,7 +105,14 @@ export function ColumnFilterPopover({ column, anchor, values, selected, sortDir,
       <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
         <label className="flex min-h-10 items-center gap-2 rounded-md border-2 border-ink px-2 focus-within:outline-3 focus-within:outline-info">
           <Icon name="search" size={16} />
-          <input type="search" aria-label="Search values" placeholder="Search" value={search} onChange={(e) => { setSearch(e.target.value); listRef.current?.scrollTo({ top: 0 }) }}
+          <input type="search" aria-label="Search values" placeholder={column === 'brand_code' ? 'Search, or codes: 6323, 6324' : 'Search'} value={search} onChange={(e) => { setSearch(e.target.value); listRef.current?.scrollTo({ top: 0 }) }}
+            onPaste={(e) => {
+              // A column copied from Excel arrives one code per line; an input would drop the line breaks.
+              const text = e.clipboardData.getData('text')
+              if (column !== 'brand_code' || !/\n/.test(text.trim())) return
+              e.preventDefault()
+              setSearch((search ? search + ',' : '') + text.trim().split(/\r?\n/).join(','))
+            }}
             className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-ink-3" />
         </label>
         <div className="flex min-h-24 flex-1 flex-col rounded-sm border border-line">
@@ -113,7 +123,7 @@ export function ColumnFilterPopover({ column, anchor, values, selected, sortDir,
             </label>
           )}
           <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto">
-            {matching.length === 0 && <p className="m-0 px-2 py-3 text-ink-2">No matches.</p>}
+            {matching.length === 0 && <p className="m-0 px-2 py-3 text-ink-2">{picked ? 'None of these codes are in this warehouse.' : 'No matches.'}</p>}
             <ul className="relative m-0 list-none p-0" style={{ height: list.getTotalSize() }}>
               {list.getVirtualItems().map((r) => {
                 const v = matching[r.index]
@@ -129,7 +139,12 @@ export function ColumnFilterPopover({ column, anchor, values, selected, sortDir,
             </ul>
           </div>
         </div>
-        <p className="m-0 text-sm text-ink-2">{matching.length === values.length ? `${values.length} values` : `${matching.length} of ${values.length} values`}</p>
+        {picked && picked.missing.length > 0 && (
+          <p role="alert" className="m-0 rounded-sm border-l-4 border-diff bg-ground px-2 py-1.5 text-sm">
+            <strong>Not found ({picked.missing.length}):</strong> <span className="break-all font-mono">{picked.missing.join(', ')}</span>
+          </p>
+        )}
+        <p className="m-0 text-sm text-ink-2">{picked ? `${picked.found.length} of ${codes!.length} codes found` : matching.length === values.length ? `${values.length} values` : `${matching.length} of ${values.length} values`}</p>
       </div>
       <div className="flex justify-end gap-2 border-t border-line bg-ground px-3 py-2">
         <button type="button" onClick={onClose} className="min-h-10 rounded-md border-2 border-ink bg-surface px-4 font-display text-[15px] font-bold">Cancel</button>

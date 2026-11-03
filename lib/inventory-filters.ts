@@ -95,3 +95,15 @@ export function applyFilters(items: ItemInventario[], state: FilterState): ItemI
     .sort((a, b) => sign * compareValues(key, a.v, b.v))
     .map((x) => x.item)
 }
+
+// Brand Code filter only: "6323, 6324;6400" (or one code per line pasted from Excel) picks those exact codes.
+// Returns null when the text is a normal search (no separator).
+export function codeList(query: string): string[] | null {
+  if (!/[,;\n]/.test(query)) return null
+  return [...new Set(query.split(/[,;\n]/).map((c) => c.trim()).filter(Boolean))]
+}
+
+export function pickCodes(values: string[], codes: string[]): { found: string[]; missing: string[] } {
+  const present = new Set(values)
+  return { found: codes.filter((c) => present.has(c)), missing: codes.filter((c) => !present.has(c)) }
+}

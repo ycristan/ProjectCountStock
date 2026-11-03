@@ -65,3 +65,11 @@ test('filter search puts the exact value first, then starts-with, then contains'
   assert.deepEqual([...f.searchValues(values, '3')], ['3', '30', '300', '0031', '0130', '1038', '113'])
   assert.deepEqual([...f.searchValues(values, '')], values)
 })
+
+test('Brand Code list: comma, semicolon or line separated exact codes; missing ones reported', () => {
+  assert.equal(f.codeList('6323'), null)
+  assert.deepEqual([...f.codeList(' 6323, 6324;6400\n6401,,6323 ')], ['6323', '6324', '6400', '6401'])
+  const r = f.pickCodes(['6323', '16323', '63230', '6324', '0017'], ['6323', '6324', '6400', '17'])
+  assert.deepEqual([...r.found], ['6323', '6324'])
+  assert.deepEqual([...r.missing], ['6400', '17'])
+})

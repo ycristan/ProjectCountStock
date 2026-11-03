@@ -94,6 +94,17 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     await page.getByRole('button',{name:'Clear all filters'}).click()
     await page.getByText(/^2310 products$/).waitFor()
 
+    // Brand Code list: exact codes separated by commas; unknown codes are reported before Apply.
+    await page.getByRole('button',{name:'Filter Brand Code'}).click()
+    const listBox=page.getByRole('dialog',{name:'Filter Brand Code'})
+    await listBox.getByLabel('Search values').fill('TB00001, TB00002,TB0000,NOPE-1')
+    await listBox.getByText('Not found (2):').waitFor()
+    await listBox.getByText('2 of 4 codes found').waitFor()
+    await listBox.getByRole('button',{name:'Apply'}).click()
+    await page.getByText(/^2 of 2310 products$/).waitFor()
+    await page.getByRole('button',{name:'Clear all filters'}).click()
+    await page.getByText(/^2310 products$/).waitFor()
+
     // Status AND BPU combine; clearing restores everything.
     await page.getByRole('button',{name:'Filter Status'}).click()
     const filterBox=page.getByRole('dialog',{name:'Filter Status'})
