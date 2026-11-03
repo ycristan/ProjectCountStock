@@ -9,7 +9,10 @@ As regras abaixo substituem propostas anteriores conflitantes na próxima implem
 Unificar Upload Inventory e View Inventory: listar, pesquisar, editar em linha, criar um produto manualmente, importar e baixar a planilha.
 Disponibilizar filtros por Brand Code, nome, categoria, estado e BIN; manter o cabeçalho visível durante a rolagem.
 Ativação/desativação manual por toggle. Não há exclusão: produto sai de uso só por desativação.
-Uma aba por warehouse (até cerca de 5 previstas; acima disso, rever para seletor). Lista, filtros, cadastro manual e download valem para a aba ativa: o produto criado manualmente pertence à warehouse da aba, e o download traz o inventário completo dessa warehouse, incluindo ativos e inativos (decisão de 2026-10-22).
+Uma aba por warehouse (até cerca de 5 previstas; acima disso, rever para seletor). Não existe aba com todas as warehouses juntas; warehouse sem produtos não ganha aba. Lista, filtros e cadastro manual valem para a aba ativa: o produto criado manualmente pertence à warehouse da aba. O download continua sendo o ZIP com todas as warehouses, uma planilha por warehouse (decisão de 2026-11-03, que substitui a de 2026-10-22).
+Colunas da tabela, com o nome da planilha: Status (toggle), Brand Code, Brand Name, Category, Category1, BPU, Pallet Size, Weight AVG, BIN Location 1 a 4. WHS não aparece na tela. Cada coluna tem filtro com busca, seleção múltipla, Select all, Clear all e ordenação A→Z/Z→A, combináveis.
+Cadastro manual com Brand Code que existe em outra warehouse é bloqueado com aviso da warehouse; transferência é outra entrega.
+Audit Inventory, dentro do Audit Count: toda alteração de produto (tela, toggle, cadastro, importação, manutenção) com data/hora, autor, antes e depois, filtrável por período e por um ou vários produtos, com download em Excel dos mesmos filtros.
 
 ## 2. Cadastro e métodos de contagem
 

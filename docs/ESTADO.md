@@ -1,4 +1,4 @@
-# Estado — 2026-11-02
+# Estado — 2026-11-03
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -10,15 +10,21 @@ Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar ant
 Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a correção do Independente).
 
 ## Em produção
-`main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), ordem de assinatura de 29/10 (migration `team_flow_admin_close` aplicada), busca por qualquer parte do nome, código ou BIN (#104), painel do admin, contagem ao vivo consolidada e Inventory (#105), paleta Next Chain com todas as telas no padrão novo e tolerância em gramas fora do Settings (#106) e, com esta PR, barra inferior no celular, Hold to finish e confirmação do próprio app (#107). Backup diário desde 28/10. Solo é usado quase todo dia.
+`main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), painel do admin, contagem ao vivo consolidada, Inventory em lista única, paleta Next Chain, barra inferior no celular e Hold to finish (#107). Backup diário desde 28/10. Solo é usado quase todo dia.
 
-## Em andamento
-- Próximo: investigar a demora de 3 a 4 s ao abrir os menus do admin (Inventory e outros), medindo antes de mudar (proxy, layout, consultas, região Vercel/Supabase, tamanho da lista). Virtualização e abas por warehouse são hipóteses, não diagnóstico.
-- Próximo: itens 2, 3, 4 e 6 de TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11", em PRs pequenas (iniciar a sessão inteira; tabela depois do encerramento; assinatura no próprio aparelho; teste com 9 usuários).
+## Em andamento — Inventory por warehouse (decisão de 03/11, antes de equipes)
+Ordem das PRs (contrato em INVENTORY_WAREHOUSES.md §1):
+1. Esta PR: documentos.
+2. Abas por warehouse e carregar só a warehouse da aba; medir a demora de 3 a 4 s antes e depois.
+3. Tabela nova: colunas da planilha, cabeçalho fixo, rolagem interna, edição sem deslocar colunas; virtualização só se a medição pedir.
+4. Filtros por coluna.
+5a. Audit Inventory no banco (trigger, só acréscimo). Migration: aplicação manual com autorização.
+5. Toggle de Status, cadastro manual, edição transacional, BPU travado também com sessão de equipes. Migration: aplicação manual com autorização.
+6. Tela Audit Inventory com período e produtos selecionáveis, Excel com os mesmos filtros.
 
-## Também em andamento
+## Depois do Inventory
+- Itens 2, 3, 4 e 6 de TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11". Yuri assumiu o risco no prazo de 27/11.
 - Agente: teste automático com 9 usuários; Sentry nos erros mostrados nas telas de equipe.
-- Depois: histórico de alterações do inventário (aprovado em 28/10).
 - O conector da Vercel não grava variáveis (403): produção é republicada por merge na `main`.
 
 ## Decisões pendentes de Yuri
@@ -26,9 +32,8 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 
 ## A verificar
-- Inventário BDS: 2.295 → 2.301 → 2.310 produtos sem explicação (sem data nem autor).
+- Inventário BDS: 2.295 → 2.301 → 2.310 produtos sem explicação; o Audit Inventory evita isso daqui em diante, não explica o passado.
 - Sentry só capta falhas não tratadas; erros mostrados na tela não chegam lá.
-- Peso: teste de 100/98 precisa de produto com peso médio pequeno (ex.: 10 g).
 
 ## Backlog aprovado, não iniciado
-- Bloqueio do login após PINs errados; aprovação dupla de BPU; itens desconhecidos com foto; código de barras; ajuste pós-assinatura; substituição e Independente compartilhado.
+- Bloqueio do login após PINs errados; aprovação dupla de BPU; itens desconhecidos com foto; código de barras; ajuste pós-assinatura; substituição e Independente compartilhado; transferência de produto entre warehouses.

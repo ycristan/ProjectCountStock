@@ -230,3 +230,10 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri escolheu a proposta B: no celular, as telas viram abas numa barra embaixo e a última aba, "Me", mostra quem está logado, o Log out e (admin) Settings. No notebook o menu de cima continua. A barra some quando o teclado está aberto.
 - Finish da equipe e do Solo: "Hold to finish" (segurar 4 s, contagem 4-3-2-1; soltar antes cancela) e depois a confirmação. Substitui o botão com confirmação de 30/10 também no Solo.
 - Toda confirmação é uma janela do próprio app (`components/confirm.tsx`), nunca a caixa do navegador; as 8 que existiam foram trocadas. Motivo: a caixa do navegador quebra o visual e não segue o padrão das telas.
+
+## Inventory por warehouse e Audit Inventory (2026-11-03)
+- Yuri decidiu: uma aba por warehouse, sem aba com todas juntas; warehouse sem produtos não ganha aba. Colunas com o nome da planilha, Status primeiro, WHS oculta; cabeçalho fixo, rolagem dentro da tabela, filtros por coluna, toggle de Status, cadastro manual.
+- Download volta a ser o ZIP com todas as warehouses (revoga a parte de download de 22/10). Import continua 1 WHS por arquivo: arquivo misturado segue bloqueado, porque um WHS errado numa linha move produto sem ninguém ver (incidente de 24/09).
+- Cadastro manual com Brand Code de outra warehouse é bloqueado com aviso; transferência fica para depois.
+- Audit Inventory (histórico aprovado em 28/10) gravado por trigger no banco, só de acréscimo, com período e produtos selecionáveis na tela e no Excel. Começa quando a migration for aplicada; o passado não existe no banco.
+- Prioridade: Inventory antes dos itens 2/3/4/6 de equipes. Yuri assume o risco no prazo de 27/11; Plano B continua valendo.
