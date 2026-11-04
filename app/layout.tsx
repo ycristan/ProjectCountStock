@@ -1,10 +1,22 @@
 import type { Metadata, Viewport } from 'next'
-import { Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 import './globals.css'
 
-const barlow = Barlow_Condensed({ subsets: ['latin'], weight: ['600', '700'], variable: '--font-barlow' })
-const plexSans = IBM_Plex_Sans({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-plex-sans' })
-const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['500', '600'], variable: '--font-plex-mono' })
+// Fonts ship with the app (latin subset, SIL OFL licences in app/fonts): the build no longer downloads them
+// from Google, which failed twice on 03/11 and would block a production deploy.
+const barlow = localFont({ variable: '--font-barlow', display: 'swap', src: [
+  { path: './fonts/barlow-condensed-latin-600-normal.woff2', weight: '600' },
+  { path: './fonts/barlow-condensed-latin-700-normal.woff2', weight: '700' },
+] })
+const plexSans = localFont({ variable: '--font-plex-sans', display: 'swap', src: [
+  { path: './fonts/ibm-plex-sans-latin-400-normal.woff2', weight: '400' },
+  { path: './fonts/ibm-plex-sans-latin-500-normal.woff2', weight: '500' },
+  { path: './fonts/ibm-plex-sans-latin-600-normal.woff2', weight: '600' },
+] })
+const plexMono = localFont({ variable: '--font-plex-mono', display: 'swap', src: [
+  { path: './fonts/ibm-plex-mono-latin-500-normal.woff2', weight: '500' },
+  { path: './fonts/ibm-plex-mono-latin-600-normal.woff2', weight: '600' },
+] })
 
 export const metadata: Metadata = {
   title: 'Count Stock',
