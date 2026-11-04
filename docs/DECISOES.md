@@ -262,3 +262,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri decidiu: `graphifyy` 0.9.102 (Apache-2.0) instalado e o mapa refeito no início de toda sessão (só análise do código, sem IA, ~10 s); o agente consulta o mapa antes de grep e leitura de arquivo.
 - `graphify-out/` fora do git: refazer custa segundos, e versionar geraria 3 MB de diff por PR.
 - Sem a skill `/graphify` (48 KB, faz passada com IA nos documentos); `docs/` continua sendo a única memória de regras e decisões.
+
+## Lentidão do Inventory: RLS antes da região (2026-11-04)
+- Medido no banco: as policies `admin_all` chamavam `is_admin()` uma vez por linha; uma página de 1000 produtos levava ~800 ms, contra ~3,5 ms com `(select is_admin())`. Explica a maior parte dos 4 a 5 s do Inventory.
+- Yuri escolheu: mergear a região dub1 (#114) primeiro e medir, depois a PR da RLS, para separar o ganho de cada uma. A regra de quem acessa não muda.
+- `can_read_warehouse(warehouse_id)` dos contadores também roda por linha; fica para investigar se o Solo estiver lento.
