@@ -246,3 +246,9 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Sai a busca geral: os filtros por coluna (estilo Excel: ordenar, limpar, buscar, "(Select all)", Apply) a substituem. "BIN Location" vira um cabeçalho só sobre as colunas 1–4.
 - A página rola: título, abas e menu saem de vista e o cabeçalho da tabela gruda no topo da tela, para a lista ter o máximo de espaço. A janela de filtro usa a altura da tela.
 - Motivo: a primeira versão (busca + filtro abaixo do nome + janela espremida) foi entregue sem conferência visual; agora toda mudança de tela é conferida em captura antes de ir para a PR.
+
+## Filtros, fontes, região e ritmo de PRs (2026-11-03)
+- Yuri pediu, no filtro de Brand Code, lista de códigos separados por vírgula com seleção exata; códigos inexistentes são avisados antes do Apply. Ordem natural e lista completa no filtro, porque o código 3 sumia além dos 200 primeiros e 1111 vinha antes de 5.
+- Fontes passam a ir dentro do projeto (`app/fonts`, licenças OFL): o build baixava do Google e falhou 2 vezes em 03/11, o que travaria a republicação da produção.
+- Achado: a Vercel roda em iad1 (EUA) e o Supabase em eu-west-1 (Irlanda); cada consulta cruza o Atlântico. Suspeito principal da demora de 3 a 4 s. Yuri autorizou a PR que muda para dub1; o ganho será medido por Yuri antes e depois, porque o plano Hobby não guarda log útil.
+- Yuri decidiu: uma PR de cada vez, na branch única do agente, para não virar bagunça.
