@@ -1,4 +1,8 @@
 #!/bin/bash
+# Caveman é obrigatório neste projeto (CLAUDE.md): a saída deste hook entra no contexto do agente.
+echo "Modo caveman obrigatório nesta sessão. Siga estas regras em toda resposta:"
+sed '1,/^---$/d' "$CLAUDE_PROJECT_DIR/.claude/skills/caveman/SKILL.md"
+
 # Sessões na nuvem começam sem node_modules; instala para typecheck, lint e testes funcionarem.
 [ "$CLAUDE_CODE_REMOTE" = "true" ] || exit 0
 cd "$CLAUDE_PROJECT_DIR" || exit 0

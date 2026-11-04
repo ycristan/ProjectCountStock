@@ -40,6 +40,7 @@ Sistema web de contagem física de inventário cega em warehouse. Yuri é gerent
 - Operações com várias gravações (equipes, sessões, importações) são transacionais.
 
 ## Qualidade
+- Skill `caveman` obrigatória em toda resposta no chat, para gastar menos tokens: o hook de início de sessão a carrega sozinho. Continua em português simples; documentos, commits e PRs ficam em texto normal; aviso de segurança, ação irreversível e pergunta a Yuri vão em frases completas.
 - Skill `ponytail` (nível full) antes e durante a escrita de código, e `ponytail-review` no diff ao concluir. Ambas ficam em `.claude/skills/`, porque plugin não carrega em sessão na nuvem. Menos código nunca justifica remover autorização, histórico, testes ou observabilidade.
 - Telas novas ou redesenhadas: skill `frontend-design`. O briefing é a operação de warehouse (contadores e Independente só no celular; admin em tablet ou notebook) e o visual do legado, nunca "moderno" genérico.
 - Bug ou teste falhando: `systematic-debugging`. Antes de dizer "pronto": `verification-before-completion`. Revisão recebida: `receiving-code-review`. Código novo: `test-driven-development`. Vêm do Superpowers; o resto dele ficou fora porque grava planos fora de `docs/` e faz merge local, o que este arquivo proíbe.

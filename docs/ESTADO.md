@@ -1,4 +1,4 @@
-# Estado — 2026-11-03 (fim do dia)
+# Estado — 2026-11-04
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -19,6 +19,7 @@ Fontes no projeto: feita (#111). Próximo: PR da região da Vercel para dub1 (ap
 5a. Audit Inventory no banco (trigger, só acréscimo). Migration: aplicação manual com autorização.
 5. Toggle de Status, cadastro manual, edição transacional, BPU travado também com sessão de equipes. Migration: aplicação manual com autorização.
 6. Tela Audit Inventory com período e produtos selecionáveis, Excel com os mesmos filtros.
+Agente: caveman obrigatório desde 04/11 (DECISOES.md); uma sessão nova por entrega.
 
 ## Depois do Inventory
 - Varredura de idioma: todo texto da aplicação em inglês britânico (PRODUTO.md); ~60 textos em português achados por busca simples, mais grafia americana a conferir.

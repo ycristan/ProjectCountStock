@@ -252,3 +252,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Fontes passam a ir dentro do projeto (`app/fonts`, licenças OFL): o build baixava do Google e falhou 2 vezes em 03/11, o que travaria a republicação da produção.
 - Achado: a Vercel roda em iad1 (EUA) e o Supabase em eu-west-1 (Irlanda); cada consulta cruza o Atlântico. Suspeito principal da demora de 3 a 4 s. Yuri autorizou a PR que muda para dub1; o ganho será medido por Yuri antes e depois, porque o plano Hobby não guarda log útil.
 - Yuri decidiu: uma PR de cada vez, na branch única do agente, para não virar bagunça.
+
+## Caveman obrigatório (2026-11-04)
+- Yuri decidiu: skill `caveman` (JuliusBrussee/caveman, Apache-2.0) obrigatória em toda sessão, carregada pelo hook de início de sessão, não por escolha do agente.
+- Motivo: gasto de tokens. Ressalva registrada: caveman corta só a fala do agente; a maior parte do custo vem de sessões longas (a de 03/11 relia ~590 mil tokens por resposta). Por isso: uma sessão nova por entrega.
+- Só a skill de fala; o proxy e o CLI do caveman ficam fora (rodam no computador do usuário, o que o CLAUDE.md proíbe).
