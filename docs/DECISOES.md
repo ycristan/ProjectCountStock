@@ -257,3 +257,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri decidiu: skill `caveman` (JuliusBrussee/caveman, Apache-2.0) obrigatória em toda sessão, carregada pelo hook de início de sessão, não por escolha do agente.
 - Motivo: gasto de tokens. Ressalva registrada: caveman corta só a fala do agente; a maior parte do custo vem de sessões longas (a de 03/11 relia ~590 mil tokens por resposta). Por isso: uma sessão nova por entrega.
 - Só a skill de fala; o proxy e o CLI do caveman ficam fora (rodam no computador do usuário, o que o CLAUDE.md proíbe).
+
+## Mapa do código com graphify (2026-11-04)
+- Yuri decidiu: `graphifyy` 0.9.102 (Apache-2.0) instalado e o mapa refeito no início de toda sessão (só análise do código, sem IA, ~10 s); o agente consulta o mapa antes de grep e leitura de arquivo.
+- `graphify-out/` fora do git: refazer custa segundos, e versionar geraria 3 MB de diff por PR.
+- Sem a skill `/graphify` (48 KB, faz passada com IA nos documentos); `docs/` continua sendo a única memória de regras e decisões.
