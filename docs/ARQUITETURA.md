@@ -3,7 +3,7 @@
 ## Componentes
 - **Next.js 16 + React 19 + TypeScript + Tailwind 4:** interface e Server Actions.
 - **Supabase** (projeto `sktpzvlmeegyuqsvtunx`): Auth, Postgres, RLS e Realtime.
-- **Vercel** (`project-count-stock-ylmm`): produção a partir da `main` e previews por branch.
+- **Vercel** (`project-count-stock-ylmm`): produção a partir da `main` e previews por branch. Funções na região `dub1` (Dublin, `vercel.json`), perto do banco em eu-west-1; o padrão da Vercel é iad1 (EUA).
 - **SheetJS 0.20.3** (distribuição oficial, não o npm 0.18.5): importação/exportação XLSX e ZIP por warehouse.
 - **Sentry:** erros de navegador e servidor, sem PINs ou dados pessoais.
 - **EmailJS:** envio do resultado de sessão solo (`lib/send-solo-results-email.ts`).
