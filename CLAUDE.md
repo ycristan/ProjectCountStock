@@ -14,6 +14,7 @@ Sistema web de contagem física de inventário cega em warehouse. Yuri é gerent
 - Documento só guarda o que não existe em outro lugar: regras aprovadas, decisões e motivo, próximo passo.
 - `docs/ESTADO.md` é reescrito do zero a cada PR, nunca acrescentado. Limite de 40 linhas, verificado no CI.
 - `docs/DECISOES.md` só recebe acréscimos, 2 a 5 linhas por decisão, com data e motivo.
+- Não ler `docs/DECISOES.md` inteiro: buscar (grep) só o assunto da tarefa e ler essas entradas.
 - Evidência de teste (commit, link de CI, contagem de testes) vai na descrição da PR, não nos documentos.
 - Branch que não vai para a `main` logo não pode ser o único lugar de uma regra aprovada.
 
@@ -40,7 +41,9 @@ Sistema web de contagem física de inventário cega em warehouse. Yuri é gerent
 - Operações com várias gravações (equipes, sessões, importações) são transacionais.
 
 ## Qualidade
+- Skill `caveman` obrigatória em toda resposta no chat, para gastar menos tokens: o hook de início de sessão a carrega sozinho. Continua em português simples; documentos, commits e PRs ficam em texto normal; aviso de segurança, ação irreversível e pergunta a Yuri vão em frases completas.
 - Skill `ponytail` (nível full) antes e durante a escrita de código, e `ponytail-review` no diff ao concluir. Ambas ficam em `.claude/skills/`, porque plugin não carrega em sessão na nuvem. Menos código nunca justifica remover autorização, histórico, testes ou observabilidade.
+- Mapa do código (graphify): antes do primeiro grep ou leitura de arquivo numa pergunta sobre o código, rodar `graphify query "<pergunta>"` (ou `explain`/`path`); ler arquivo só nas linhas que o mapa apontou. Depois de mudar código, `graphify update .`. O mapa não é memória: regra e decisão continuam só em `docs/`. Não usar a skill `/graphify` (passada com IA, cara).
 - Telas novas ou redesenhadas: skill `frontend-design`. O briefing é a operação de warehouse (contadores e Independente só no celular; admin em tablet ou notebook) e o visual do legado, nunca "moderno" genérico.
 - Bug ou teste falhando: `systematic-debugging`. Antes de dizer "pronto": `verification-before-completion`. Revisão recebida: `receiving-code-review`. Código novo: `test-driven-development`. Vêm do Superpowers; o resto dele ficou fora porque grava planos fora de `docs/` e faz merge local, o que este arquivo proíbe.
 - Reutilizar componentes existentes (`CountForm`, `SearchInput`, `ResultList` etc.); divergência visual entre telas é inaceitável.

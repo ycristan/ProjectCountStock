@@ -35,3 +35,6 @@ yarn-error.log*
 next-env.d.ts
 
 # synthetic credentials generated only inside Codespaces
+
+# graphify: mapa do código, refeito no início de cada sessão
+graphify-out/
