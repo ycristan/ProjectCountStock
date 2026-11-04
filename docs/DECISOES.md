@@ -267,3 +267,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Medido no banco: as policies `admin_all` chamavam `is_admin()` uma vez por linha; uma página de 1000 produtos levava ~800 ms, contra ~3,5 ms com `(select is_admin())`. Explica a maior parte dos 4 a 5 s do Inventory.
 - Yuri escolheu: mergear a região dub1 (#114) primeiro e medir, depois a PR da RLS, para separar o ganho de cada uma. A regra de quem acessa não muda.
 - `can_read_warehouse(warehouse_id)` dos contadores também roda por linha; fica para investigar se o Solo estiver lento.
+
+## Correção: regra do contador também por linha (2026-11-04)
+- Depois de aplicar a #115, a página de 1000 produtos caiu de ~800 ms para ~350 ms, não para os ~3,5 ms previstos: a medição anterior fixou a ordem das regras à mão, e o Postgres testa primeiro `can_read_warehouse(warehouse_id)`, linha a linha, também para o admin.
+- Yuri autorizou a PR que calcula uma vez por consulta as warehouses legíveis (`private.readable_warehouse_ids()`); medido ~4 ms. Quem pode ler não muda.
