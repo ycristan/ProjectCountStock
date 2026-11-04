@@ -1,4 +1,4 @@
-# Estado — 2026-11-03 (fontes)
+# Estado — 2026-11-03 (fim do dia)
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -15,7 +15,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 ## Em andamento — Inventory por warehouse (decisão de 03/11, antes de equipes)
 Ordem das PRs (contrato em INVENTORY_WAREHOUSES.md §1):
 1–4. Documentos, abas, tabela e filtros: feitos (#108, #109, #110).
-Antes da 5a, a pedido de Yuri: esta PR (fontes no projeto; o build baixava do Google e falhou 2 vezes em 03/11) e PR da região da Vercel (app em iad1/EUA, banco em eu-west-1/Irlanda: suspeito da demora de 3 a 4 s; medir antes e depois).
+Fontes no projeto: feita (#111). Próximo: PR da região da Vercel para dub1 (app em iad1/EUA, banco em eu-west-1/Irlanda; Yuri mede antes e depois), depois 5a, 5 e 6, uma PR de cada vez.
 5a. Audit Inventory no banco (trigger, só acréscimo). Migration: aplicação manual com autorização.
 5. Toggle de Status, cadastro manual, edição transacional, BPU travado também com sessão de equipes. Migration: aplicação manual com autorização.
 6. Tela Audit Inventory com período e produtos selecionáveis, Excel com os mesmos filtros.
@@ -31,6 +31,7 @@ Antes da 5a, a pedido de Yuri: esta PR (fontes no projeto; o build baixava do Go
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 
 ## A verificar
+- Defeitos em produção até a PR 5: edição grava produto e BINs em etapas soltas (falha no meio deixa o produto sem BIN) e BPU pode mudar durante contagem de equipes.
 - Inventário BDS: 2.295 → 2.301 → 2.310 produtos sem explicação; o Audit Inventory evita isso daqui em diante, não explica o passado.
 - Sentry só capta falhas não tratadas; erros mostrados na tela não chegam lá.
 
