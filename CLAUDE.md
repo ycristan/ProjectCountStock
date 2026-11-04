@@ -14,6 +14,7 @@ Sistema web de contagem física de inventário cega em warehouse. Yuri é gerent
 - Documento só guarda o que não existe em outro lugar: regras aprovadas, decisões e motivo, próximo passo.
 - `docs/ESTADO.md` é reescrito do zero a cada PR, nunca acrescentado. Limite de 40 linhas, verificado no CI.
 - `docs/DECISOES.md` só recebe acréscimos, 2 a 5 linhas por decisão, com data e motivo.
+- Não ler `docs/DECISOES.md` inteiro: buscar (grep) só o assunto da tarefa e ler essas entradas.
 - Evidência de teste (commit, link de CI, contagem de testes) vai na descrição da PR, não nos documentos.
 - Branch que não vai para a `main` logo não pode ser o único lugar de uma regra aprovada.
 
