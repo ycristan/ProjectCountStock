@@ -40,6 +40,7 @@
 9. **`next build` falha com variável não usada** (ESLint).
 10. **Login solo por cookie/PIN foi abandonado** (redirect 307 sem causa encontrada). O solo usa conta fixa com login 2-PIN; não reabrir o caminho do cookie.
 11. **Warehouse nova ≠ renomear warehouse.** Upload com nome diferente criava outra identidade e deixava os produtos ausentes para trás (incidente de 2026-09-24). Hoje a criação de WHS nova é rejeitada se a planilha tiver Brand Code já cadastrado.
+12. **Função em policy de RLS sem `(select ...)` roda uma vez por linha.** `is_admin()` puro custava ~800 ms por página de 1000 produtos; `(select is_admin())` roda uma vez por consulta (~3,5 ms). O teste `rls_admin_check_once` barra o formato puro.
 
 ## Backup do banco
 - O Supabase está no plano gratuito, sem backup acessível. O workflow `Database backup` roda toda noite (03:17 UTC): `supabase/maintenance/backup-dump.sh` exporta roles, schema, dados e histórico de migrations num único arquivo criptografado (AES-256, senha no segredo `BACKUP_PASSPHRASE`); `restore-check.sh` restaura esse mesmo arquivo num banco descartável e compara as contagens tabela a tabela. Só então o arquivo vira artefato, guardado 30 dias.
