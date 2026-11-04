@@ -15,7 +15,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 ## Em andamento — Inventory por warehouse (decisão de 03/11, antes de equipes)
 Ordem das PRs (contrato em INVENTORY_WAREHOUSES.md §1):
 1–4. Documentos, abas, tabela e filtros: feitos (#108, #109, #110).
-Fontes no projeto: feita (#111). Próximo: PR da região da Vercel para dub1 (app em iad1/EUA, banco em eu-west-1/Irlanda; Yuri mede antes e depois), depois 5a, 5 e 6, uma PR de cada vez.
+Fontes no projeto: feita (#111). Região da Vercel para dub1 (`vercel.json`): PR aberta, Yuri mede o tempo antes e depois do merge. Próximo: 5a, 5 e 6, uma PR de cada vez.
 5a. Audit Inventory no banco (trigger, só acréscimo). Migration: aplicação manual com autorização.
 5. Toggle de Status, cadastro manual, edição transacional, BPU travado também com sessão de equipes. Migration: aplicação manual com autorização.
 6. Tela Audit Inventory com período e produtos selecionáveis, Excel com os mesmos filtros.
