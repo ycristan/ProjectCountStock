@@ -16,9 +16,9 @@ revoke all on function private.readable_warehouse_ids() from public, anon;
 grant execute on function private.readable_warehouse_ids() to authenticated;
 
 alter policy counter_read on public.inventory_items
-  using (warehouse_id = any ((select private.readable_warehouse_ids())));
+  using (warehouse_id = any ((select private.readable_warehouse_ids())::uuid[]));
 
 alter policy counter_read on public.item_bin_locations
   using (exists (select 1 from public.inventory_items i
     where i.brand_code = item_bin_locations.brand_code
-      and i.warehouse_id = any ((select private.readable_warehouse_ids()))));
+      and i.warehouse_id = any ((select private.readable_warehouse_ids())::uuid[])));
