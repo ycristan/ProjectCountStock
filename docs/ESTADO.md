@@ -13,7 +13,7 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 `main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), painel do admin, contagem ao vivo, Inventory com abas por warehouse, tabela virtualizada e filtros estilo Excel, região dub1 e RLS mais leve (#114–#116, migrations aplicadas). Backup diário desde 28/10. Solo é usado quase todo dia.
 
 ## Em andamento — Inventory por warehouse (contrato em INVENTORY_WAREHOUSES.md §1)
-PR 5 em produção (#117; migration aplicada em 10/11). Agora: PR aberta com bloqueio do cadastro manual durante contagem de equipes na mesma warehouse e vírgula/ponto como decimal ("2,5" virava 25). Migration nova: aplicação manual só com autorização de Yuri, antes do merge.
+PR 5 em produção (#117; migration aplicada em 10/11). Agora: PR aberta com bloqueio do cadastro manual durante contagem de equipes na mesma warehouse e vírgula/ponto como decimal ("2,5" virava 25). Migration aplicada em produção (10/11, autorizada por Yuri); falta o merge, que depende de Yuri.
 Depois: 5a (Audit Inventory no banco, trigger só de acréscimo; migration com autorização) e 6 (tela Audit Inventory: histórico de alterações de produto com data, autor, antes/depois, filtro por período e produtos, Excel; candidata a ficar para depois de 02/01, decisão de Yuri pendente).
 Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).
 
