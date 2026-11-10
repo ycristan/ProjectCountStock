@@ -136,7 +136,7 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     assert.match(page.url(),new RegExp('wh='+small.id))
 
     // PR 5: Status toggle, edit in one transaction, manual creation. Real server actions and database.
-    const row=async code=>checked(await db.from('inventory_items').select('brand_active, warehouse_id, item_bin_locations(bin_location)').eq('brand_code',code).single())
+    const row=async code=>checked(await db.from('inventory_items').select('brand_active, warehouse_id, weight_avg, item_bin_locations(bin_location)').eq('brand_code',code).single())
     await page.getByRole('switch',{name:'Status TS00001'}).click()
     await page.locator('[role="switch"][aria-label="Status TS00001"][aria-checked="false"]').waitFor()
     assert.equal((await row('TS00001')).brand_active,false,'toggle saved Inactive')
@@ -145,9 +145,15 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     await page.getByRole('button',{name:'Edit TS00002'}).click()
     await page.getByRole('textbox',{name:'BIN 1'}).fill('7A')
     await page.getByRole('textbox',{name:'BIN 2'}).fill(' 7B ')
+    // A thousands separator is refused with a message, never read as 1.25 (or 1250).
+    await page.getByRole('textbox',{name:'Weight AVG'}).fill('1.250')
+    await page.getByRole('button',{name:'Save'}).click()
+    await page.getByText('Weight AVG must be a number with up to 2 decimals',{exact:false}).waitFor()
+    await page.getByRole('textbox',{name:'Weight AVG'}).fill('6,25')
     await page.getByRole('button',{name:'Save'}).click()
     await page.getByRole('button',{name:'Edit TS00002'}).waitFor()
     assert.deepEqual((await row('TS00002')).item_bin_locations.map(b=>b.bin_location).sort(),['7A','7B'],'edit saved trimmed BINs')
+    assert.equal(Number((await row('TS00002')).weight_avg),6.25,'comma read as decimal separator')
 
     await page.getByRole('button',{name:'New product'}).click()
     const dialog=page.getByRole('dialog',{name:'New product'})
@@ -162,7 +168,8 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     await dialog.getByRole('textbox',{name:'Brand Name'}).fill('Manual synthetic')
     await dialog.getByRole('textbox',{name:'Category',exact:true}).fill('Food')
     await dialog.getByRole('textbox',{name:'Category1'}).fill('Tins')
-    await dialog.getByRole('spinbutton',{name:'BPU'}).fill('12')
+    await dialog.getByRole('textbox',{name:'BPU'}).fill('12')
+    await dialog.getByRole('textbox',{name:'Weight AVG'}).fill('2,5')
     await dialog.getByRole('textbox',{name:'BIN 1'}).fill('9Z')
     if(process.env.SCREENSHOT_DIR) await page.screenshot({path:process.env.SCREENSHOT_DIR+'/inventory-1366-new-product.png'}).catch(()=>{})
     await dialog.getByRole('button',{name:'Create product'}).click()
@@ -170,6 +177,7 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     const created=await row('TSNEW1')
     assert.equal(created.warehouse_id,small.id,'manual product belongs to the active tab warehouse')
     assert.equal(created.brand_active,true)
+    assert.equal(Number(created.weight_avg),2.5,'"2,5" saved as 2.5, not 25')
     assert.deepEqual(created.item_bin_locations.map(b=>b.bin_location),['9Z'])
     await page.getByRole('button',{name:'New product'}).click()
     await dialog.getByRole('textbox',{name:'Brand Code'}).fill('TSNEW1')

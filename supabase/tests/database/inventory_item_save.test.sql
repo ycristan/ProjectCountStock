@@ -97,6 +97,11 @@ select throws_ok($$select public.save_inventory_item(pg_temp.main(), '0901', pg_
  'Open team session freezes BPU');
 select lives_ok($$select public.save_inventory_item(pg_temp.main(), '0901', pg_temp.item_row(24, '[]', 'Name only'))$$,
  'Other fields still editable during a team count');
+select throws_ok($$select public.save_inventory_item(pg_temp.main(), 'TEAMNEW', pg_temp.item_row(), true)$$,
+ 'P0001', 'New products cannot be added while a team count is open in this warehouse',
+ 'Manual creation blocked in the warehouse with an open team count (Yuri, 10/11)');
+select lives_ok($$select public.save_inventory_item('00000000-0000-0000-0000-000000000911', 'OTHERWH', pg_temp.item_row(), true)$$,
+ 'Another warehouse can still receive manual products');
 reset role;
 update public.count_sessions set status = 'fechada' where id = '00000000-0000-0000-0000-000000000921';
 insert into public.solo_sessions(id, title, warehouse_id) values ('00000000-0000-0000-0000-000000000922', 'Solo guard', pg_temp.main());
@@ -104,6 +109,8 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000901', true);
 select throws_ok($$select public.save_inventory_item(pg_temp.main(), '0901', pg_temp.item_row(30))$$,
  'P0001', 'BPU cannot change while a solo count is open', 'Open solo session freezes BPU');
+select lives_ok($$select public.save_inventory_item(pg_temp.main(), 'SOLONEW', pg_temp.item_row(), true)$$,
+ 'Closed team count and an open solo count do not block manual creation');
 
 reset role;
 select * from finish();

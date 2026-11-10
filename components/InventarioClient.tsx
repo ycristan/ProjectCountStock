@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { ItemInventario } from '@/actions/inventario'
 import { alterarStatusItem, editarItemInventario } from '@/actions/inventario'
 import { NewProductDialog } from '@/components/NewProductDialog'
+import { parseInventoryNumbers } from '@/lib/parse-number'
 import { Tag, buttonClass } from '@/components/ui'
 import { Icon } from '@/components/icons'
 import { ColumnFilterPopover } from '@/components/ColumnFilterPopover'
@@ -93,12 +94,12 @@ export function InventarioClient({ items, warehouseId }: { items: ItemInventario
 
   function save() {
     if (!editingCode || !edit) return
+    const numbers = parseInventoryNumbers(edit)
+    if ('error' in numbers) { setErro(numbers.error); return }
     startTransition(async () => {
       const result = await editarItemInventario(editingCode, {
         brand_name: edit.brand_name,
-        bpu: Number(edit.bpu) || 0,
-        pallet_size: Number(edit.pallet_size) || 0,
-        weight_avg: Number(edit.weight_avg) || 0,
+        ...numbers,
         category: edit.category,
         category1: edit.category1,
         bins: edit.bins.map((b) => b.trim()).filter(Boolean),
@@ -206,9 +207,9 @@ export function InventarioClient({ items, warehouseId }: { items: ItemInventario
                       <td className={ecell}><input aria-label="Brand Name" className={inp} value={edit.brand_name} onChange={(e) => setField('brand_name', e.target.value)} /></td>
                       <td className={ecell}><input aria-label="Category" className={inp} value={edit.category} onChange={(e) => setField('category', e.target.value)} /></td>
                       <td className={ecell}><input aria-label="Category1" className={inp} value={edit.category1} onChange={(e) => setField('category1', e.target.value)} /></td>
-                      <td className={ecell}><input aria-label="BPU" className={inp + ' text-right'} type="number" min="0" value={edit.bpu} onChange={(e) => setField('bpu', e.target.value)} /></td>
-                      <td className={ecell}><input aria-label="Pallet Size" className={inp + ' text-right'} type="number" min="0" value={edit.pallet_size} onChange={(e) => setField('pallet_size', e.target.value)} /></td>
-                      <td className={ecell}><input aria-label="Weight AVG" className={inp + ' text-right'} type="number" min="0" step="0.01" value={edit.weight_avg} onChange={(e) => setField('weight_avg', e.target.value)} /></td>
+                      <td className={ecell}><input aria-label="BPU" className={inp + ' text-right'} inputMode="numeric" value={edit.bpu} onChange={(e) => setField('bpu', e.target.value)} /></td>
+                      <td className={ecell}><input aria-label="Pallet Size" className={inp + ' text-right'} inputMode="numeric" value={edit.pallet_size} onChange={(e) => setField('pallet_size', e.target.value)} /></td>
+                      <td className={ecell}><input aria-label="Weight AVG" className={inp + ' text-right'} inputMode="decimal" value={edit.weight_avg} onChange={(e) => setField('weight_avg', e.target.value)} /></td>
                       {([0, 1, 2, 3] as const).map((i) => (
                         <td key={i} className={ecell}><input aria-label={`BIN ${i + 1}`} className={inp + ' font-mono ' + (edit.bins[i] ? 'bg-line' : 'border-dashed border-line-2')} value={edit.bins[i]} onChange={(e) => setBin(i, e.target.value)} placeholder={`BIN ${i + 1}`} /></td>
                       ))}

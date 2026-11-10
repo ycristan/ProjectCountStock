@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { buscarCodigos, criarItemInventario, type CodigoExistente } from '@/actions/inventario'
 import { Label, Notice, Tag, buttonClass, inputClass } from '@/components/ui'
+import { parseInventoryNumbers } from '@/lib/parse-number'
 
 const EMPTY = { brand_code: '', brand_name: '', category: '', category1: '', bpu: '', pallet_size: '', weight_avg: '', bins: ['', '', '', ''] }
 type Form = typeof EMPTY
@@ -38,11 +39,12 @@ export function NewProductDialog({ warehouseId, onClose, onCreated, onEditExisti
   const setBin = (i: number, value: string) => setForm((f) => ({ ...f, bins: f.bins.map((b, j) => (j === i ? value : b)) }))
 
   function create() {
+    const numbers = parseInventoryNumbers(form)
+    if ('error' in numbers) { setErro(numbers.error); return }
     setErro(null)
     startTransition(async () => {
       const result = await criarItemInventario(code, {
-        brand_name: form.brand_name, category: form.category, category1: form.category1,
-        bpu: Number(form.bpu) || 0, pallet_size: Number(form.pallet_size) || 0, weight_avg: Number(form.weight_avg) || 0,
+        brand_name: form.brand_name, category: form.category, category1: form.category1, ...numbers,
         bins: form.bins.map((b) => b.trim()).filter(Boolean),
       }, warehouseId)
       if (result.error) setErro(result.error)
@@ -54,7 +56,7 @@ export function NewProductDialog({ warehouseId, onClose, onCreated, onEditExisti
     <label className="flex flex-col gap-1">
       <Label>{label}</Label>
       <input className={inputClass + (numeric ? ' text-right' : '')} value={form[key]} onChange={(e) => set(key, e.target.value)}
-        type={numeric ? 'number' : 'text'} min={numeric ? 0 : undefined} step={key === 'weight_avg' ? '0.01' : undefined} />
+        inputMode={numeric ? (key === 'weight_avg' ? 'decimal' : 'numeric') : undefined} />
     </label>
   )
 

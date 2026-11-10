@@ -1,4 +1,4 @@
-# Estado — 2026-11-10
+# Estado — 2026-11-10 (tarde)
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -13,8 +13,8 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 `main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), painel do admin, contagem ao vivo, Inventory com abas por warehouse, tabela virtualizada e filtros estilo Excel, região dub1 e RLS mais leve (#114–#116, migrations aplicadas). Backup diário desde 28/10. Solo é usado quase todo dia.
 
 ## Em andamento — Inventory por warehouse (contrato em INVENTORY_WAREHOUSES.md §1)
-Agora: PR 5 aberta. Toggle de Status, cadastro manual e edição numa transação só (`save_inventory_item`). Migration já aplicada em produção (10/11, autorizada por Yuri); falta o merge, que depende de Yuri.
-Depois: 5a (Audit Inventory no banco, trigger só de acréscimo; migration com autorização) e 6 (tela Audit Inventory com Excel; candidata a ficar para depois de 02/01, decisão de Yuri pendente).
+PR 5 em produção (#117; migration aplicada em 10/11). Agora: PR aberta com bloqueio do cadastro manual durante contagem de equipes na mesma warehouse e vírgula/ponto como decimal ("2,5" virava 25). Migration nova: aplicação manual só com autorização de Yuri, antes do merge.
+Depois: 5a (Audit Inventory no banco, trigger só de acréscimo; migration com autorização) e 6 (tela Audit Inventory: histórico de alterações de produto com data, autor, antes/depois, filtro por período e produtos, Excel; candidata a ficar para depois de 02/01, decisão de Yuri pendente).
 Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).
 
 ## Depois do Inventory
@@ -25,7 +25,6 @@ Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).
 
 ## Decisões pendentes de Yuri
 - PR 6 antes ou depois de 02/01.
-- Cadastro manual durante contagem de equipes aberta não é bloqueado (o contrato não pede). Confirmar.
 - Tolerância em gramas (`default_tolerance_g`, `tolerance_g`): só o fluxo antigo usa; remover com ele depois de 02/01.
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 
