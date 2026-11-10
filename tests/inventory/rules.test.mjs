@@ -65,7 +65,7 @@ test('CONTRACT: active solo count blocks direct BPU edits', async () => {
   const result = await f.inventory.editarItemInventario('6323', {
     brand_name: f.item.brand_name, bpu: 24, pallet_size: 0, weight_avg: 0,
     category: 'Test', category1: 'Test', bins: [],
-  })
+  }, 'warehouse-main')
   blocked(result, f.writes)
 })
 
@@ -110,19 +110,55 @@ test('list restriction cannot be disabled after start', async () => {
 const fields = bpu => ({ brand_name: 'Test', bpu, pallet_size: 0, weight_avg: 0, category: 'Test', category1: 'Test', bins: [] })
 test('unchanged BPU allows editing other fields during solo', async () => {
   const f = await fixture()
-  assert.equal((await f.inventory.editarItemInventario('6323', fields(20))).error, undefined)
+  assert.equal((await f.inventory.editarItemInventario('6323', fields(20), 'warehouse-main')).error, undefined)
   assert.ok(f.writes.length > 0)
 })
 test('BPU can change when no solo session is open', async () => {
   const f = await fixture({ session: { status: 'closed' } })
-  assert.equal((await f.inventory.editarItemInventario('6323', fields(24))).error, undefined)
+  assert.equal((await f.inventory.editarItemInventario('6323', fields(24), 'warehouse-main')).error, undefined)
   assert.equal(f.writes[0].payload.bpu, 24)
 })
 test('BPU cannot change if active-session lookup fails', async () => {
   const f = await fixture({ readErrorTable: 'solo_sessions' })
-  blocked(await f.inventory.editarItemInventario('6323', fields(24)), f.writes)
+  blocked(await f.inventory.editarItemInventario('6323', fields(24), 'warehouse-main'), f.writes)
 })
 test('inventory rejects zero BPU before any mutation', async () => {
   const f = await fixture()
-  blocked(await f.inventory.editarItemInventario('6323', fields(0)), f.writes)
+  blocked(await f.inventory.editarItemInventario('6323', fields(0), 'warehouse-main'), f.writes)
+})
+test('edit sends product and BINs in one database call, scoped to the tab warehouse', async () => {
+  const f = await fixture({ session: { status: 'closed' } })
+  assert.equal((await f.inventory.editarItemInventario('6323', { ...fields(20), bins: ['40A', '40B'] }, 'warehouse-main')).error, undefined)
+  assert.equal(f.writes.length, 1, 'Separate BIN delete/insert calls were the old partial-write defect')
+  assert.deepEqual([...f.writes[0].payload.bins], ['40A', '40B'])
+  assert.equal(f.writes[0].args.p_warehouse_id, 'warehouse-main')
+})
+test('team-count BPU refusal is shown in plain words', async () => {
+  const f = await fixture({ session: { status: 'closed' }, rpcError: 'BPU correction during a team count requires the dedicated two-admin approval flow' })
+  assert.equal((await f.inventory.editarItemInventario('6323', fields(24), 'warehouse-main')).error, 'BPU cannot change while a team count is open.')
+})
+test('non-administrator cannot edit, create or toggle', async () => {
+  const f = await fixture({ admin: false })
+  blocked(await f.inventory.editarItemInventario('6323', fields(20), 'warehouse-main'), f.writes)
+  blocked(await f.inventory.criarItemInventario('9999', fields(20), 'warehouse-main'), f.writes)
+  blocked(await f.inventory.alterarStatusItem('6323', false, 'warehouse-main'), f.writes)
+})
+test('manual creation rejects blank code and zero BPU before any write', async () => {
+  const f = await fixture()
+  blocked(await f.inventory.criarItemInventario('  ', fields(20), 'warehouse-main'), f.writes)
+  blocked(await f.inventory.criarItemInventario('9999', fields(0), 'warehouse-main'), f.writes)
+})
+test('manual creation goes to the tab warehouse', async () => {
+  const f = await fixture()
+  assert.equal((await f.inventory.criarItemInventario('9999', fields(20), 'warehouse-main')).error, undefined)
+  assert.equal(f.writes[0].operation, 'insert')
+  assert.equal(f.writes[0].args.p_warehouse_id, 'warehouse-main')
+})
+test('status toggle changes only brand_active of a product in the tab warehouse', async () => {
+  const f = await fixture()
+  assert.equal((await f.inventory.alterarStatusItem('6323', false, 'warehouse-main')).error, undefined)
+  assert.deepEqual(Object.keys(f.writes[0].payload), ['brand_active'])
+  assert.equal(f.writes[0].payload.brand_active, false)
+  const other = await fixture()
+  assert.ok((await other.inventory.alterarStatusItem('6323', false, 'warehouse-other')).error, 'Another tab cannot toggle it')
 })

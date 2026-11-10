@@ -49,18 +49,23 @@ export async function listarInventario(warehouseId: string): Promise<ItemInventa
   }))
 }
 
-export async function editarItemInventario(
-  brandCode: string,
-  fields: {
-    brand_name: string
-    bpu: number
-    pallet_size: number
-    weight_avg: number
-    category: string
-    category1: string
-    bins: string[]
-  }
-): Promise<{ error?: string }> {
+export type ItemFields = {
+  brand_name: string
+  bpu: number
+  pallet_size: number
+  weight_avg: number
+  category: string
+  category1: string
+  bins: string[]
+}
+
+// The database message names a two-admin flow that does not exist yet; say what the admin can do.
+function friendly(message: string) {
+  return message.includes('during a team count') ? 'BPU cannot change while a team count is open.' : message
+}
+
+// Product and BINs are written by one database function, so a failure never leaves a product without BINs.
+export async function editarItemInventario(brandCode: string, fields: ItemFields, warehouseId: string): Promise<{ error?: string }> {
   if (!(await isAdmin())) return { error: 'Unauthorized' }
   const supabase = await createClient()
   if (!Number.isInteger(fields.bpu) || fields.bpu < 1) return { error: 'BPU must be a positive integer.' }
@@ -73,16 +78,44 @@ export async function editarItemInventario(
     if (sessionError) return { error: 'Unable to verify active counts; BPU was not changed.' }
     if (activeSolo) return { error: 'BPU cannot change while a solo count is open.' }
   }
-  const { bins, ...itemFields } = fields
-  const { error } = await supabase.from('inventory_items').update(itemFields).eq('brand_code', brandCode)
+  const { error } = await supabase.rpc('save_inventory_item', { p_warehouse_id: warehouseId, p_brand_code: brandCode, p_item: fields })
+  return error ? { error: friendly(error.message) } : {}
+}
+
+// Manual creation goes into the warehouse of the active tab; the database refuses an existing Brand Code.
+export async function criarItemInventario(brandCode: string, fields: ItemFields, warehouseId: string): Promise<{ error?: string }> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
+  if (!brandCode.trim()) return { error: 'Brand Code is required.' }
+  if (!Number.isInteger(fields.bpu) || fields.bpu < 1) return { error: 'BPU must be a positive integer.' }
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('save_inventory_item', {
+    p_warehouse_id: warehouseId, p_brand_code: brandCode, p_item: fields, p_create: true,
+  })
+  return error ? { error: error.message } : {}
+}
+
+export async function alterarStatusItem(brandCode: string, active: boolean, warehouseId: string): Promise<{ error?: string }> {
+  if (!(await isAdmin())) return { error: 'Unauthorized' }
+  const supabase = await createClient()
+  const { data, error } = await supabase.from('inventory_items').update({ brand_active: active })
+    .eq('brand_code', brandCode).eq('warehouse_id', warehouseId).select('brand_code')
   if (error) return { error: error.message }
-  const { error: delError } = await supabase.from('item_bin_locations').delete().eq('brand_code', brandCode)
-  if (delError) return { error: delError.message }
-  if (bins.length > 0) {
-    const { error: insError } = await supabase
-      .from('item_bin_locations')
-      .insert(bins.map((bin_location) => ({ brand_code: brandCode, bin_location })))
-    if (insError) return { error: insError.message }
-  }
-  return {}
+  return data?.length ? {} : { error: 'Product not found in this warehouse.' }
+}
+
+export type CodigoExistente = { brand_code: string; brand_name: string; brand_active: boolean; warehouse_id: string; warehouse: string }
+
+// Existing products whose Brand Code starts with what the admin typed, in any warehouse, inactive included.
+export async function buscarCodigos(prefix: string): Promise<CodigoExistente[]> {
+  const code = prefix.trim()
+  if (!code || !(await isAdmin())) return []
+  const supabase = await createClient()
+  const { data } = await supabase.from('inventory_items')
+    .select('brand_code, brand_name, brand_active, warehouse_id, warehouses(name)')
+    .ilike('brand_code', code.replace(/[\\%_]/g, '\\$&') + '%')
+    .order('brand_code').limit(8)
+  return (data ?? []).map(({ warehouses, ...item }) => ({
+    ...item,
+    warehouse: (warehouses as unknown as { name: string } | null)?.name ?? '',
+  }))
 }

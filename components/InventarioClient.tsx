@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useRouter } from 'next/navigation'
 import type { ItemInventario } from '@/actions/inventario'
-import { editarItemInventario } from '@/actions/inventario'
+import { alterarStatusItem, editarItemInventario } from '@/actions/inventario'
+import { NewProductDialog } from '@/components/NewProductDialog'
 import { Tag, buttonClass } from '@/components/ui'
 import { Icon } from '@/components/icons'
 import { ColumnFilterPopover } from '@/components/ColumnFilterPopover'
@@ -41,7 +42,7 @@ const MIN_WIDTH = COLS.reduce((a, b) => a + b, 0)
 const ROW_HEIGHT = 56
 const HEAD = 'px-3 py-2 text-left align-middle font-display text-[15px] font-bold'
 
-export function InventarioClient({ items }: { items: ItemInventario[] }) {
+export function InventarioClient({ items, warehouseId }: { items: ItemInventario[]; warehouseId: string }) {
   const router = useRouter()
   const [editingCode, setEditingCode] = useState<string | null>(null)
   const [edit, setEdit] = useState<EditRow | null>(null)
@@ -49,6 +50,7 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS)
   const [open, setOpen] = useState<{ key: ColumnKey; rect: DOMRect } | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [creating, setCreating] = useState(false)
   const filtersOn = activeFilterKeys(filters).length > 0
   const tableRef = useRef<HTMLDivElement>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
@@ -99,8 +101,8 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
         weight_avg: Number(edit.weight_avg) || 0,
         category: edit.category,
         category1: edit.category1,
-        bins: edit.bins.filter(Boolean),
-      })
+        bins: edit.bins.map((b) => b.trim()).filter(Boolean),
+      }, warehouseId)
       if (result.error) {
         setErro(result.error)
       } else {
@@ -109,6 +111,24 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
         router.refresh()
       }
     })
+  }
+
+  function toggleStatus(item: ItemInventario) {
+    setErro(null)
+    startTransition(async () => {
+      const result = await alterarStatusItem(item.brand_code, !item.brand_active, warehouseId)
+      if (result.error) setErro(result.error)
+      else router.refresh()
+    })
+  }
+
+  // Picking an existing code in the new-product window opens that row for editing instead.
+  function editExisting(code: string) {
+    const item = items.find((i) => i.brand_code === code)
+    setCreating(false)
+    if (!item) return
+    setFilters({ ...EMPTY_FILTERS, selected: { brand_code: new Set([code]) } })
+    startEdit(item)
   }
 
   const shown = useMemo(() => applyFilters(items, filters), [items, filters])
@@ -149,6 +169,7 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
     <div className="flex flex-col gap-3">
       <div className="flex min-h-10 flex-wrap items-center gap-3">
         <span className="text-[15px] text-ink-2">{filtersOn ? `${shown.length} of ${items.length} products` : `${items.length} products`}</span>
+        <button type="button" onClick={() => setCreating(true)} className={buttonClass('dark', 'sm')}><Icon name="plus" size={16} />New product</button>
         {anyActive && <button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setOpen(null); toTop() }}
           className="inline-flex min-h-10 items-center gap-1.5 rounded-md border-2 border-ink bg-surface px-3 font-display text-[15px] font-bold"><Icon name="close" size={16} />Clear all filters</button>}
       </div>
@@ -173,7 +194,12 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
               const isEditing = editingCode === item.brand_code && edit !== null
               return (
                 <tr key={item.brand_code} style={{ height: ROW_HEIGHT }} className={'border-t border-ground-2 ' + (isEditing ? 'bg-ground' : '')}>
-                  <td className={cell}>{item.brand_active ? <Tag tone="ok">Active</Tag> : <Tag tone="neutral">Inactive</Tag>}</td>
+                  <td className={cell}>
+                    <button type="button" role="switch" aria-checked={item.brand_active} aria-label={'Status ' + item.brand_code}
+                      disabled={isPending} onClick={() => toggleStatus(item)} className="min-h-10 rounded-sm focus-visible:outline-3 focus-visible:outline-info disabled:opacity-60">
+                      {item.brand_active ? <Tag tone="ok">Active</Tag> : <Tag tone="neutral">Inactive</Tag>}
+                    </button>
+                  </td>
                   <td className={cell + ' font-mono text-[13px] font-semibold text-ink-2'}>{text(item.brand_code)}</td>
                   {isEditing && edit ? (
                     <>
@@ -223,6 +249,8 @@ export function InventarioClient({ items }: { items: ItemInventario[] }) {
           </tbody>
         </table>
       </div>
+      {creating && <NewProductDialog warehouseId={warehouseId} onClose={() => setCreating(false)}
+        onCreated={() => { setCreating(false); router.refresh() }} onEditExisting={editExisting} />}
       {open && (
         <ColumnFilterPopover key={open.key} column={open.key} anchor={open.rect} values={openValues}
           selected={filters.selected[open.key] ?? null} sortDir={filters.sort?.key === open.key ? filters.sort.dir : null}
