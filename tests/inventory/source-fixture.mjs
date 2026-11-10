@@ -59,6 +59,11 @@ export async function fixture(options = {}) {
       return query
     },
     async rpc(name, args) {
+      // The real function validates and writes in one transaction; here it only records the write.
+      if (name === 'save_inventory_item') {
+        writes.push({ table: 'inventory_items', operation: args.p_create ? 'insert' : 'update', payload: args.p_item, args })
+        return { data: null, error: options.rpcError ? { message: options.rpcError } : null }
+      }
       if (name !== 'convert_count') throw new Error('Unmodelled RPC: ' + name)
       const result = conversion.convertCount(args.p_pallets, args.p_cases, args.p_units, args.p_bpu, args.p_pallet_size)
       return { data: { final_cases: result.finalCases, final_units: result.finalUnits }, error: null }

@@ -32,7 +32,8 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
           ))}
         </nav>
       )}
-      <InventarioClient key={active?.id} items={items} />
+      {active ? <InventarioClient key={active.id} items={items} warehouseId={active.id} />
+        : <p className="m-0 text-[15px] text-ink-2">No items in inventory. Import an .xlsx file.</p>}
     </div>
   )
 }

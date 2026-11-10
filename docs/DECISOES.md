@@ -271,3 +271,9 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Correção: regra do contador também por linha (2026-11-04)
 - Depois de aplicar a #115, a página de 1000 produtos caiu de ~800 ms para ~350 ms, não para os ~3,5 ms previstos: a medição anterior fixou a ordem das regras à mão, e o Postgres testa primeiro `can_read_warehouse(warehouse_id)`, linha a linha, também para o admin.
 - Yuri autorizou a PR que calcula uma vez por consulta as warehouses legíveis (`private.readable_warehouse_ids()`); medido ~4 ms. Quem pode ler não muda.
+
+## PR 5 do Inventory e mapa graphify (2026-11-10)
+- Yuri mandou começar pela PR 5 (corrige defeito em produção) antes da 5a. Edição e cadastro manual gravam produto e BINs numa função só (`save_inventory_item`); falha no meio não deixa mais produto sem BIN.
+- Achado: BPU já era bloqueado no banco durante sessão de equipes desde 17/09 (`guard_inventory_warehouse`, com teste). O ESTADO dizia o contrário. A PR só troca a mensagem da tela.
+- Cadastro manual em janela própria; código existente na mesma warehouse abre a edição dele (inclusive inativo), nunca cria outro.
+- graphify passa a ignorar `docs/`, `.claude/` e `*.md` (`.graphifyignore`): documentos e skills puxavam a busca para nós errados.

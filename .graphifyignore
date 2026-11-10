@@ -1,0 +1,4 @@
+# Mapa do código só com código: documentos e skills poluem as consultas (DECISOES.md, 10/11).
+docs/
+.claude/
+*.md
