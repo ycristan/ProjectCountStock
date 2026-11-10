@@ -277,3 +277,7 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Achado: BPU já era bloqueado no banco durante sessão de equipes desde 17/09 (`guard_inventory_warehouse`, com teste). O ESTADO dizia o contrário. A PR só troca a mensagem da tela.
 - Cadastro manual em janela própria; código existente na mesma warehouse abre a edição dele (inclusive inativo), nunca cria outro.
 - graphify passa a ignorar `docs/`, `.claude/` e `*.md` (`.graphifyignore`): documentos e skills puxavam a busca para nós errados.
+
+## Cadastro manual e separador decimal (2026-11-10)
+- Yuri decidiu: cadastro manual bloqueado enquanto houver contagem de equipes aberta na mesma warehouse. Solo e outras warehouses não bloqueiam. Conferido no banco, não só na tela.
+- Achado no teste da PR 5: o campo numérico do navegador transformava "2,5" em 25 sem aviso (Weight AVG 10x maior estraga a contagem por peso). Vírgula e ponto passam a valer como decimal; mais de 2 casas é recusado, para "1.250" (milhar) nunca virar 1,25. Telas dos contadores ficam como estão: só recebem inteiros.
