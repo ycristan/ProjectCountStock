@@ -154,6 +154,13 @@ export async function verifyInventoryTabs({db,base,cookies}) {
     await page.getByRole('button',{name:'Edit TS00002'}).waitFor()
     assert.deepEqual((await row('TS00002')).item_bin_locations.map(b=>b.bin_location).sort(),['7A','7B'],'edit saved trimmed BINs')
     assert.equal(Number((await row('TS00002')).weight_avg),6.25,'comma read as decimal separator')
+    // Audit Inventory (5a): a real request commits once, so one edit (product + BIN delete/insert) is one row.
+    const audit=checked(await db.from('inventory_audit').select('actor_id, actor_role, before, after').eq('brand_code','TS00002').order('id'))
+    assert.equal(audit.length,2,'seed insert + one edit (the refused 1.250 attempt records nothing): '+audit.length)
+    assert.equal(audit[1].actor_role,'authenticated')
+    assert.ok(audit[1].actor_id,'edit has the admin as author')
+    assert.deepEqual([...audit[1].before.bins],[])
+    assert.deepEqual([...audit[1].after.bins],['7A','7B'])
 
     await page.getByRole('button',{name:'New product'}).click()
     const dialog=page.getByRole('dialog',{name:'New product'})
