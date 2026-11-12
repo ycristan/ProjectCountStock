@@ -1,4 +1,4 @@
-# Estado — 2026-11-10 (tarde)
+# Estado — 2026-11-12
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
@@ -13,8 +13,9 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 `main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), painel do admin, contagem ao vivo, Inventory com abas por warehouse, tabela virtualizada e filtros estilo Excel, região dub1 e RLS mais leve (#114–#116, migrations aplicadas). Backup diário desde 28/10. Solo é usado quase todo dia.
 
 ## Em andamento — Inventory por warehouse (contrato em INVENTORY_WAREHOUSES.md §1)
-PR 5 em produção (#117; migration aplicada em 10/11). Agora: PR aberta com bloqueio do cadastro manual durante contagem de equipes na mesma warehouse e vírgula/ponto como decimal ("2,5" virava 25). Migration aplicada em produção (10/11, autorizada por Yuri); falta o merge, que depende de Yuri.
-Depois: 5a (Audit Inventory no banco, trigger só de acréscimo; migration com autorização) e 6 (tela Audit Inventory: histórico de alterações de produto com data, autor, antes/depois, filtro por período e produtos, Excel; candidata a ficar para depois de 02/01, decisão de Yuri pendente).
+PR 5 e correções em produção (#117, #118; migrations aplicadas em 10/11).
+Agora: 5a aberta. Audit Inventory gravado pelo banco (`inventory_audit`), só de acréscimo. Migration: aplicação manual só com autorização de Yuri. O histórico começa no dia em que ela for aplicada.
+Depois: 6 (tela Audit Inventory com período, produtos e Excel). Yuri: 5a antes da 6; a 6 pode entrar antes de 02/01.
 Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).
 
 ## Depois do Inventory
@@ -24,7 +25,6 @@ Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).
 - O conector da Vercel não grava variáveis (403): produção é republicada por merge na `main`.
 
 ## Decisões pendentes de Yuri
-- PR 6 antes ou depois de 02/01.
 - Tolerância em gramas (`default_tolerance_g`, `tolerance_g`): só o fluxo antigo usa; remover com ele depois de 02/01.
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 

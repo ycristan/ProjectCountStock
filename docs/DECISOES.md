@@ -281,3 +281,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 ## Cadastro manual e separador decimal (2026-11-10)
 - Yuri decidiu: cadastro manual bloqueado enquanto houver contagem de equipes aberta na mesma warehouse. Solo e outras warehouses não bloqueiam. Conferido no banco, não só na tela.
 - Achado no teste da PR 5: o campo numérico do navegador transformava "2,5" em 25 sem aviso (Weight AVG 10x maior estraga a contagem por peso). Vírgula e ponto passam a valer como decimal; mais de 2 casas é recusado, para "1.250" (milhar) nunca virar 1,25. Telas dos contadores ficam como estão: só recebem inteiros.
+
+## Audit Inventory no banco (2026-11-12)
+- Yuri: 5a antes da 6; a 6 pode entrar antes de 02/01.
+- Uma linha por produto e transação, com o produto inteiro antes e depois (BINs inclusos), comparado no commit. Motivo: edição e importação apagam e reinserem BINs; registrar linha a linha geraria ruído e uma reimportação igual pareceria mudança.
+- Origem (tela, importação, manutenção) não é gravada como campo: autor e papel do banco já separam admin de manutenção. Rever na tela 6 se fizer falta.
