@@ -1,8 +1,9 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
--- The audit is written at commit; this test never commits, so run those triggers per statement.
-set constraints all immediate;
+-- The audit is written at commit, once per product. This test never commits, so after each
+-- whole change it fires the pending commit triggers by switching to immediate and back
+-- (switching per statement would run them inside the function, between its own statements).
 
 insert into auth.users(id, email, raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000a01', 'audit-admin@example.invalid', '{}'),
@@ -33,6 +34,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000a01', true);
 
 select lives_ok($$select public.save_inventory_item(pg_temp.main(), 'AUD1', pg_temp.item_row(), true)$$, 'Manual creation');
+set constraints all immediate; set constraints all deferred;
 select is(pg_temp.audits(), 1::bigint, 'Creation recorded once (product row and BIN row are one change)');
 select ok((pg_temp.last_audit()).before is null, 'Creation has no before');
 select is((pg_temp.last_audit()).after -> 'bins', '["40A"]'::jsonb, 'After includes the BINs');
@@ -41,6 +43,7 @@ select is((pg_temp.last_audit()).actor_id, '00000000-0000-0000-0000-000000000a01
 select is((pg_temp.last_audit()).actor_role, 'authenticated', 'Request role recorded');
 
 select lives_ok($$select public.save_inventory_item(pg_temp.main(), 'AUD1', pg_temp.item_row(20, '["40A","40C"]', 'Edited'))$$, 'Edit');
+set constraints all immediate; set constraints all deferred;
 select is(pg_temp.audits(), 2::bigint, 'Edit with BIN delete+insert recorded once');
 select is((pg_temp.last_audit()).before ->> 'bpu', '24', 'Before BPU');
 select is((pg_temp.last_audit()).after ->> 'bpu', '20', 'After BPU');
@@ -48,20 +51,25 @@ select is((pg_temp.last_audit()).before -> 'bins', '["40A"]'::jsonb, 'Before BIN
 select is((pg_temp.last_audit()).after -> 'bins', '["40A","40C"]'::jsonb, 'After BINs');
 
 select lives_ok($$select public.save_inventory_item(pg_temp.main(), 'AUD1', pg_temp.item_row(20, '["40C","40A"]', 'Edited'))$$, 'Save without changes');
+set constraints all immediate; set constraints all deferred;
 select is(pg_temp.audits(), 2::bigint, 'Saving the same values records nothing');
 
 select lives_ok($$update public.inventory_items set brand_active = false where brand_code = 'AUD1'$$, 'Status toggle');
+set constraints all immediate; set constraints all deferred;
 select is(pg_temp.audits(), 3::bigint, 'Toggle recorded');
 select is((pg_temp.last_audit()).after ->> 'brand_active', 'false', 'Toggle after is Inactive');
 
 select lives_ok($$select public.import_warehouse_inventory('Main', pg_temp.import_row(20, '["40A","40C"]'))$$, 'Import reactivates');
+set constraints all immediate; set constraints all deferred;
 select is(pg_temp.audits(), 4::bigint, 'Import change recorded');
 select lives_ok($$select public.import_warehouse_inventory('Main', pg_temp.import_row(20, '["40A","40C"]'))$$, 'Same sheet again');
+set constraints all immediate; set constraints all deferred;
 select is(pg_temp.audits(), 4::bigint, 'Re-importing the same sheet records nothing');
 
 -- Failed change leaves no audit row: the whole transaction, audit included, is undone.
 select throws_ok($$select public.save_inventory_item(pg_temp.main(), 'AUD1', pg_temp.item_row(0))$$,
  'P0001', 'BPU must be a positive integer', 'Invalid edit refused');
+set constraints all immediate; set constraints all deferred;
 select is(pg_temp.audits(), 4::bigint, 'Refused edit records nothing');
 
 select throws_ok($$insert into public.inventory_audit(brand_code, actor_role, after) values ('AUD1', 'x', '{}')$$,
@@ -74,11 +82,13 @@ select is((select count(*) from public.inventory_audit), 0::bigint, 'Non-admin (
 reset role;
 select set_config('request.jwt.claim.sub', '', true);
 update public.inventory_items set brand_name = 'Fixed by SQL' where brand_code = 'AUD1';
+set constraints all immediate; set constraints all deferred;
 select is(pg_temp.audits(), 5::bigint, 'Direct SQL change recorded');
 select ok((pg_temp.last_audit()).actor_id is null, 'Maintenance has no app author');
 select is((pg_temp.last_audit()).actor_role, 'postgres', 'Maintenance role recorded');
 
 delete from public.inventory_items where brand_code = 'AUD1';
+set constraints all immediate; set constraints all deferred;
 select is(pg_temp.audits(), 6::bigint, 'Deletion recorded');
 select ok((pg_temp.last_audit()).after is null, 'Deletion has no after');
 select is((pg_temp.last_audit()).before -> 'bins', '["40A","40C"]'::jsonb, 'Deletion keeps the BINs it had');
