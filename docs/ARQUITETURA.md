@@ -22,6 +22,7 @@
 - Legado de equipes: `count_sessions`, `teams`, `counter_accounts`, `count_entries`, `reconciliation_items`, `combined_results`.
 - Solo: `solo_sessions`, `solo_entries`, `solo_session_items`. Configuração: `app_settings`. Autorização: `app_user_access`.
 - `inventory_items` nunca tem linhas apagadas: é FK de contagens, reconciliações, resultados e BINs.
+- `inventory_audit` (desde a 5a): uma linha por produto alterado em cada transação, com antes/depois (BINs inclusos), autor (`actor_id`) e papel do banco. Gravada por triggers em `inventory_items` e `item_bin_locations`, que comparam o produto no commit (trigger adiado); por isso importar a mesma planilha não grava nada. Só acréscimo, até para `service_role`. Teste dentro de uma transação sem commit força o registro com `set constraints all immediate; set constraints all deferred;` depois de cada alteração completa; deixar imediato o tempo todo grava um registro por comando dentro da função.
 
 ## Fórmulas
 - **Normal:** `final_cases = pallets × pallet_size + cases`; `final_units = units`. Conversão canônica em `lib/convert.ts` / `convert_count` no banco.
