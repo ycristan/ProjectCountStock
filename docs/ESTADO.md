@@ -18,7 +18,7 @@ Próximo: 6 (tela Audit Inventory com período, produtos e Excel). Pode entrar a
 Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).
 
 ## Em PR, aguardando Yuri (24/11)
-Auditor em produção e aprovado (#122). Abertas: assinatura no próprio aparelho, sem testemunha tardia e "Hold to submit to admin" (#124, sem migration); título obrigatório na sessão de equipes (migration `count_session_title`, aplicação manual só com autorização; fora do Auditor e das telas dos contadores, que exigiriam mudar `read_team_count`).
+Auditor (#122) e assinatura no próprio aparelho, sem testemunha tardia e "Hold to submit to admin" (#124) em produção. Aberta: título obrigatório na sessão de equipes (migration `count_session_title` já aplicada em produção; fora do Auditor e das telas dos contadores, que exigiriam mudar `read_team_count`).
 
 ## Depois do Inventory
 - Varredura de idioma: todo texto da aplicação em inglês britânico (PRODUTO.md); ~60 textos em português achados por busca simples.

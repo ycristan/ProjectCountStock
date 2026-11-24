@@ -9,17 +9,19 @@ import { useConfirm } from '@/components/confirm'
 type Run = (action: () => Promise<{ error?: string }>, done: string) => void
 type Form = { membershipId: string; mode: 'sign' | 'absent' | 'witness' }
 
-// R11 (revised 2026-10-29): counters sign first, the Independent last, then the admin
-// closes the team. Every confirmation is made by the person (PIN) or formalized as an
-// absence; nothing is signed on someone's behalf. The database enforces the order.
-export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
-  teamId: string; signing: TeamSigning; isAdmin: boolean; pending: boolean; run: Run
+// R11 (revised 2026-11-02): each person signs on their own device with their personal PIN;
+// a device shows the signing button only for whoever is signed in there. The others show
+// "Waiting signature...". Absent is for the Independent (counters) and the admin (the
+// Independent). The server refuses a PIN used from someone else's session; the database
+// enforces the order: counters first, the Independent last.
+export function SigningPanel({ teamId, signing, isAdmin, viewer, pending, run }: {
+  teamId: string; signing: TeamSigning; isAdmin: boolean; viewer: { membershipId: string | null; role: string }
+  pending: boolean; run: Run
 }) {
   const [form, setForm] = useState<Form | null>(null)
   const [confirm, confirmDialog] = useConfirm()
   const [pin, setPin] = useState('')
   const [reason, setReason] = useState('')
-  const [witnessId, setWitnessId] = useState('')
   // A retry of the same confirmation reuses its command; the database returns the original receipt.
   const commands = useRef(new Map<string, string>())
   const command = (key: string) => {
@@ -29,12 +31,15 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
   }
   const independent = signing.participants.find(p => p.role === 'independent')!
   const presentCounters = signing.participants.filter(p => p.role === 'counter' && !p.departed)
+  // Only a present counter, on their own device, can witness the Independent's absence.
+  const witnessSelf = viewer.role === 'counter' && presentCounters.some(w => w.membershipId === viewer.membershipId)
+    ? viewer.membershipId : null
   const ordered = [...signing.participants].sort((a, b) =>
     Number(a.role === 'independent') - Number(b.role === 'independent') || a.order - b.order)
   const countersDone = signing.participants.every(p => p.role === 'independent' || p.confirmation)
   const complete = countersDone && !!independent.confirmation
     && (independent.confirmation.kind === 'pin' || independent.confirmation.witnessed)
-  const open = (next: Form | null) => { setForm(next); setPin(''); setReason(''); setWitnessId(presentCounters[0]?.membershipId ?? '') }
+  const open = (next: Form | null) => { setForm(next); setPin(''); setReason('') }
   const done = (action: () => Promise<{ error?: string }>, message: string) =>
     run(async () => { const result = await action(); if (!result.error) open(null); return result }, message)
   const pinInput = (label: string) => <label className="flex flex-col gap-1.5"><Label>{label}</Label>
@@ -52,11 +57,14 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
     <h2 className="m-0 font-display text-2xl font-bold uppercase tracking-[0.03em]">Sign the result</h2>
     <p className="m-0 text-[15px] leading-snug text-ink-2">{signing.frozen
       ? 'Result frozen: a confirmation was received. Only the remaining confirmations can be completed.'
-      : 'Each person confirms the accepted result with their own PIN.'} Counters sign first, the Independent last;
+      : 'Each person signs on their own device with their personal PIN.'} Counters sign first, the Independent last;
       then the admin closes the team.</p>
     {ordered.map(p => {
       const c = p.confirmation
-      const status = !c ? 'Pending' : c.kind === 'pin' ? 'Signed by PIN'
+      const mine = p.membershipId === viewer.membershipId
+      // Absent: the Independent marks a counter; only the admin marks the Independent.
+      const canMarkAbsent = p.role === 'counter' ? viewer.role === 'independent' : isAdmin
+      const status = !c ? (mine ? 'Pending' : 'Waiting signature...') : c.kind === 'pin' ? 'Signed by PIN'
         : p.role === 'independent' && !c.witnessed ? 'Absent: ' + c.reason + ' — waiting for a witness' : 'Absent: ' + c.reason
       const active = form?.membershipId === p.membershipId ? form.mode : null
       const reasonKey = reason.trim()
@@ -78,13 +86,13 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
         </div>
         {!c && waiting && <p className="m-0 text-sm text-ink-2">Signs after every counter.</p>}
         {!c && !active && !waiting && <div className="flex flex-wrap gap-2">
-          {!p.departed && <Button variant="dark" size="md" disabled={pending}
-            onClick={() => open({ membershipId: p.membershipId, mode: 'sign' })}>SIGN BY PIN CODE</Button>}
-          {(p.role === 'counter' || isAdmin) && <Button variant="quiet" size="sm" disabled={pending}
+          {mine && !p.departed && <Button variant="dark" size="md" disabled={pending}
+            onClick={() => open({ membershipId: p.membershipId, mode: 'sign' })}>SIGN WITH PERSONAL PIN CODE</Button>}
+          {canMarkAbsent && <Button variant="danger" size="sm" disabled={pending}
             onClick={() => open({ membershipId: p.membershipId, mode: 'absent' })}>Absent</Button>}
         </div>}
-        {c && p.role === 'independent' && !c.witnessed && !active && <div className="flex flex-wrap gap-2">
-          {presentCounters.length > 0 && <Button variant="quiet" size="sm" disabled={pending}
+        {c && p.role === 'independent' && c.kind === 'absence' && !c.witnessed && !active && <div className="flex flex-wrap gap-2">
+          {witnessSelf && <Button variant="quiet" size="sm" disabled={pending}
             onClick={() => open({ membershipId: p.membershipId, mode: 'witness' })}>Witness by counter PIN</Button>}
           {isAdmin && <Button variant="quiet" size="sm" disabled={pending} onClick={async () => {
             if (await confirm({ title: 'Witness the absence?', text: 'Confirm as witness that the Independent is absent?', confirm: 'Confirm as witness' }))
@@ -92,7 +100,7 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
           }}>Witness as admin</Button>}
         </div>}
         {active === 'sign' && <div className="flex flex-col gap-2">
-          {pinInput(p.name + ' — PIN')}
+          {pinInput('Your personal PIN')}
           <Button variant="primary" size="md" disabled={pending || pin.length !== 4}
             onClick={() => done(() => signWithPin(teamId, p.membershipId, pin, signing.versionId, command('sign:' + p.membershipId)),
               'Signed: ' + p.name + '.')}>Confirm signature</Button>
@@ -100,7 +108,7 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
         </div>}
         {active === 'absent' && <div className="flex flex-col gap-2">
           {reasonInput}
-          {p.role === 'counter' && pinInput('Independent (' + independent.name + ') — PIN')}
+          {p.role === 'counter' && pinInput('Your personal PIN')}
           <Button variant="primary" size="md" disabled={pending || !reasonKey || (p.role === 'counter' && pin.length !== 4)}
             onClick={() => done(() => p.role === 'counter'
               ? formalizeCounterAbsence(teamId, p.membershipId, reasonKey, independent.membershipId, pin, signing.versionId,
@@ -110,15 +118,10 @@ export function SigningPanel({ teamId, signing, isAdmin, pending, run }: {
           <Button variant="outline" size="md" onClick={() => open(null)}>Cancel</Button>
         </div>}
         {active === 'witness' && <div className="flex flex-col gap-2">
-          <label className="flex flex-col gap-1.5"><Label>Witness</Label>
-            <select value={witnessId} onChange={e => setWitnessId(e.target.value)} className="min-h-12 rounded-lg border-2 border-ink bg-surface px-3 text-[17px]">
-              {presentCounters.map(w => <option key={w.membershipId} value={w.membershipId}>{w.name}</option>)}
-            </select>
-          </label>
-          {pinInput('Witness PIN')}
-          <Button variant="primary" size="md" disabled={pending || pin.length !== 4 || !witnessId}
-            onClick={() => done(() => witnessIndependentAbsence(teamId, signing.versionId, command('witness:' + witnessId),
-              { membershipId: witnessId, pin }), 'Absence witnessed.')}>Confirm as witness</Button>
+          {pinInput('Your personal PIN')}
+          <Button variant="primary" size="md" disabled={pending || pin.length !== 4 || !witnessSelf}
+            onClick={() => done(() => witnessIndependentAbsence(teamId, signing.versionId, command('witness:' + witnessSelf),
+              { membershipId: witnessSelf!, pin }), 'Absence witnessed.')}>Confirm as witness</Button>
           <Button variant="outline" size="md" onClick={() => open(null)}>Cancel</Button>
         </div>}
       </div>

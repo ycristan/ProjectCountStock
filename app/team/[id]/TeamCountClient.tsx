@@ -408,15 +408,16 @@ export function TeamCountClient({ initial, inventory, back }: {
       </div>
       {canReconcile && comparison.length > 0 && <div className="sticky bottom-[var(--bottom-bar)] -mx-4 flex flex-col gap-2 border-t border-line bg-ground px-4 py-3">
         <p className="m-0 text-[15px] font-medium">{pendingItems === 0 ? 'Every item is resolved.' : pendingItems + ' item(s) still need a decision or reconciled count.'}</p>
-        <Button variant="primary" size="lg" full disabled={pending || pendingItems > 0}
-          onClick={async () => {
+        {/* Same safeguard as a counter's "Hold to finish" (Yuri, 24/11): hold 4 s, then confirm. */}
+        <HoldButton label="Hold to submit to admin" disabled={pending || pendingItems > 0}
+          onHeld={async () => {
             const ok = await confirm({ title: 'Submit to admin?', text: 'Reconciliation will be closed for this team.', confirm: 'Submit' })
             if (!ok) return
             if (submission.current?.revision !== state.revision)
               submission.current = { revision: state.revision, id: crypto.randomUUID() }
             const { revision, id } = submission.current
             finish(() => submitTeamReconciliation(teamId, revision, id), 'Submitted to the admin for review.')
-          }}>Submit to admin</Button>
+          }} />
       </div>}
       {canReconcile && openRound && <p className="m-0 text-[15px]">Recount round: only the products returned by the admin can be recounted. Other results are kept.</p>}
       {state.phase === 'admin_review' && state.role !== 'admin' && <p className="m-0 text-[15px]">Waiting for admin review. The submitted result is sealed.</p>}
@@ -437,7 +438,7 @@ export function TeamCountClient({ initial, inventory, back }: {
     </div>}
 
     {state.phase === 'signing' && signing && !unavailable && <div className="mx-auto w-full max-w-lg"><SigningPanel teamId={teamId} signing={signing}
-      isAdmin={state.role === 'admin'} pending={pending} run={finish} /></div>}
+      isAdmin={state.role === 'admin'} viewer={{ membershipId: state.membershipId, role: state.role }} pending={pending} run={finish} /></div>}
 
   </section>
 }
