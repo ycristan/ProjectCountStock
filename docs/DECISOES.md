@@ -286,3 +286,4 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri: 5a antes da 6; a 6 pode entrar antes de 02/01.
 - Uma linha por produto e transação, com o produto inteiro antes e depois (BINs inclusos), comparado no commit. Motivo: edição e importação apagam e reinserem BINs; registrar linha a linha geraria ruído e uma reimportação igual pareceria mudança.
 - Origem (tela, importação, manutenção) não é gravada como campo: autor e papel do banco já separam admin de manutenção. Rever na tela 6 se fizer falta.
+- Criação do acesso: um clique do admin na tela de equipes ("Create Auditor access"), não dentro do setup de equipes. Motivo: a criação automática alongava a ação do setup e quebrou o teste de navegador dele no CI; o setup é o caminho mais crítico e não ganha risco por causa do Auditor.
