@@ -111,7 +111,10 @@ select throws_ok($q$select public.read_team_count('40000000-0000-0000-0000-00000
 
 -- Session closed: the other Auditor loses access too.
 reset role;
+-- The versioned close workflow guards this table; the test only needs the resulting state.
+alter table public.count_sessions disable trigger user;
 update public.count_sessions set status='fechada' where id='40000000-0000-0000-0000-000000000101';
+alter table public.count_sessions enable trigger user;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','40000000-0000-0000-0000-000000000006',true);
 select ok(not public.is_auditor(),'Auditor of a closed session is not recognised');
