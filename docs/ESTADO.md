@@ -13,13 +13,13 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 `main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), painel do admin, contagem ao vivo, Inventory com abas por warehouse, tabela virtualizada e filtros estilo Excel, região dub1 e RLS mais leve (#114–#116, migrations aplicadas). Backup diário desde 28/10. Solo é usado quase todo dia.
 
 ## Em andamento — Inventory por warehouse (contrato em INVENTORY_WAREHOUSES.md §1)
-PR 5 e correções em produção (#117, #118; migrations aplicadas em 10/11).
-5a em produção (#119, 12/11): Audit Inventory gravado pelo banco (`inventory_audit`), só de acréscimo; migration aplicada. O histórico começa no dia da aplicação.
+PR 5 e correções em produção (#117, #118). 5a em produção (#119, 12/11): Audit Inventory gravado pelo banco (`inventory_audit`), só de acréscimo; o histórico começa no dia da aplicação.
 Próximo: 6 (tela Audit Inventory com período, produtos e Excel). Pode entrar antes de 02/01.
 Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).
 
 ## Auditor (decisão em DECISOES.md, 24/11)
-Migration `auditor_access` aplicada em produção em 24/11. Código na PR aberta (CI verde): login só de leitura, um por sessão, só na tela ao vivo. Falta: teste manual na warehouse TESTE e autorização de Yuri para mergear. Até o merge, o preview já usa o banco novo.
+Em produção (#122, migration `auditor_access` aplicada). Yuri testou e aprovou: só vê a contagem ao vivo e perde o acesso ao encerrar. Cartão impresso com QR incluído.
+Ideia pedida por Yuri, não iniciada: título na sessão de equipes (como no solo). Falta decidir: obrigatório ou opcional.
 
 ## Depois do Inventory
 - Varredura de idioma: todo texto da aplicação em inglês britânico (PRODUTO.md); ~60 textos em português achados por busca simples.
