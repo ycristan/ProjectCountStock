@@ -19,7 +19,7 @@ Próximo: 6 (tela Audit Inventory com período, produtos e Excel). Pode entrar a
 Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).
 
 ## Auditor (decisão em DECISOES.md, 24/11)
-PR aberta com migration `auditor_access` (aplicação manual só com autorização de Yuri). Login só de leitura, um por sessão, só na tela ao vivo. Falta: CI verde, teste manual na warehouse TESTE, autorização para aplicar e mergear.
+Migration `auditor_access` aplicada em produção em 24/11. Código na PR aberta (CI verde): login só de leitura, um por sessão, só na tela ao vivo. Falta: teste manual na warehouse TESTE e autorização de Yuri para mergear. Até o merge, o preview já usa o banco novo.
 
 ## Depois do Inventory
 - Varredura de idioma: todo texto da aplicação em inglês britânico (PRODUTO.md); ~60 textos em português achados por busca simples.
