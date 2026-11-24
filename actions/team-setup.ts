@@ -7,6 +7,7 @@ import { generatePin, pinPassword } from '@/lib/pin-credentials'
 import { reportTeamContextError } from '@/lib/report-team-context-error'
 import type { TeamDraft, SetupJob } from '@/lib/team-setup-types'
 import type { Credencial } from '@/actions/sessao'
+import { createAuditorAccess } from '@/actions/auditor'
 
 function cards(job: SetupJob): Credencial[] {
   return job.plan.flatMap(t => {
@@ -55,7 +56,7 @@ export async function createTeamSetup(sessionId: string, draft: TeamDraft[]): Pr
       if (result.error.code !== '23505') throw new Error('Setup reservation failed')
     }
     if (!job) throw new Error('Setup reservation unavailable')
-    if (job.complete) return { draft: job.draft, credenciais: cards(job) }
+    if (job.complete) { await createAuditorAccess(sessionId).catch(() => undefined); return { draft: job.draft, credenciais: cards(job) } }
     const admin = createAdminClient()
     for (const team of job.plan) for (const member of team.members) {
       if (member.userId) continue
@@ -82,6 +83,8 @@ export async function createTeamSetup(sessionId: string, draft: TeamDraft[]): Pr
     const result = await db.rpc('complete_team_setup', { p_session: sessionId })
     if (result.error || !result.data?.complete) throw new Error('Setup completion failed')
     job = result.data as SetupJob
+    // One Auditor login per session. Best effort: the admin can still create it on the teams screen.
+    await createAuditorAccess(sessionId).catch(() => undefined)
     return { draft: job.draft, credenciais: cards(job) }
   } catch {
     // A reservation response can be lost after committing. Recover its draft too.

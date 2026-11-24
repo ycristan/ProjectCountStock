@@ -5,6 +5,8 @@ import { TeamSetupForm } from './_components/TeamSetupForm'
 import { TeamSessionClosing } from './_components/TeamSessionClosing'
 import { readTeamSessionClosing } from '@/actions/team-session'
 import { listarEquipes } from '@/actions/sessao'
+import { readAuditorAccess } from '@/actions/auditor'
+import { AuditorAccess } from './_components/AuditorAccess'
 import { EquipesForm } from './_components/EquipesForm'
 import { EquipesGerenciar } from './_components/EquipesGerenciar'
 import { Notice, buttonClass } from '@/components/ui'
@@ -31,6 +33,7 @@ export default async function EquipesPage({
     const saved = await readTeamSetup(id)
     if (saved.error) return <Notice>{saved.error}</Notice>
     const closing = teams.length ? await readTeamSessionClosing(id) : null
+    const auditor = teams.length ? await readAuditorAccess(id) : null
     return <>
       <TeamSetupForm sessionId={id} numberOfTeams={Number.isFinite(numEquipes) ? numEquipes : 1}
         savedDraft={saved.draft} credentials={saved.credenciais} />
@@ -39,6 +42,7 @@ export default async function EquipesPage({
       <nav className="mt-4 flex flex-wrap gap-2" aria-label="Team counting monitors">
         {teams.map(team => <Link key={team.id} href={'/team/' + team.id} className={buttonClass('outline', 'sm') + ' no-underline'}>Open monitor — {team.team_name}</Link>)}
       </nav>
+      {teams.length > 0 && <AuditorAccess sessionId={id} initial={auditor} />}
       {closing && <TeamSessionClosing sessionId={id} initial={closing} />}
     </>
   }

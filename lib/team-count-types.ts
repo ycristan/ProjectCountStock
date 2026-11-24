@@ -4,7 +4,7 @@ export type TeamCountRecord = {
 }
 export type TeamCountState = {
   teamId: string; teamName: string; warehouseName: string; phase: string; revision: string
-  role: 'counter' | 'independent' | 'admin'; membershipId: string | null
+  role: 'counter' | 'independent' | 'admin' | 'auditor'; membershipId: string | null
   finishState: string | null
   members: { id: string; name: string; role: string; order: number; finishState: string; departed: boolean }[]
   records: TeamCountRecord[]

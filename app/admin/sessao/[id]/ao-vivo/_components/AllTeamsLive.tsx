@@ -30,8 +30,10 @@ function statusOf(quantities: (string | undefined)[], compared: TeamComparisonIt
   return quantities.every(q => q === quantities[0]) ? 'equal' : 'different'
 }
 
-export function AllTeamsLive({ sessionId, teamIds, initial, inventory }: {
-  sessionId: string; teamIds: string[]; initial: (TeamCountState | null)[]; inventory: ItemBusca[]
+// readOnly (Auditor): no back link and no link into a team screen. The database also refuses
+// the Auditor on every write; hiding the buttons is only the visible half.
+export function AllTeamsLive({ sessionId, teamIds, initial, inventory, readOnly = false }: {
+  sessionId: string; teamIds: string[]; initial: (TeamCountState | null)[]; inventory: ItemBusca[]; readOnly?: boolean
 }) {
   const [states, setStates] = useState(initial)
   const [comparisons, setComparisons] = useState<(TeamComparisonItem[] | null)[]>([])
@@ -95,7 +97,7 @@ export function AllTeamsLive({ sessionId, teamIds, initial, inventory }: {
   const head = 'px-3 py-2.5 font-display text-[13px] font-bold uppercase tracking-[0.08em]'
 
   return <div className="flex flex-col gap-4">
-    <PageTop back={{ href: '/admin/sessao/' + sessionId + '/equipes', label: 'Session teams' }}
+    <PageTop back={readOnly ? undefined : { href: '/admin/sessao/' + sessionId + '/equipes', label: 'Session teams' }}
       title={'Live count' + (live[0] ? ' — ' + live[0].warehouseName : '')} />
     {unavailable
       ? <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-[15px] font-medium text-white">Connection lost. Counts shown may be out of date; the screen retries on its own.</p>
@@ -128,9 +130,9 @@ export function AllTeamsLive({ sessionId, teamIds, initial, inventory }: {
           </div>
           <span className="text-[13px] text-ink-2">{counters.map(c => c.name + ' ' + s.records.filter(r => r.membershipId === c.id).length).join(', ')}</span>
           {asking.length > 0 && <span className="flex items-center gap-1.5 text-[13px] font-semibold text-info">{asking.join(' and ')} asked to finish</span>}
-          <Link href={'/team/' + id} className={buttonClass(review ? 'dark' : 'outline', 'sm') + ' no-underline'}>
+          {!readOnly && <Link href={'/team/' + id} className={buttonClass(review ? 'dark' : 'outline', 'sm') + ' no-underline'}>
             <Icon name={review ? 'audit' : 'live'} />{review ? 'Review ' + s.teamName : 'Open ' + s.teamName}
-          </Link>
+          </Link>}
         </div>
       })}
     </section>
