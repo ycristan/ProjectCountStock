@@ -15,6 +15,9 @@ export async function verifySessionTitleBrowser({base,db,status}) {
     const admin=checked(await db.auth.admin.createUser({email,password,email_confirm:true})).user
     checked(await db.from('app_user_access').insert({user_id:admin.id,access_kind:'admin'}))
     const wh=checked(await db.from('warehouses').insert({name:'Title '+randomUUID()}).select('id').single())
+    // The form only offers warehouses that have products.
+    checked(await db.from('inventory_items').insert({brand_code:'TITLE-'+randomUUID(),brand_name:'Title proof product',
+      category:'Test',category1:'Test',bpu:10,pallet_size:0,weight_avg:0,brand_active:true,warehouse_id:wh.id}))
     const title='End Of Year Count '+randomUUID().slice(0,8)
     const page=await (await browser.newContext()).newPage()
     page.setDefaultTimeout(30000)
