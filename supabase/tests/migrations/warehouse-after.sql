@@ -1,10 +1,13 @@
 -- Every old field must remain byte-for-byte equivalent as JSON, including dates,
--- quantities and closed session metadata. Only warehouse_id is new.
+-- quantities and closed session metadata. Only warehouse_id is new, and count_sessions.title
+-- (added 24/11, optional, null for every old session). solo_sessions already had its own title,
+-- which stays compared.
 do $$
-declare original record; actual jsonb; main_id uuid; tab text; wrong bigint;
+declare original record; actual jsonb; main_id uuid; tab text; wrong bigint; added text;
 begin
  for original in select * from migration_probe.snapshots loop
-   execute format('select jsonb_agg(to_jsonb(t)-''warehouse_id'' order by (to_jsonb(t)-''warehouse_id'')::text) from public.%I t',original.name) into actual;
+   added:=case when original.name='count_sessions' then 'title' else 'warehouse_id' end;
+   execute format('select jsonb_agg(to_jsonb(t)-''warehouse_id''-%L order by (to_jsonb(t)-''warehouse_id''-%L)::text) from public.%I t',added,added,original.name) into actual;
    if actual is distinct from original.content then
      raise exception 'Warehouse migration changed historical fields in %',original.name;
    end if;
