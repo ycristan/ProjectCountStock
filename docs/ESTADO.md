@@ -17,8 +17,8 @@ PR 5 e correções em produção (#117, #118). 5a em produção (#119, 12/11): A
 Próximo: 6 (tela Audit Inventory com período, produtos e Excel). Pode entrar antes de 02/01.
 Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).
 
-## Em PR, aguardando Yuri (24/11)
-Auditor (#122) e assinatura no próprio aparelho, sem testemunha tardia e "Hold to submit to admin" (#124) em produção. Aberta: título obrigatório na sessão de equipes (migration `count_session_title` já aplicada em produção; fora do Auditor e das telas dos contadores, que exigiriam mudar `read_team_count`).
+## Em produção e aprovado por Yuri em 24/11
+Auditor (#122); assinatura no próprio aparelho, sem testemunha tardia e "Hold to submit to admin" (#124); título obrigatório na sessão de equipes (#125, migration `count_session_title` aplicada). O título ainda não aparece no Auditor, nas telas dos contadores nem no nome do Excel: exigiria mudar `read_team_count`; só se Yuri pedir.
 
 ## Depois do Inventory
 - Varredura de idioma: todo texto da aplicação em inglês britânico (PRODUTO.md); ~60 textos em português achados por busca simples.
