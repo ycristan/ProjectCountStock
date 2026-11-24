@@ -63,6 +63,36 @@ select is((select count(*) from public.team_count_records),0::bigint,'Auditor ha
 select is((select count(*) from public.team_memberships),0::bigint,'Auditor has no direct read on memberships');
 select throws_ok($q$select * from public.session_auditors$q$,'42501',null,'Nobody but the server reads the Auditor PINs');
 
+-- Every write command with REAL arguments (team in the counting phase, a real member, a fresh
+-- command id): the Auditor must be refused for authorization (42501), not for bad arguments.
+select throws_ok($q$select public.start_team_count('40000000-0000-0000-0000-000000000200',1)$q$,'42501',null,'Auditor cannot start the count');
+select throws_ok($q$select public.request_team_finish('40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000301',1,'40000000-0000-0000-0000-000000000801')$q$,'42501',null,'Auditor cannot request finish');
+select throws_ok($q$select public.decide_team_finish('40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000301',true,1,'40000000-0000-0000-0000-000000000802')$q$,'42501',null,'Auditor cannot decide finish');
+select throws_ok($q$select public.submit_team_reconciliation('40000000-0000-0000-0000-000000000200',1,'40000000-0000-0000-0000-000000000803')$q$,'42501',null,'Auditor cannot submit reconciliation');
+select throws_ok($q$select public.decide_team_item('40000000-0000-0000-0000-000000000200','aud-a1',null,1,'40000000-0000-0000-0000-000000000804')$q$,'42501',null,'Auditor cannot decide an item');
+select throws_ok($q$select public.mark_team_counter_absent('40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000301','not there',1,'40000000-0000-0000-0000-000000000805')$q$,'42501',null,'Auditor cannot mark a counter absent');
+select throws_ok($q$select public.formalize_counter_absence('40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000900','40000000-0000-0000-0000-000000000301','not there','40000000-0000-0000-0000-000000000806')$q$,'42501',null,'Auditor cannot formalize an absence');
+select throws_ok($q$select public.record_independent_absence('40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000900','not there','40000000-0000-0000-0000-000000000807')$q$,'42501',null,'Auditor cannot record an Independent absence');
+select throws_ok($q$select public.witness_independent_absence('40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000900','40000000-0000-0000-0000-000000000808')$q$,'42501',null,'Auditor cannot witness an absence');
+select throws_ok($q$select public.sign_team_result('40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000900','40000000-0000-0000-0000-000000000809')$q$,'42501',null,'Auditor cannot sign');
+select throws_ok($q$select public.cancel_team_signing('40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000900','40000000-0000-0000-0000-000000000810')$q$,'42501',null,'Auditor cannot cancel signing');
+select throws_ok($q$select public.confirm_team_close('40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000900','40000000-0000-0000-0000-000000000811')$q$,'42501',null,'Auditor cannot confirm the team close');
+select throws_ok($q$select public.close_team_session('40000000-0000-0000-0000-000000000100','{}')$q$,'42501',null,'Auditor cannot close the session');
+select throws_ok($q$select public.reserve_team_setup('40000000-0000-0000-0000-000000000100','[]','[]')$q$,'42501',null,'Auditor cannot reserve a team setup');
+select throws_ok($q$select public.complete_team_setup('40000000-0000-0000-0000-000000000100')$q$,'42501',null,'Auditor cannot complete a team setup');
+-- Read functions the Auditor must NOT get (reviews, closing list, setup with PINs, signatures).
+select throws_ok($q$select public.read_team_reviews('40000000-0000-0000-0000-000000000200')$q$,'42501',null,'Auditor cannot read the admin reviews');
+select throws_ok($q$select public.read_team_session_closing('40000000-0000-0000-0000-000000000100')$q$,'42501',null,'Auditor cannot read the closing list');
+select throws_ok($q$select public.read_team_setup('40000000-0000-0000-0000-000000000100')$q$,'42501',null,'Auditor cannot read the team setup (PINs)');
+select throws_ok($q$select public.read_team_signing('40000000-0000-0000-0000-000000000200')$q$,'42501',null,'Auditor cannot read the signatures');
+-- Direct table writes, including self-promotion to admin.
+select throws_ok($q$insert into public.app_user_access(user_id,access_kind) values('40000000-0000-0000-0000-000000000005','admin')$q$,'42501',null,'Auditor cannot make themselves admin');
+select throws_ok($q$update public.session_auditors set revoked_at=null$q$,'42501',null,'Auditor cannot edit the Auditor access');
+select throws_ok($q$update public.team_flows set phase='closed' where team_id='40000000-0000-0000-0000-000000000200'$q$,'42501',null,'Auditor cannot change a team phase');
+select throws_ok($q$update public.team_count_records set cases=99$q$,'42501',null,'Auditor cannot change a count');
+select throws_ok($q$delete from public.team_count_records$q$,'42501',null,'Auditor cannot delete a count');
+select throws_ok($q$insert into public.team_memberships(team_id,user_id,display_name,role,display_order) values('40000000-0000-0000-0000-000000000200','40000000-0000-0000-0000-000000000005','Sneaky','counter',9)$q$,'42501',null,'Auditor cannot join a team');
+
 -- Writes: call EVERY function the Auditor could execute with plausible arguments, then compare
 -- the whole database. Anything that changed data fails here, including functions added later.
 do $$
