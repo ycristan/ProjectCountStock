@@ -18,6 +18,9 @@ PR 5 e correções em produção (#117, #118; migrations aplicadas em 10/11).
 Próximo: 6 (tela Audit Inventory com período, produtos e Excel). Pode entrar antes de 02/01.
 Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).
 
+## Auditor (decisão em DECISOES.md, 24/11)
+Migration `auditor_access` aplicada em produção em 24/11. Código na PR aberta (CI verde): login só de leitura, um por sessão, só na tela ao vivo. Falta: teste manual na warehouse TESTE e autorização de Yuri para mergear. Até o merge, o preview já usa o banco novo.
+
 ## Depois do Inventory
 - Varredura de idioma: todo texto da aplicação em inglês britânico (PRODUTO.md); ~60 textos em português achados por busca simples.
 - Itens 2, 3, 4 e 6 de TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11". Yuri assumiu o risco no prazo de 27/11.

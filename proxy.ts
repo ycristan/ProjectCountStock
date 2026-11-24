@@ -32,12 +32,20 @@ export async function proxy(request: NextRequest) {
 
   if (!user) return supabaseResponse
 
-  const [{ data: adminValue }, { data: soloValue }] = await Promise.all([
+  const [{ data: adminValue }, { data: soloValue }, { data: auditorValue }] = await Promise.all([
     supabase.rpc('is_admin'),
     supabase.rpc('is_solo_counter'),
+    supabase.rpc('is_auditor'),
   ])
   const isAdmin = adminValue === true
   const isSoloCounter = soloValue === true
+  // Auditor: read-only login. Only /auditor (and the sign-out POST on it) is theirs.
+  // A revoked or closed-session Auditor is not recognised here and falls through to the
+  // counter rules, which give them nothing (no counter account), so they see no data anywhere.
+  if (!isAdmin && !isSoloCounter && auditorValue === true) {
+    if (pathname.startsWith('/auditor')) return supabaseResponse
+    return NextResponse.redirect(new URL('/auditor', request.url))
+  }
   let counterHome = '/busca'
   if (!isAdmin && !isSoloCounter && (pathname === '/' || pathname === '/login')) {
     const { data: account } = await supabase.from('counter_accounts').select('role')

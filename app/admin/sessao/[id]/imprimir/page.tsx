@@ -1,5 +1,6 @@
 import { listarEquipes } from '@/actions/sessao'
 import { readTeamSetup } from '@/actions/team-setup'
+import { readAuditorAccess } from '@/actions/auditor'
 import { headers } from 'next/headers'
 import qrcode from 'qrcode'
 import Link from 'next/link'
@@ -16,10 +17,16 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default async function ImprimirPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ only?: string }>
 }) {
   const { id } = await params
+  // ?only=auditor prints just the Auditor card (one per session, no card per team).
+  const onlyAuditor = (await searchParams).only === 'auditor'
+  const auditorAccess = await readAuditorAccess(id)
+  const auditor = auditorAccess && !auditorAccess.revoked ? auditorAccess : null
   // New-flow sessions keep their credentials in the setup job; legacy ones in counter_accounts.
   const setup = process.env.TEAM_SETUP_ENABLED === 'true' ? await readTeamSetup(id) : null
   const contadores: Card[] = setup?.credenciais
@@ -42,7 +49,7 @@ export default async function ImprimirPage({
     if (!teamMap.has(c.team)) teamMap.set(c.team, [])
     teamMap.get(c.team)!.push(c)
   }
-  const teams = [...teamMap.values()].sort((a, b) => a[0].team.localeCompare(b[0].team))
+  const teams = onlyAuditor ? [] : [...teamMap.values()].sort((a, b) => a[0].team.localeCompare(b[0].team))
 
   return (
     <>
@@ -58,7 +65,7 @@ export default async function ImprimirPage({
         <Link href={`/admin/sessao/${id}/equipes`} className={buttonClass('outline', 'sm') + ' no-underline'}>← Teams</Link>
         <PrintButton />
         <span className="text-[13px] text-ink-2">
-          {teams.length} team{teams.length !== 1 ? 's' : ''} · {contadores.length} cards
+          {onlyAuditor ? '1 card' : <>{teams.length} team{teams.length !== 1 ? 's' : ''} · {contadores.length + (auditor ? 1 : 0)} cards</>}
         </span>
       </div>
 
@@ -69,7 +76,7 @@ export default async function ImprimirPage({
           const sorted = [...grupo].sort((a, b) =>
             Number(a.role === 'Independent') - Number(b.role === 'Independent') || a.role.localeCompare(b.role, undefined, { numeric: true }))
           return (
-            <div key={first.team} className={ti < teams.length - 1 ? 'page-break' : ''}>
+            <div key={first.team} className={ti < teams.length - 1 || auditor ? 'page-break' : ''}>
               <h1
                 className="text-center mb-5 font-black uppercase tracking-widest"
                 style={{ fontSize: '2.4rem', letterSpacing: '0.12em' }}
@@ -135,8 +142,41 @@ export default async function ImprimirPage({
           )
         })}
 
-        {teams.length === 0 && (
-          <p className="text-center text-ink-3 py-20">No teams found.</p>
+        {auditor && (
+          <div>
+            <h1 className="text-center mb-5 font-black uppercase tracking-widest" style={{ fontSize: '2.4rem', letterSpacing: '0.12em' }}>
+              Auditor
+            </h1>
+            <div className="border-[3px] border-black">
+              <div className="flex">
+                <div className="flex-1 p-5 border-r-[3px] border-black">
+                  <div className="font-black uppercase tracking-wide" style={{ fontSize: '1.1rem' }}>Auditor</div>
+                  <div className="font-bold mt-1" style={{ fontSize: '1.2rem' }}>Live count only (read-only)</div>
+                  <div className="flex gap-4 mt-4">
+                    <div className="border-2 border-line-2 rounded-lg px-4 py-2 bg-ground">
+                      <div className="text-[10px] font-bold text-ink-3 uppercase tracking-widest mb-1">Team PIN</div>
+                      <div className="font-black font-mono tracking-[0.25em]" style={{ fontSize: '1.6rem' }}>{auditor.team_code}</div>
+                    </div>
+                    <div className="border-2 border-line-2 rounded-lg px-4 py-2 bg-ground">
+                      <div className="text-[10px] font-bold text-ink-3 uppercase tracking-widest mb-1">Personal PIN</div>
+                      <div className="font-black font-mono tracking-[0.25em]" style={{ fontSize: '1.6rem' }}>{auditor.pin}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-2 px-5 bg-black" style={{ minWidth: '168px' }}>
+                  <div className="bg-white rounded p-1" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+                  <div className="text-white font-black uppercase text-xs tracking-[0.35em]"
+                    style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)' }}>
+                    Scan Me
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {teams.length === 0 && !auditor && (
+          <p className="text-center text-ink-3 py-20">{onlyAuditor ? 'No active Auditor access.' : 'No teams found.'}</p>
         )}
       </div>
     </>

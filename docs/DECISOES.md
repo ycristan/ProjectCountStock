@@ -293,3 +293,5 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - O acesso termina quando a contagem encerra (Yuri descartou o prazo de 24 horas). O banco já recusa leitura em sessão fechada, então não precisa de exceção.
 - Yuri aceitou que o Auditor veja as contagens enquanto as equipes ainda contam (empresa terceira, sem contato com os contadores).
 - Segurança: papel só de leitura conferido no banco e no servidor; toda função que grava recusa o Auditor, com teste negativo em cada uma.
+- Criação do acesso: um clique do admin na tela de equipes ("Create Auditor access"), não dentro do setup de equipes. Motivo: a criação automática alongava a ação do setup e quebrou o teste de navegador dele no CI; o setup é o caminho mais crítico e não ganha risco por causa do Auditor.
+- Cartão impresso (Yuri, 24/11): um único cartão do Auditor por sessão, com QR para o login e os dois PINs, igual ao das equipes. Botão "Print card" no bloco do Auditor; a impressão das equipes o inclui como última página. Nunca um cartão por equipe.
