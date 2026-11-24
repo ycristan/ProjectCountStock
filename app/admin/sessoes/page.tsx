@@ -8,13 +8,13 @@ export default async function SessoesPage() {
 
   const { data: sessoes } = await supabase
     .from('count_sessions')
-    .select('id, created_at, status, teams(team_flows(team_id))')
+    .select('id, created_at, status, title, warehouses(name), teams(team_flows(team_id))')
     .order('created_at', { ascending: false })
 
   return (
     <div>
       <PageTop back={{ href: '/admin', label: 'Home' }} title="Count Sessions" />
-      <SessoesClient sessoes={(sessoes ?? []).map(({ teams, ...s }) => ({ ...s, href: sessionHref(s.id, teams) }))} />
+      <SessoesClient sessoes={(sessoes ?? []).map(({ teams, warehouses, ...s }) => ({ ...s, warehouse: (warehouses as unknown as { name: string } | null)?.name ?? null, href: sessionHref(s.id, teams) }))} />
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button, Tag, buttonClass, cardClass } from '@/components/ui'
 import { forcarFecharSessao, deletarSessao } from '@/actions/sessao'
 
-type Session = { id: string; created_at: string; status: string; href: string }
+type Session = { id: string; created_at: string; status: string; title: string | null; warehouse: string | null; href: string }
 
 export function SessoesClient({ sessoes }: { sessoes: Session[] }) {
   const router = useRouter()
@@ -48,7 +48,8 @@ export function SessoesClient({ sessoes }: { sessoes: Session[] }) {
         {sessoes.map((s) => (
           <div key={s.id} className={cardClass + ' flex flex-wrap items-center justify-between gap-3 p-3.5'}>
             <div className="flex min-w-0 flex-col gap-1">
-              <strong className="text-base">{fmt(s.created_at)}</strong>
+              <strong className="text-base">{s.title ?? fmt(s.created_at)}</strong>
+              {s.title && <span className="text-[13px] text-ink-2">{[s.warehouse, fmt(s.created_at)].filter(Boolean).join(' · ')}</span>}
               <span className="flex items-center gap-2 text-[13px] text-ink-2">Status <Tag tone={s.status === 'fechada' ? 'neutral' : 'ok'}>{s.status === 'fechada' ? 'Closed' : 'Open'}</Tag></span>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">

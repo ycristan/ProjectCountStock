@@ -24,6 +24,7 @@ export default async function EquipesPage({
   const numEquipes = Math.max(1, parseInt(n ?? '1'))
 
   const db = await createClient()
+  const { data: session } = await db.from('count_sessions').select('title').eq('id', id).maybeSingle()
   const { data: allTeams, error } = await db.from('teams').select('id,team_name,team_flows(team_id)').eq('session_id', id)
   if (error || !allTeams) return <Notice>Teams are unavailable. Please reload.</Notice>
   const teams = allTeams.filter(t => t.team_flows)
@@ -35,6 +36,7 @@ export default async function EquipesPage({
     const closing = teams.length ? await readTeamSessionClosing(id) : null
     const auditor = teams.length ? await readAuditorAccess(id) : null
     return <>
+      {session?.title && <h1 className="m-0 mb-4 font-display text-[28px] leading-tight font-bold uppercase">{session.title}</h1>}
       <TeamSetupForm sessionId={id} numberOfTeams={Number.isFinite(numEquipes) ? numEquipes : 1}
         savedDraft={saved.draft} credentials={saved.credenciais} />
       {teams.length > 0 && <Link href={'/admin/sessao/' + id + '/ao-vivo'} className={buttonClass('primary', 'md') + ' mt-4 no-underline'}>

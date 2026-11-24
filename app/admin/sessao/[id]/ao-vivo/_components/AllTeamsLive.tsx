@@ -32,8 +32,8 @@ function statusOf(quantities: (string | undefined)[], compared: TeamComparisonIt
 
 // readOnly (Auditor): no back link and no link into a team screen. The database also refuses
 // the Auditor on every write; hiding the buttons is only the visible half.
-export function AllTeamsLive({ sessionId, teamIds, initial, inventory, readOnly = false }: {
-  sessionId: string; teamIds: string[]; initial: (TeamCountState | null)[]; inventory: ItemBusca[]; readOnly?: boolean
+export function AllTeamsLive({ sessionId, sessionTitle = null, teamIds, initial, inventory, readOnly = false }: {
+  sessionId: string; sessionTitle?: string | null; teamIds: string[]; initial: (TeamCountState | null)[]; inventory: ItemBusca[]; readOnly?: boolean
 }) {
   const [states, setStates] = useState(initial)
   const [comparisons, setComparisons] = useState<(TeamComparisonItem[] | null)[]>([])
@@ -97,7 +97,7 @@ export function AllTeamsLive({ sessionId, teamIds, initial, inventory, readOnly 
   const head = 'px-3 py-2.5 font-display text-[13px] font-bold uppercase tracking-[0.08em]'
 
   return <div className="flex flex-col gap-4">
-    <PageTop back={readOnly ? undefined : { href: '/admin/sessao/' + sessionId + '/equipes', label: 'Session teams' }}
+    <PageTop kicker={sessionTitle} back={readOnly ? undefined : { href: '/admin/sessao/' + sessionId + '/equipes', label: 'Session teams' }}
       title={'Live count' + (live[0] ? ' — ' + live[0].warehouseName : '')} />
     {unavailable
       ? <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-[15px] font-medium text-white">Connection lost. Counts shown may be out of date; the screen retries on its own.</p>

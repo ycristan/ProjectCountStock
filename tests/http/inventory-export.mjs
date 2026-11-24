@@ -15,6 +15,7 @@ import { createServerClient } from '@supabase/ssr'
 import * as XLSX from 'xlsx'
 import { verifyTeamPinBrowser } from './team-pin-browser.mjs'
 import { verifyAuditorBrowser } from './auditor-browser.mjs'
+import { verifySessionTitleBrowser } from './session-title-browser.mjs'
 import { verifyTeamContexts } from './team-context.mjs'
 
 assert.equal(process.env.GITHUB_ACTIONS, 'true', 'Disposable GitHub runner required')
@@ -58,6 +59,7 @@ try {
   await verifyTeamContexts({base,db,status,sql,envelopes})
   await verifyTeamPinBrowser({base,db,status,sql})
   await verifyAuditorBrowser({base,db,status,sql})
+  await verifySessionTitleBrowser({base,db,status})
 
   const password=randomUUID()+'aA!9'
   const email='zip-'+randomUUID()+'@example.invalid'

@@ -11,6 +11,7 @@ export default async function AllTeamsLivePage({ params }: { params: Promise<{ i
   if (process.env.TEAM_SETUP_ENABLED !== 'true' || !(await isAdmin())) notFound()
   const { id } = await params
   const db = await createClient()
+  const { data: session } = await db.from('count_sessions').select('title').eq('id', id).maybeSingle()
   const { data: teams, error } = await db.from('teams').select('id, team_flows(team_id)').eq('session_id', id).order('team_name')
   const back = { href: '/admin/sessao/' + id + '/equipes', label: 'Session teams' }
   if (error) return <><PageTop back={back} title="Live count" /><p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-white">Teams are unavailable. Please reload.</p></>
@@ -22,5 +23,5 @@ export default async function AllTeamsLivePage({ params }: { params: Promise<{ i
   // a closed team no longer reads it, so take the first team that still can.
   let inventory = null
   for (const teamId of teamIds) if ((inventory = await readTeamInventory(teamId))) break
-  return <AllTeamsLive sessionId={id} teamIds={teamIds} initial={states} inventory={inventory ?? []} />
+  return <AllTeamsLive sessionId={id} sessionTitle={session?.title ?? null} teamIds={teamIds} initial={states} inventory={inventory ?? []} />
 }

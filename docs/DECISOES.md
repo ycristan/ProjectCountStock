@@ -300,3 +300,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Yuri achou no teste: a tela do Independente aceitava assinar com o PIN dos outros contadores; os botões de testemunha apareciam depois de o Independente assinar. Causa: a tela ainda seguia o desenho de 29/10 e a condição do botão de testemunha não checava o tipo da confirmação. O banco já recusava a testemunha tardia ("No absence waiting for a witness").
 - Decisão: vale o R11 de 02/11, agora também no servidor: o PIN pessoal só funciona na sessão da própria pessoa. Absent: Independente marca contadores; só o admin marca o Independente. Testemunha por PIN só no aparelho do contador que testemunha.
 - "Submit to Admin" do Independente passa a "Hold to submit to admin": segurar 4 s e depois confirmar, igual ao "Hold to finish" dos contadores.
+
+## Título da sessão de equipes (2026-11-24)
+- Yuri: título obrigatório nas sessões novas (ex.: "End Of Year Count CCH - Main Warehouse 2026"), como no solo. Sessões antigas ficam sem título e aparecem por warehouse e data.
+- Obrigatório só pela ação de criar sessão (até 120 caracteres, sem espaços nas pontas). No banco a coluna é opcional, com checagem de título em branco ou longo, para não quebrar sessões existentes nem testes que inserem sessão direto.
+- Aparece na lista de sessões, na home do admin, no Audit Count, na tela de equipes e na contagem ao vivo do admin. Fora desta entrega: Auditor, telas dos contadores e nome do Excel (exigiriam mudar `read_team_count`, usada por todos).
