@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Button, Tag, cardClass } from '@/components/ui'
+import Link from 'next/link'
+import { Button, Tag, buttonClass, cardClass } from '@/components/ui'
 import { useConfirm } from '@/components/confirm'
 import { createAuditorAccess, revokeAuditorAccess, type AuditorAccess as Access } from '@/actions/auditor'
 
@@ -27,7 +28,8 @@ export function AuditorAccess({ sessionId, initial }: { sessionId: string; initi
       <div className="flex flex-col"><span className="text-[13px] text-ink-2">PIN</span><span className={pin}>{access.pin}</span></div>
     </div>}
     {error && <p role="alert" className="m-0 rounded-md bg-alert px-3 py-2 text-[15px] font-medium text-white">{error}</p>}
-    <div>
+    <div className="flex flex-wrap gap-2">
+      {active && <Link href={'/admin/sessao/' + sessionId + '/imprimir?only=auditor'} className={buttonClass('outline', 'sm') + ' no-underline'}>Print card</Link>}
       {active
         ? <Button variant="outline" size="sm" disabled={pending} onClick={async () => {
             if (!(await confirm({ title: 'Revoke Auditor access?', text: 'Auditors will lose access to the live count immediately.', confirm: 'Revoke' }))) return
