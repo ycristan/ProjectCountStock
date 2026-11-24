@@ -295,3 +295,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Segurança: papel só de leitura conferido no banco e no servidor; toda função que grava recusa o Auditor, com teste negativo em cada uma.
 - Criação do acesso: um clique do admin na tela de equipes ("Create Auditor access"), não dentro do setup de equipes. Motivo: a criação automática alongava a ação do setup e quebrou o teste de navegador dele no CI; o setup é o caminho mais crítico e não ganha risco por causa do Auditor.
 - Cartão impresso (Yuri, 24/11): um único cartão do Auditor por sessão, com QR para o login e os dois PINs, igual ao das equipes. Botão "Print card" no bloco do Auditor; a impressão das equipes o inclui como última página. Nunca um cartão por equipe.
+
+## Assinatura no próprio aparelho, testemunha e envio do Independente (2026-11-24)
+- Yuri achou no teste: a tela do Independente aceitava assinar com o PIN dos outros contadores; os botões de testemunha apareciam depois de o Independente assinar. Causa: a tela ainda seguia o desenho de 29/10 e a condição do botão de testemunha não checava o tipo da confirmação. O banco já recusava a testemunha tardia ("No absence waiting for a witness").
+- Decisão: vale o R11 de 02/11, agora também no servidor: o PIN pessoal só funciona na sessão da própria pessoa. Absent: Independente marca contadores; só o admin marca o Independente. Testemunha por PIN só no aparelho do contador que testemunha.
+- "Submit to Admin" do Independente passa a "Hold to submit to admin": segurar 4 s e depois confirmar, igual ao "Hold to finish" dos contadores.

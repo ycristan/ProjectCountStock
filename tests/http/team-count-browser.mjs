@@ -9,6 +9,8 @@ import { pinPassword } from '../../lib/pin-credentials.ts'
 // Confirmations are an in-app dialog (components/confirm.tsx), not the browser's box.
 const confirmInApp=async p=>{await p.locator('dialog[open] [data-confirm]').click();await p.locator('dialog[open]').waitFor({state:'detached'})}
 // Hold to finish (components/hold-button.tsx): Space held through the 4 s countdown.
+// Hold to submit to admin (same component): Space held through the 4 s countdown.
+const holdToSubmit=async p=>{await p.getByRole('button',{name:'Hold to submit to admin',exact:true}).focus();await p.keyboard.down('Space');await delay(4300);await p.keyboard.up('Space')}
 const holdToFinish=async p=>{await p.getByRole('button',{name:'Hold to finish',exact:true}).focus();await p.keyboard.down('Space');await delay(4300);await p.keyboard.up('Space')}
 
 export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,page,plan,session,wh}) {
@@ -247,9 +249,9 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         assert.equal(checked(await db.from('team_count_records').select('weighing').eq('team_id',stored.id).eq('brand_code',codes[2])
           .eq('units',49).single()).weighing.grossG,4900,'raw weighing stored')
         stage='reconciliation through the screen (block 7)'
-        const submitButton=independent.p.getByRole('button',{name:'Submit to admin',exact:true})
+        const submitButton=independent.p.getByRole('button',{name:'Hold to submit to admin',exact:true})
         assert.ok(await submitButton.isDisabled(),'submission blocked while items are pending')
-        assert.equal(await page.getByRole('button',{name:/Enter reconciled count|Submit to admin/}).count(),0,'admin never reconciles')
+        assert.equal(await page.getByRole('button',{name:/Enter reconciled count|submit to admin/i}).count(),0,'admin never reconciles')
         await independent.p.locator('tr[data-brand="'+codes[0]+'"]').getByRole('button',{name:'Enter reconciled count',exact:true}).click()
         await independent.p.getByText('Original counts',{exact:true}).waitFor()
         await independent.p.getByText('1+4',{exact:true}).waitFor()
@@ -267,7 +269,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
           p_weight_avg:0,p_tare:300}))
         await independent.p.locator('tr[data-brand="'+codes[1]+'"][data-result="Reconciled 0+0"]').waitFor()
         stage='submission to the admin (block 7)'
-        await submitButton.click()
+        await holdToSubmit(independent.p)
         await confirmInApp(independent.p)
         await independent.p.locator('[data-phase="admin_review"]').waitFor()
         await page.locator('[data-phase="admin_review"]').waitFor()
@@ -275,7 +277,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         const result=checked(await db.from('team_result_items').select('brand_code,quantity_units,resolution').eq('team_id',stored.id))
         assert.deepEqual(Object.fromEntries(result.map(r=>[r.brand_code,r.quantity_units+':'+r.resolution])),
           {[codes[0]]:'15:reconciled',[codes[1]]:'0:reconciled',[codes[2]]:'49:weight_tolerance'})
-        assert.equal(await independent.p.getByRole('button',{name:/Enter reconciled count|Edit reconciled count|Submit to admin/}).count(),0)
+        assert.equal(await independent.p.getByRole('button',{name:/Enter reconciled count|Edit reconciled count|submit to admin/i}).count(),0)
         stage='admin review: selective recount round (block 8)'
         assert.equal(await independent.p.getByRole('button',{name:/Accept result|selected for recount/}).count(),0,'only the admin reviews')
         const returnButton=page.getByRole('button',{name:/selected for recount$/})
@@ -293,7 +295,7 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         await reconcileInputs.nth(2).fill('3')
         await independent.p.getByRole('button',{name:'Confirm Count',exact:true}).click()
         await independent.p.locator('tr[data-brand="'+codes[1]+'"][data-result="Recounted 0+3"]').waitFor()
-        await submitButton.click()
+        await holdToSubmit(independent.p)
         await confirmInApp(independent.p)
         await page.locator('[data-phase="admin_review"]').waitFor()
         await page.getByText(/Round 1: returned /).waitFor()
@@ -310,34 +312,59 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         assert.ok((await first.client.rpc('read_team_count',{p_team:stored.id})).error)
         assert.ok((await first.client.rpc('save_team_count',{...args})).error)
         assert.equal(checked(await first.client.from('team_count_records').select('*').eq('team_id',stored.id)).length,0)
-        stage='signature collection by PIN on the admin screen (block 11)'
+        stage='signature collection: each person on their own device (block 11)'
         const lead=team.members.find(m=>m.role==='independent'), present=team.members[1], gone=team.members[0]
-        const block=name=>page.locator('[data-participant="'+name+'"]')
+        const block=(p,name)=>p.locator('[data-participant="'+name+'"]')
+        const signButton={name:'SIGN WITH PERSONAL PIN CODE',exact:true}
         await page.locator('[data-signing]').waitFor()
+        await second.p.locator('[data-signing]').waitFor()
+        await independent.p.locator('[data-signing]').waitFor()
         assert.equal(await page.locator('[data-participant]').last().getAttribute('data-participant'),lead.name,'Independent last')
-        await block(lead.name).getByText('Signs after every counter.',{exact:true}).waitFor()
-        assert.equal(await block(lead.name).getByRole('button').count(),0,'Independent cannot sign before the counters')
-        await block(present.name).getByRole('button',{name:'SIGN BY PIN CODE',exact:true}).click()
-        await block(present.name).locator('input[type="password"]').fill(lead.pin)
-        await block(present.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
-        await page.getByText('PIN does not match this person.',{exact:true}).waitFor()
+        await block(independent.p,lead.name).getByText('Signs after every counter.',{exact:true}).waitFor()
+        assert.equal(await block(independent.p,lead.name).getByRole('button').count(),0,'Independent cannot sign before the counters')
+        // The admin screen signs for nobody and cannot mark a counter absent.
+        assert.equal(await page.getByRole('button',signButton).count(),0,'admin screen has no personal-PIN signing')
+        assert.equal(await page.locator('input[type="password"]').count(),0,'admin screen has no PIN field')
+        assert.equal(await block(page,present.name).getByRole('button',{name:'Absent',exact:true}).count(),0,'admin cannot mark a counter absent')
+        await page.locator('[data-participant="'+present.name+'"][data-status="Waiting signature..."]').waitFor()
+        // The Independent screen shows the counters as waiting, with Absent but no way to sign for them.
+        await independent.p.locator('[data-participant="'+present.name+'"][data-status="Waiting signature..."]').waitFor()
+        assert.equal(await independent.p.getByRole('button',signButton).count(),0,'Independent cannot sign for a counter')
+        assert.equal(await independent.p.locator('input[type="password"]').count(),0,'Independent screen has no PIN field for others')
+        assert.equal(await block(independent.p,present.name).getByRole('button',{name:'Absent',exact:true}).count(),1,'Independent can mark a counter absent')
+        // A counter device: only their own signing button; nothing for the other counter.
+        assert.equal(await block(second.p,present.name).getByRole('button',signButton).count(),1)
+        assert.equal(await block(second.p,gone.name).getByRole('button').count(),0,'a counter cannot sign or mark absent for another')
+        assert.equal(await block(second.p,lead.name).getByRole('button').count(),0,'a counter cannot touch the Independent')
+        await block(second.p,present.name).getByRole('button',signButton).click()
+        await block(second.p,present.name).locator('input[type="password"]').fill(lead.pin)
+        await block(second.p,present.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
+        await second.p.getByText('PIN does not match this person.',{exact:true}).waitFor()
         assert.equal(checked(await db.from('team_confirmations').select('id').eq('team_id',stored.id)).length,0,'wrong PIN saves nothing')
-        await block(present.name).locator('input[type="password"]').fill(present.pin)
-        await block(present.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
-        await page.locator('[data-participant="'+present.name+'"][data-status="Signed by PIN"]').waitFor()
+        await block(second.p,present.name).locator('input[type="password"]').fill(present.pin)
+        await block(second.p,present.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
+        await second.p.locator('[data-participant="'+present.name+'"][data-status="Signed by PIN"]').waitFor()
         await page.getByText(/^Result frozen/).waitFor()
         assert.equal(await page.getByRole('button',{name:'Cancel signature collection',exact:true}).count(),0,'no cancel after first confirmation')
-        stage='formal absence of a revoked counter (block 11)'
-        await block(gone.name).getByRole('button',{name:'Absent',exact:true}).click()
-        await block(gone.name).getByLabel('Reason').fill('Left before signing')
-        await block(gone.name).locator('input[type="password"]').fill(lead.pin)
-        await block(gone.name).getByRole('button',{name:'Record absence',exact:true}).click()
-        await page.locator('[data-participant="'+gone.name+'"][data-status="Absent: Left before signing"]').waitFor()
-        stage='Independent signs last; the admin closes the team (decision of 2026-10-29)'
-        await block(lead.name).getByRole('button',{name:'SIGN BY PIN CODE',exact:true}).click()
-        await block(lead.name).locator('input[type="password"]').fill(lead.pin)
-        await block(lead.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
+        stage='formal absence of a revoked counter, on the Independent device (block 11)'
+        await block(independent.p,gone.name).getByRole('button',{name:'Absent',exact:true}).click()
+        await block(independent.p,gone.name).getByLabel('Reason').fill('Left before signing')
+        await block(independent.p,gone.name).locator('input[type="password"]').fill(lead.pin)
+        await block(independent.p,gone.name).getByRole('button',{name:'Record absence',exact:true}).click()
+        await independent.p.locator('[data-participant="'+gone.name+'"][data-status="Absent: Left before signing"]').waitFor()
+        stage='Independent signs last, on their own device; the admin closes the team (decision of 2026-10-29)'
+        await block(independent.p,lead.name).getByRole('button',signButton).click()
+        await block(independent.p,lead.name).locator('input[type="password"]').fill(lead.pin)
+        await block(independent.p,lead.name).getByRole('button',{name:'Confirm signature',exact:true}).click()
+        await independent.p.locator('[data-participant="'+lead.name+'"][data-status="Signed by PIN"]').waitFor()
+        stage='no witness after the Independent signed (24/11)'
         await page.locator('[data-participant="'+lead.name+'"][data-status="Signed by PIN"]').waitFor()
+        assert.equal(await page.getByRole('button',{name:/Witness/}).count(),0,'admin has no witness buttons after the Independent signed')
+        assert.equal(await independent.p.getByRole('button',{name:/Witness/}).count(),0,'Independent has no witness buttons after signing')
+        assert.equal(await second.p.getByRole('button',{name:/Witness/}).count(),0,'a counter has no witness button after the Independent signed')
+        const signedVersion=checked(await db.from('team_flows').select('result_version_id').eq('team_id',stored.id).single())
+        const lateWitness=await login.rpc('witness_independent_absence',{p_team:stored.id,p_version:signedVersion.result_version_id,p_command:randomUUID()})
+        assert.equal(lateWitness.error?.message,'No absence waiting for a witness','the database also refuses a witness after the Independent signed')
         await independent.p.getByText('All signatures received. Waiting for the admin to close the team.',{exact:true}).waitFor()
         assert.equal(checked(await db.from('team_flows').select('phase').eq('team_id',stored.id).single()).phase,'signing','last signature does not close')
         checked(await independent.client.rpc('read_team_count',{p_team:stored.id}))
