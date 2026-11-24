@@ -19,6 +19,11 @@ export async function criarSessao(
 
   if (!(await isAdmin())) return { error: 'Not authorised.' }
 
+  const rawTitle = formData.get('title')
+  const title = typeof rawTitle === 'string' ? rawTitle.trim() : ''
+  if (!title) return { error: 'Enter a title for the count.' }
+  if (title.length > 120) return { error: 'The title can have at most 120 characters.' }
+
   const warehouseId = formData.get('warehouse_id')
   if (typeof warehouseId !== 'string' || !warehouseId) return { error: 'Choose a warehouse.' }
   const db = await createClient()
@@ -29,7 +34,7 @@ export async function criarSessao(
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('count_sessions')
-    .insert({ status: 'aberta', box_tare_g, tolerance_g, warehouse_id: warehouse.id })
+    .insert({ status: 'aberta', box_tare_g, tolerance_g, warehouse_id: warehouse.id, title })
     .select('id')
     .single()
 

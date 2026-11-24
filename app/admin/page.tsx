@@ -25,7 +25,7 @@ function Sign({ href, icon, title, text, figure, unit }: {
 export default async function AdminPage() {
   const supabase = await createClient()
   const [open, closed, solo, items, warehouses] = await Promise.all([
-    supabase.from('count_sessions').select('id, created_at, warehouses(name), teams(id, team_flows(team_id))')
+    supabase.from('count_sessions').select('id, created_at, title, warehouses(name), teams(id, team_flows(team_id))')
       .neq('status', 'fechada').order('created_at', { ascending: false }),
     supabase.from('count_sessions').select('id', { count: 'exact', head: true }).eq('status', 'fechada'),
     supabase.from('solo_sessions').select('id', { count: 'exact', head: true }).eq('status', 'open'),
@@ -47,7 +47,7 @@ export default async function AdminPage() {
           <span className="flex items-center gap-2 text-sm font-semibold text-ok"><span className="cs-live size-2.5 rounded-full bg-ok" />Count in progress</span>
           <strong className="font-display text-3xl leading-tight font-bold uppercase">
             {/* many-to-one: one warehouse object, typed as array by the client */}
-            {(live.warehouses as unknown as { name: string } | null)?.name ?? 'Session'}, started <LocalTime iso={live.created_at} />
+            {live.title ?? (live.warehouses as unknown as { name: string } | null)?.name ?? 'Session'}, started <LocalTime iso={live.created_at} />
           </strong>
           {sessions.length > 1 && <span className="text-[15px] text-ink-2">{sessions.length - 1} more session{sessions.length > 2 ? 's' : ''} in progress.</span>}
         </div>

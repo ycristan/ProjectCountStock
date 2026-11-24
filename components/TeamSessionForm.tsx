@@ -14,6 +14,11 @@ export function TeamSessionForm({ warehouses }: { warehouses: { id: string; name
     <div>
       <PageTop back={{ href: '/admin/sessao', label: 'New Session' }} title="New Team Count Session" />
       <form action={formAction} className="flex max-w-sm flex-col gap-5">
+        <label htmlFor="title" className="flex flex-col gap-1.5">
+          <Label>Title</Label>
+          <input id="title" name="title" type="text" required maxLength={120} autoComplete="off"
+            placeholder="e.g. End Of Year Count CCH - Main Warehouse 2026" className={inputClass} />
+        </label>
         <label className="flex flex-col gap-1.5">
           <Label>Warehouse</Label>
           <select name="warehouse_id" required defaultValue="" className={inputClass}>

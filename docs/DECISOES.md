@@ -295,3 +295,8 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 - Segurança: papel só de leitura conferido no banco e no servidor; toda função que grava recusa o Auditor, com teste negativo em cada uma.
 - Criação do acesso: um clique do admin na tela de equipes ("Create Auditor access"), não dentro do setup de equipes. Motivo: a criação automática alongava a ação do setup e quebrou o teste de navegador dele no CI; o setup é o caminho mais crítico e não ganha risco por causa do Auditor.
 - Cartão impresso (Yuri, 24/11): um único cartão do Auditor por sessão, com QR para o login e os dois PINs, igual ao das equipes. Botão "Print card" no bloco do Auditor; a impressão das equipes o inclui como última página. Nunca um cartão por equipe.
+
+## Título da sessão de equipes (2026-11-24)
+- Yuri: título obrigatório nas sessões novas (ex.: "End Of Year Count CCH - Main Warehouse 2026"), como no solo. Sessões antigas ficam sem título e aparecem por warehouse e data.
+- Obrigatório só pela ação de criar sessão (até 120 caracteres, sem espaços nas pontas). No banco a coluna é opcional, com checagem de título em branco ou longo, para não quebrar sessões existentes nem testes que inserem sessão direto.
+- Aparece na lista de sessões, na home do admin, no Audit Count, na tela de equipes e na contagem ao vivo do admin. Fora desta entrega: Auditor, telas dos contadores e nome do Excel (exigiriam mudar `read_team_count`, usada por todos).
