@@ -30,12 +30,15 @@ async function asMember<T>(teamId: string, membershipId: string, pin: string, ro
   const caller = await createClient()
   const { error: visible } = await caller.rpc('read_team_signing', { p_team: teamId })
   if (visible) return { denied: 'Team access unavailable.' }
+  const { data: { user: callerUser } } = await caller.auth.getUser()
   const admin = createAdminClient()
   const [{ data: team }, { data: member }] = await Promise.all([
     admin.from('teams').select('team_pin').eq('id', teamId).single(),
     admin.from('team_memberships').select('user_id,role').eq('team_id', teamId).eq('id', membershipId).single(),
   ])
   if (!team?.team_pin || !member || (role && member.role !== role)) return { denied: 'Person not found in this team.' }
+  // R11 (2026-11-02): a personal PIN is only used from that person's own signed-in device.
+  if (!callerUser || callerUser.id !== member.user_id) return { denied: 'Each person signs on their own device.' }
   const db = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { auth: { persistSession: false, autoRefreshToken: false } })
   const { data: login } = await db.auth.signInWithPassword({
