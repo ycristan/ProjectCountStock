@@ -14,10 +14,9 @@ Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a
 
 ## Em andamento — teste automático com 9 usuários (TEAM_COUNT_PLAN.md, item 6)
 Workflow "Nine users at the same time": 2 admins + equipe A (3) + equipe B (4), cada um num navegador isolado, pelas telas reais, do login ao Excel final, num banco descartável. Grava um vídeo por pessoa e um vídeo em grade (artefato `nine-users-video`, 14 dias), também útil para o tutorial.
-Achado: quando contadores da mesma equipe seguram "Finish" no mesmo instante, só um passa; os outros veem "The team changed. Refresh and try again." e precisam segurar de novo (4 de 5 no teste). Nada se perde (contrato T50), mas irrita no dia. Correção possível sem mudar o banco: a tela repete sozinha uma vez. Decisão de Yuri.
+Achado e corrigido na mesma PR (autorizado por Yuri em 25/11): "Finish" e "Accept/Reject" simultâneos na mesma equipe colidiam na revisão do time e a pessoa tinha de repetir (4 de 5 contadores no teste). Agora a tela repete sozinha com a revisão atual, sem mudar o banco, e não oferece de novo o botão antes da leitura mais recente chegar.
 
 ## Decisões pendentes de Yuri
-- Repetição automática do "Finish" e do "Accept" em caso de colisão (achado acima).
 - Tolerância em gramas (`default_tolerance_g`, `tolerance_g`): só o fluxo antigo usa; remover com ele depois de 02/01.
 - `solo_sessions.access_pin` sem uso: remover depois de 02/01 (precisa de `drop`, que o conector não roda).
 - O título da sessão não aparece no Auditor, nas telas dos contadores nem no nome do Excel: só se Yuri pedir.

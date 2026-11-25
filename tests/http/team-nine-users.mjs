@@ -63,7 +63,7 @@ const phase = async (name, work) => {
   stage = name; const t = Date.now(); await work(); timings.push([name, ((Date.now() - t) / 1000).toFixed(1)])
   console.log('PASS: ' + name)
 }
-const serverErrors = [], clicks = { finishConflicts: 0, accept: 0 }
+const serverErrors = [], clicks = { accept: 0 }
 const PHONE = { width: 390, height: 844 }, LAPTOP = { width: 1280, height: 800 }
 async function device(label, size) {
   if (videoDir) mkdirSync(videoDir + '/raw/' + label, { recursive: true })
@@ -189,10 +189,9 @@ try {
     await admin2.p.locator('[data-phase="counting"]').waitFor()
   })
 
-  // Same-instant finishes collide on the team revision: the loser sees "The team changed" (T50,
-  // recoverable) and, like a person, holds again. Collisions are counted and reported, not hidden.
+  // Same-instant finishes collide on the team revision (40001, nothing saved). The screen retries
+  // with the current revision on its own, so nobody has to hold Finish or tap Accept twice.
   await phase('every counter holds Finish at the same time; Independents accept each one', () => all(teams, async t => {
-    const waiting = /^Your count status: (Waiting for the Independent|Accepted)$/
     const accepting = (async () => { // the Independent taps Accept on whoever is waiting, while counters keep finishing
       await until(async () => {
         const accept = t.independent.p.locator('[data-member] button:not([disabled])', { hasText: /^Accept$/ }).first()
@@ -201,19 +200,14 @@ try {
       }, t.name + ' all finishes accepted')
     })()
     await all(t.counters, async c => {
-      for (let attempt = 0; ; attempt++) {
-        assert.ok(attempt < 5, c.label + ': finish never confirmed')
-        await hold(c.p, 'Hold to finish'); await confirmInApp(c.p); await delay(500)
-        let done = false
-        await until(async () => (done = (await c.p.getByText(waiting).count()) === 1) || (await c.p.locator('[data-phase="counting"]').count()) === 0
-          || ((await c.p.getByRole('button', { name: 'Hold to finish', exact: true }).isEnabled())
-            && (await c.p.getByText('The team changed. Refresh and try again.', { exact: true }).count()) === 1), c.label + ' finish result')
-        if (done || (await c.p.locator('[data-phase="counting"]').count()) === 0) break
-        clicks.finishConflicts++
-      }
+      await hold(c.p, 'Hold to finish'); await confirmInApp(c.p)
+      await until(async () => (await c.p.getByText(/^Your count status: (Waiting for the Independent|Accepted)$/).count()) === 1
+        || (await c.p.locator('[data-phase="counting"]').count()) === 0, c.label + ' finish confirmed')
+      assert.equal(await c.p.getByText('The team changed. Refresh and try again.', { exact: true }).count(), 0, c.label + ' saw a collision')
     })
     await accepting
   }))
+  assert.equal(clicks.accept, 5, 'one Accept per counter, no repeated tap (taps: ' + clicks.accept + ')')
 
   await phase('both Independents reconcile and submit at the same time', () => all(teams, async t => {
     const p = t.independent.p, counted = Object.keys(Object.assign({}, ...t.counts))
@@ -293,8 +287,6 @@ try {
   assert.deepEqual(serverErrors, [], 'No server error on any of the nine devices')
   console.log('PASS: nine people, two teams and two admins at the same time: ' + ((Date.now() - started) / 1000).toFixed(0) + ' s')
   console.table(timings)
-  // 5 counters need 5 accepts; anything above that was a collision the person had to repeat.
-  console.log('FINDING: finish collisions repeated by counters: ' + clicks.finishConflicts + '; extra Accept taps by Independents: ' + (clicks.accept - 5))
 } catch (error) {
   // Stage only: Playwright messages may echo typed PINs.
   console.error('Last server log lines:\n' + appLog.split('\n').filter(l => !/@count\.local|password/i.test(l)).slice(-15).join('\n'))
