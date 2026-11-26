@@ -9,6 +9,7 @@ import { filterItems } from '@/lib/inventory-search'
 import { useTeamLive } from '@/lib/use-team-live'
 import { PageTop, Tag, buttonClass, segmentClass } from '@/components/ui'
 import { Icon } from '@/components/icons'
+import { reportScreenError } from '@/lib/report-screen-error'
 
 type Status = 'equal' | 'tolerance' | 'different' | 'reconciled' | 'waiting'
 const STATUS: Record<Status, { label: string; tone: 'ok' | 'diff' | 'info' | 'neutral' }> = {
@@ -65,7 +66,7 @@ export function AllTeamsLive({ sessionId, sessionTitle = null, teamIds, initial,
       setStates(next)
       setComparisons(compared)
       setUnavailable(false)
-    } catch { if (sequence === readSequence.current) setUnavailable(true) }
+    } catch (error) { if (sequence === readSequence.current) { setUnavailable(true); reportScreenError('live.read', error) } }
   }, [teamIds])
   useTeamLive(teamIds, refresh, setUnavailable)
 

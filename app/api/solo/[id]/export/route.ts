@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx'
 import { isAdmin } from '@/lib/authorization'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
+import { sheetName } from '@/lib/team-session-report'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdmin())) {
@@ -38,7 +39,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, (session?.title ?? 'Solo').slice(0, 31))
+  XLSX.utils.book_append_sheet(wb, ws, sheetName(session?.title ?? '', 'Solo'))
 
   // ponytail: TS 5.7 Uint8Array cast — same pattern as existing export route
   const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as unknown as BodyInit

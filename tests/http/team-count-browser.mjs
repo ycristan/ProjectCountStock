@@ -13,7 +13,7 @@ const confirmInApp=async p=>{await p.locator('dialog[open] [data-confirm]').clic
 const holdToSubmit=async p=>{await p.getByRole('button',{name:'Hold to submit to admin',exact:true}).focus();await p.keyboard.down('Space');await delay(4300);await p.keyboard.up('Space')}
 const holdToFinish=async p=>{await p.getByRole('button',{name:'Hold to finish',exact:true}).focus();await p.keyboard.down('Space');await delay(4300);await p.keyboard.up('Space')}
 
-export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,page,plan,session,wh}) {
+export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,page,plan,session,wh,envelopes}) {
   assert.equal(process.env.GITHUB_ACTIONS,'true')
   assert.equal(base,'http://127.0.0.1:3100')
   assert.equal(new URL(status.API_URL).origin,'http://127.0.0.1:54321')
@@ -190,6 +190,12 @@ export async function verifyTeamCountBrowser({base,db,status,sql,login,browser,p
         for(let i=0;i<50&&!blocked;i++)await delay(100)
         assert.ok(blocked)
         await independent.p.getByRole('alert').filter({hasText:'Connection or access unavailable'}).waitFor()
+        stage='reconnection: screen error reaches Sentry, tagged preview, without identities'
+        let screen
+        for(let i=0;i<40&&!screen;i++){screen=envelopes.find(e=>e.includes('Shown on screen: team.read'));if(!screen)await delay(250)}
+        assert.ok(screen,'browser reports the failed team read')
+        assert.match(screen,/"environment":"preview"/)
+        for(const m of team.members)assert.ok(!screen.includes(team.pin+m.pin),'no login in telemetry')
         await independent.p.locator('tr[data-brand]').first().waitFor({state:'hidden'})
         assert.equal(await independent.p.locator('tr[data-brand]').count(),0)
         stage='reconnection: restore refresh'

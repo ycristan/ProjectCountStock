@@ -12,6 +12,7 @@ import { markCounterAbsent, readTeamSigning } from '@/actions/team-signing'
 import { SigningPanel } from './SigningPanel'
 import { useConfirm } from '@/components/confirm'
 import { HoldButton } from '@/components/hold-button'
+import { reportScreenError } from '@/lib/report-screen-error'
 import { PHASE_LABEL, PHASE_STEPS } from '@/lib/team-count-types'
 import { Button, Label, PageTop, Tag } from '@/components/ui'
 
@@ -74,7 +75,7 @@ export function TeamCountClient({ initial, inventory, back }: {
       setUnavailable(false)
       setRejected(lastFinish === 'reject')
       phase.current = next.phase
-    } catch { if (sequence === readSequence.current) setUnavailable(true) }
+    } catch (error) { if (sequence === readSequence.current) { setUnavailable(true); reportScreenError('team.read', error) } }
   }, [teamId, router])
   // The newest read wins; finish() waits for it so a button is not offered again on stale state.
   const latestRead = useRef<Promise<void>>(Promise.resolve())
@@ -125,7 +126,8 @@ export function TeamCountClient({ initial, inventory, back }: {
       if (next) saved.current.set(item.brand_code, next)
       void refresh()
       return result
-    } catch {
+    } catch (error) {
+      reportScreenError('team.save', error)
       return { error: 'Response unavailable. Retry the same count to confirm it safely.' }
     }
   }
@@ -143,7 +145,8 @@ export function TeamCountClient({ initial, inventory, back }: {
       command.current = null
       void refresh()
       return result
-    } catch {
+    } catch (error) {
+      reportScreenError('team.reconcile', error)
       return { error: 'Response unavailable. Retry the same count to confirm it safely.' }
     }
   }

@@ -65,6 +65,6 @@ Formato: 1 equipe com 2 contadores reais + Independente; Yuri como admin e, se f
 
 **7. Fechamento e Excel (admin)**
 - [ ] Em "Close the count", a lista mostra os produtos ativos não contados, por BIN. Clicar em "Acknowledge and close the count".
-- [ ] Baixar "Download final Excel": uma aba por equipe; o produto contado pelas duas equipes aparece somado no Consolidado; não contados com 0 e "Not counted"; inativos não contados sem linha.
+- [ ] Baixar "Download final Excel": uma aba por equipe; o produto contado pelas duas equipes aparece somado na aba Consolidated; não contados com 0 e "Not counted"; inativos não contados sem linha.
 - [ ] Baixar "Download Audit Count" e conferir contagens, pesagens, conciliações, decisões, ausências e assinaturas.
 - [ ] Tentar alterar qualquer coisa depois do fechamento: nada pode mudar.

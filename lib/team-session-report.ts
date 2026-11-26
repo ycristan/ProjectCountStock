@@ -1,6 +1,6 @@
 // Final team-count workbook (block 12, columns approved by Yuri on 2026-10-07):
-// one sheet per team, "Consolidado" with each team's final and the total, and
-// "Template Import Reconc" unchanged from the legacy export. Pure: rows only.
+// one sheet per team, "Consolidated" with each team's final and the total, and
+// "Template Import Reconc" (legacy four columns plus the Note, Yuri 26/11). Pure: rows only.
 
 type Cell = string | number
 export type Sheet = { name: string; rows: Cell[][] }
@@ -24,11 +24,14 @@ export type ConsolidatedItem = {
 const split = (quantity: number, bpu: number): Cell[] => [Math.floor(quantity / bpu), quantity % bpu]
 const RESOLUTION = { equal: 'Equal', weight_tolerance: 'Weight tolerance', reconciled: 'Reconciled' } as const
 
-// Excel sheet names: max 31 chars, no []:*?/\ and unique in the workbook.
+// Excel sheet names: max 31 chars and no []:*?/\ (a title like "Count 04/11" broke the Solo download).
+export const sheetName = (raw: string, fallback = 'Sheet') => raw.replace(/[[\]:*?/\\]/g, ' ').trim().slice(0, 31) || fallback
+
+// Team sheets must also be unique in the workbook.
 function sheetNames(names: string[]) {
-  const used = new Set(['consolidado', 'template import reconc'])
+  const used = new Set(['consolidated', 'template import reconc'])
   return names.map(raw => {
-    const base = raw.replace(/[[\]:*?/\\]/g, ' ').trim().slice(0, 31) || 'Team'
+    const base = sheetName(raw, 'Team')
     let name = base
     for (let n = 2; used.has(name.toLowerCase()); n++) name = base.slice(0, 31 - String(n).length - 1) + ' ' + n
     used.add(name.toLowerCase())
@@ -58,7 +61,7 @@ export function teamSessionSheets(teams: TeamReport[], consolidated: Consolidate
     return { name: names[index], rows: [header, ...rows] }
   })
   const lines = [...consolidated].sort(byCode)
-  const consolidatedSheet: Sheet = { name: 'Consolidado', rows: [
+  const consolidatedSheet: Sheet = { name: 'Consolidated', rows: [
     ['Category', 'Category 1', 'Brand Code', 'Brand Name', 'BPU', 'Status',
       ...teams.flatMap(t => [t.name + ' Cases', t.name + ' Units']), 'TOTAL Cases', 'TOTAL Units', 'Note'],
     ...lines.map((item): Cell[] => [item.category ?? '', item.category1 ?? '', item.brand_code, item.brand_name, item.bpu,
@@ -69,10 +72,10 @@ export function teamSessionSheets(teams: TeamReport[], consolidated: Consolidate
       }),
       item.final_cases, item.final_units, item.uncounted ? 'Not counted' : '']),
   ] }
-  // Unchanged import format: every consolidated line, uncounted actives with 0.
+  // Import format: every consolidated line, uncounted actives with 0 and the same Note as Consolidated.
   const template: Sheet = { name: 'Template Import Reconc', rows: [
-    ['Brand Code', 'Outer (qty)', 'Units (qty)', 'Status'],
-    ...lines.map(item => [item.brand_code, item.final_cases, item.final_units, 'Avl']),
+    ['Brand Code', 'Outer (qty)', 'Units (qty)', 'Status', 'Note'],
+    ...lines.map(item => [item.brand_code, item.final_cases, item.final_units, 'Avl', item.uncounted ? 'Not counted' : '']),
   ] }
   return [...teamSheets, consolidatedSheet, template]
 }

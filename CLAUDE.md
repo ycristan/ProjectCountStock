@@ -4,7 +4,7 @@ Sistema web de contagem física de inventário cega em warehouse. Yuri é gerent
 
 ## Ao iniciar uma sessão
 1. Ler `docs/ESTADO.md` (uma tela): em que pé o trabalho está e o próximo passo.
-2. Conferir o estado real pelos conectores, nunca por documento: PRs abertas e branches (GitHub), migrations aplicadas (Supabase), deploy de produção (Vercel).
+2. Conferir o estado real pelos conectores, nunca por documento: PRs abertas e branches (GitHub), migrations aplicadas (Supabase), deploy de produção (Vercel) e problemas abertos em produção (Sentry, projeto `javascript-nextjs`). Erro novo vira item de trabalho ou é resolvido com o motivo.
 3. Se `docs/ESTADO.md` contradisser os conectores, os conectores valem. Corrigir o documento na próxima PR.
 4. Antes de mexer em uma área, ler o documento dela (índice em `docs/README.md`).
 

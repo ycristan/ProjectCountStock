@@ -308,3 +308,11 @@ Consolidado em 2026-10-05 a partir de `docs/`, `.claude/memory/` e das branches 
 
 ## Repetição automática em colisões do fluxo de equipes (2026-11-25)
 - Yuri aprovou: quando "Finish" ou "Accept/Reject" de pessoas da mesma equipe chegam no mesmo instante e colidem na revisão do time, a tela repete sozinha com a revisão atual (até 5 vezes), em vez de mostrar "The team changed" e pedir que a pessoa repita. Motivo: o teste com 9 usuários mostrou 4 de 5 contadores tendo de repetir. Na colisão o banco não grava nada; ele continua conferindo papel, etapa e estado do contador.
+
+## Excel final em inglês e Note na aba de importação (2026-11-26)
+- Yuri: nenhum termo em português nos Excels. A aba "Consolidado" passa a "Consolidated" (fluxo novo e fluxo antigo) e os arquivos a `team-count-…`, `count-…`.
+- Yuri: a coluna "Note" ("Not counted") da aba Consolidated é repetida como 5ª coluna da aba "Template Import Reconc". Risco avisado: um importador que aceite só as 4 colunas antigas pode recusar o arquivo; nesse caso, apagar a coluna antes de importar.
+
+## Vigilância de erros com o Sentry (2026-11-26)
+- Yuri aprovou: o Sentry separa preview de produção também no navegador; falhas que o celular só mostra na tela (leitura da equipe, gravação sem resposta) vão ao Sentry como aviso, uma vez por tipo por página, sem ids de pessoa, nomes, PINs ou dados; alerta por e-mail para todo problema novo em produção; monitor de disponibilidade do `/login`; o agente confere o Sentry no início de cada sessão (CLAUDE.md).
+- Mapas de código (stack legível) ficam para depois: precisam de um token do Sentry nas variáveis da Vercel, que o conector não grava.
