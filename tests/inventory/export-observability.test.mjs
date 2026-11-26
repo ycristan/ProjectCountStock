@@ -76,7 +76,9 @@ test('Next build uses Sentry integration and retains upload body limit',async()=
   let called=false
   await loadSource('next.config.ts',{'@sentry/nextjs':{withSentryConfig:(config,options)=>{
     called=true;assert.equal(config.experimental.serverActions.bodySizeLimit,'4.4mb')
-    assert.equal(options.sourcemaps.disable,true);return config
-  }}})
+    assert.equal(options.sourcemaps.disable,true)
+    assert.equal(config.env.NEXT_PUBLIC_VERCEL_ENV,'preview','browser Sentry tag follows the Vercel environment')
+    return config
+  }}},{process:{env:{VERCEL_ENV:'preview'}}})
   assert.equal(called,true)
 })

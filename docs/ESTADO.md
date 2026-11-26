@@ -1,20 +1,22 @@
-# Estado — 2026-11-25
+# Estado — 2026-11-26
 
 Reescrever do zero a cada PR. Máximo 40 linhas. PRs, migrations e deploy: consultar os conectores.
 
 ## Prazo
 Próxima contagem oficial de equipes: **02/01/2027**. Datas-limite (entregar antes se possível):
 - até 27/11: fluxo novo completo, testado e publicado em produção;
-- até 11/12: teste automático com 9 usuários em paralelo;
+- até 11/12: teste automático com 9 usuários em paralelo (feito, #127);
 - 12/12 a 02/01: produção congelada, só correção urgente.
 Plano B: sem fluxo novo pronto em 27/11, contar 02/01 no fluxo antigo (já com a correção do Independente).
 
 ## Em produção
-`main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), painel do admin, contagem ao vivo, Inventory com abas por warehouse, Audit Inventory gravado pelo banco (#119), Auditor (#122), assinatura no próprio aparelho (#124) e título obrigatório (#125). Backup diário desde 28/10. Solo é usado quase todo dia.
+`main` com fluxo novo ligado (`TEAM_SETUP_ENABLED=true` desde 29/10), painel do admin, contagem ao vivo, Inventory com abas por warehouse, Audit Inventory gravado pelo banco (#119), Auditor (#122), assinatura no próprio aparelho (#124), título obrigatório (#125) e teste automático com 9 usuários + repetição automática de Finish/Accept em colisão (#127). Backup diário desde 28/10. Solo é usado quase todo dia.
 
-## Em andamento — teste automático com 9 usuários (TEAM_COUNT_PLAN.md, item 6)
-Workflow "Nine users at the same time": 2 admins + equipe A (3) + equipe B (4), cada um num navegador isolado, pelas telas reais, do login ao Excel final, num banco descartável. Grava um vídeo por pessoa e um vídeo em grade (artefato `nine-users-video`, 14 dias), também útil para o tutorial.
-Achado e corrigido na mesma PR (autorizado por Yuri em 25/11): "Finish" e "Accept/Reject" simultâneos na mesma equipe colidiam na revisão do time e a pessoa tinha de repetir (4 de 5 contadores no teste). Agora a tela repete sozinha com a revisão atual, sem mudar o banco, e não oferece de novo o botão antes da leitura mais recente chegar.
+## Em andamento — Excel em inglês e vigilância de erros (Sentry)
+- Excel do Solo quebrava com `: / \ ? * [ ]` no título (20 de 99 sessões em 26/11); corrigido nesta PR.
+- Excel de equipes: aba "Consolidated" (antes "Consolidado") e "Note" repetida na aba "Template Import Reconc".
+- Sentry: preview separado de produção no navegador; erros só de tela das equipes enviados como aviso; alerta por e-mail para todo erro novo em produção e monitor do `/login` a cada 5 min (já criados no Sentry em 26/11).
+- Falta: mapas de código para stack legível (token do Sentry na Vercel; o conector não grava variáveis).
 
 ## Decisões pendentes de Yuri
 - Tolerância em gramas (`default_tolerance_g`, `tolerance_g`): só o fluxo antigo usa; remover com ele depois de 02/01.
@@ -25,7 +27,6 @@ Achado e corrigido na mesma PR (autorizado por Yuri em 25/11): "Finish" e "Accep
 - Tela Audit Inventory (INVENTORY_WAREHOUSES.md §1, PR 6): período, produtos e Excel. Pode entrar antes de 02/01.
 - Varredura de idioma: todo texto da aplicação em inglês britânico (PRODUTO.md); ~60 textos em português.
 - Itens 2 e 3 de TEAM_COUNT_PLAN.md, "Achados do teste de Yuri em 02/11". Yuri assumiu o risco no prazo de 27/11.
-- Sentry nos erros mostrados nas telas de equipe (hoje só capta falhas não tratadas).
 
 ## A verificar
 - Yuri ainda não mediu o Inventory depois de #115 e #116 (antes: 4 a 5 s).

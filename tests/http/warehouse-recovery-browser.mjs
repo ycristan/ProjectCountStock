@@ -61,7 +61,7 @@ export async function verifyRecoveredWarehouse({db,base,headers,cookies}) {
   const team=await fetch(base+'/api/sessao/00000000-0000-0000-0000-00000000a106/export',{headers})
   assert.equal(team.status,200)
   const wb=XLSX.read(Buffer.from(await team.arrayBuffer()),{type:'buffer'})
-  const rows=XLSX.utils.sheet_to_json(wb.Sheets.Consolidado,{header:1})
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets.Consolidated,{header:1})
   const row=rows.find(row=>row[2]==='1213')
   assert.ok(row)
   assert.equal(row[3],'Kinder synthetic 1213')

@@ -270,10 +270,12 @@ try {
     const res = await admin1.p.request.get(base + '/api/sessao/' + session.id + '/team-export')
     assert.equal(res.status(), 200)
     const book = XLSX.read(Buffer.from(await res.body()), { type: 'buffer' })
-    const rows = XLSX.utils.sheet_to_json(book.Sheets.Consolidado, { defval: '' })
+    const rows = XLSX.utils.sheet_to_json(book.Sheets.Consolidated, { defval: '' })
     const got = Object.fromEntries(rows.map(r => [r['Brand Code'], [r['TOTAL Cases'], r['TOTAL Units']]]))
     for (const [n, want] of Object.entries(EXPECTED)) assert.deepEqual(got[code(n)], want, 'Total P' + n)
     assert.equal(rows.find(r => r['Brand Code'] === code(7)).Note, 'Not counted')
+    const template = XLSX.utils.sheet_to_json(book.Sheets['Template Import Reconc'], { defval: '' })
+    assert.deepEqual(template.filter(r => r.Note === 'Not counted').map(r => r['Brand Code']), [code(7)], 'Note repeated in the import template')
     // One sealed count per counter and product: nothing duplicated by the simultaneous clicks.
     for (const t of teams) {
       const records = checked(await db.from('team_count_records').select('brand_code,slot_id').eq('team_id', t.id))

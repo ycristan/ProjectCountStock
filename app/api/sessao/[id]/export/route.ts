@@ -203,7 +203,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   })
 
   const wsConsolidado = XLSX.utils.aoa_to_sheet([h1, h2, h3, ...consolidatedRows])
-  XLSX.utils.book_append_sheet(wb, wsConsolidado, 'Consolidado')
+  XLSX.utils.book_append_sheet(wb, wsConsolidado, 'Consolidated')
 
   // Template Import Reconc: Brand Code | Outer (qty) | Units (qty) | Status="Avl"
   const templateRows = allCodes.map((code) => {
@@ -222,7 +222,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return new Response(buf, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="contagem-${sessionId.slice(0, 8)}.xlsx"`,
+      'Content-Disposition': `attachment; filename="count-${sessionId.slice(0, 8)}.xlsx"`,
     },
   })
 }

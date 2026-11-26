@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { teamSessionSheets } from '../../lib/team-session-report.ts'
+import { sheetName, teamSessionSheets } from '../../lib/team-session-report.ts'
 
 // Synthetic data only. Columns approved by Yuri on 2026-10-07.
 const teams = [{
@@ -26,8 +26,8 @@ const consolidated = [
 const sheets = teamSessionSheets(teams, consolidated)
 const sheet = name => sheets.find(s => s.name === name)
 
-test('one sheet per team, then Consolidado and the unchanged template', () => {
-  assert.deepEqual(sheets.map(s => s.name), ['Aisle A', 'Aisle A 2', 'Consolidado', 'Template Import Reconc'])
+test('one sheet per team, then Consolidated and the template, all in English', () => {
+  assert.deepEqual(sheets.map(s => s.name), ['Aisle A', 'Aisle A 2', 'Consolidated', 'Template Import Reconc'])
 })
 
 test('team sheet: each counter in order, reconciled only when reconciled, how it was resolved', () => {
@@ -39,17 +39,17 @@ test('team sheet: each counter in order, reconciled only when reconciled, how it
   assert.deepEqual(p2, ['Snacks', '', 'p2', 'Two', 10, 1, 4, 1, 7, 1, 5, 1, 5, 'Recounted'])
 })
 
-test('consolidado: final of each team, total, status and "Not counted"', () => {
-  const [header, p1, p9] = sheet('Consolidado').rows
+test('consolidated: final of each team, total, status and "Not counted"', () => {
+  const [header, p1, p9] = sheet('Consolidated').rows
   assert.deepEqual(header, ['Category', 'Category 1', 'Brand Code', 'Brand Name', 'BPU', 'Status',
     'Aisle A Cases', 'Aisle A Units', 'Aisle A Cases', 'Aisle A Units', 'TOTAL Cases', 'TOTAL Units', 'Note'])
   assert.deepEqual(p1, ['Drinks', 'Cans', 'p1', 'One', 24, 'Inactive', 2, 2, 1, 0, 3, 2, ''])
   assert.deepEqual(p9, ['', '', 'p9', 'Missing', 6, 'Active', '', '', '', '', 0, 0, 'Not counted'])
 })
 
-test('template keeps the legacy four columns and Avl, uncounted with 0', () => {
+test('template keeps the legacy four columns and Avl, plus the Note of the uncounted (Yuri, 26/11)', () => {
   assert.deepEqual(sheet('Template Import Reconc').rows, [
-    ['Brand Code', 'Outer (qty)', 'Units (qty)', 'Status'], ['p1', 3, 2, 'Avl'], ['p9', 0, 0, 'Avl']])
+    ['Brand Code', 'Outer (qty)', 'Units (qty)', 'Status', 'Note'], ['p1', 3, 2, 'Avl', ''], ['p9', 0, 0, 'Avl', 'Not counted']])
 })
 
 test('audit count keeps replaced versions, raw weighing and every decision in time order', async () => {
@@ -69,4 +69,10 @@ test('audit count keeps replaced versions, raw weighing and every decision in ti
   assert.deepEqual(sheets[0].rows[2].slice(8, 14), ['weight', 1370, 1, 300, 1070, 2])
   assert.deepEqual(sheets[1].rows[1].slice(0, 4), ['A', 'Ivy', 'p1', 1])
   assert.deepEqual(sheets[2].rows.slice(1).map(r => r[3]), ['Returned for recount', 'Signed by PIN'])
+})
+
+test('sheet name: Excel-forbidden characters and length never break a download (Solo bug, 04/11)', () => {
+  assert.equal(sheetName('Count 04/11: aisle [A]*?\\'), 'Count 04 11  aisle  A')
+  assert.equal(sheetName('x'.repeat(40)).length, 31)
+  assert.equal(sheetName(' / '), 'Sheet')
 })

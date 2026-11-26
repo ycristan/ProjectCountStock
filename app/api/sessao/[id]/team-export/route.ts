@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const report = await loadTeamSessionReport(await createClient(), id)
     if (!report) return new NextResponse('Session not closed yet', { status: 409 })
-    return xlsxResponse(teamSessionSheets(report.teams, report.consolidated), 'contagem-equipes-' + id.slice(0, 8) + '.xlsx')
+    return xlsxResponse(teamSessionSheets(report.teams, report.consolidated), 'team-count-' + id.slice(0, 8) + '.xlsx')
   } catch {
     await reportTeamContextError('team.count')
     return new NextResponse('Report unavailable', { status: 500 })
