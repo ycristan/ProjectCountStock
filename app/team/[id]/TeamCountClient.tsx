@@ -43,7 +43,7 @@ export function TeamCountClient({ initial, inventory, back }: {
   // Products whose count just changed flash once on the monitor; the number restarts the animation.
   const [flash, setFlash] = useState(new Map<string, number>())
   const seen = useRef(new Map(initial.records.map(r => [r.brandCode + ':' + r.membershipId, r.revision])))
-  const refresh = useCallback(async () => {
+  const read = useCallback(async () => {
     const sequence = ++readSequence.current
     try {
       const next = await readTeamCount(teamId)
@@ -76,6 +76,9 @@ export function TeamCountClient({ initial, inventory, back }: {
       phase.current = next.phase
     } catch { if (sequence === readSequence.current) setUnavailable(true) }
   }, [teamId, router])
+  // The newest read wins; finish() waits for it so a button is not offered again on stale state.
+  const latestRead = useRef<Promise<void>>(Promise.resolve())
+  const refresh = useCallback(() => (latestRead.current = read()), [read])
   // Inventory is loaded once; reload it only on demand or after a product-changed error.
   const reloadCatalog = useCallback(async () => {
     const next = await readTeamInventory(teamId).catch(() => null)
@@ -145,11 +148,26 @@ export function TeamCountClient({ initial, inventory, back }: {
     }
   }
 
+  // Finish requests and the Independent's decisions often happen at the same second. A collision on
+  // the team revision saves nothing (40001), so retry with the current revision instead of making
+  // the person hold or tap again. The database still checks role, phase and the counter's state.
+  async function onCurrentRevision(run: (revision: string) => Promise<{ error?: string; conflict?: boolean }>) {
+    let result = await run(state.revision)
+    for (let retry = 0; retry < 5 && result.conflict; retry++) { // one winner per round: enough for a 5-counter team
+      const current = await readTeamCount(teamId)
+      if (!current) break
+      result = await run(current.revision)
+    }
+    return result
+  }
+
   function finish(action: () => Promise<{ error?: string }>, done: string) {
     startTransition(async () => {
       const result = await action()
       setNotice(result.error ?? done)
       await refresh()
+      // A live update fired by this same write can start after our read and replace it.
+      for (let run = latestRead.current; ; run = latestRead.current) { await run; if (run === latestRead.current) break }
     })
   }
   const statusLabel: Record<string, string> = {
@@ -290,11 +308,11 @@ export function TeamCountClient({ initial, inventory, back }: {
         </span>
         {state.role === 'independent' && m.finishState === 'requested' && <span className="flex gap-2">
           <Button variant="danger" size="sm" disabled={pending}
-            onClick={() => finish(() => decideTeamFinish(teamId, m.id, false, state.revision, crypto.randomUUID()),
-              'Finish rejected: ' + m.name + ' can count again.')}>Reject</Button>
+            onClick={() => { const command = crypto.randomUUID(); finish(() => onCurrentRevision(revision => decideTeamFinish(teamId, m.id, false, revision, command)),
+              'Finish rejected: ' + m.name + ' can count again.') }}>Reject</Button>
           <Button variant="success" size="sm" disabled={pending}
-            onClick={() => finish(() => decideTeamFinish(teamId, m.id, true, state.revision, crypto.randomUUID()),
-              'Finish accepted: ' + m.name + '.')}>Accept</Button>
+            onClick={() => { const command = crypto.randomUUID(); finish(() => onCurrentRevision(revision => decideTeamFinish(teamId, m.id, true, revision, command)),
+              'Finish accepted: ' + m.name + '.') }}>Accept</Button>
         </span>}
         {state.role === 'independent' && !m.departed && m.finishState !== 'accepted' && <Button variant="quiet" size="sm" disabled={pending}
           onClick={() => {
@@ -347,7 +365,8 @@ export function TeamCountClient({ initial, inventory, back }: {
             text: 'You will not be able to add or edit counts unless the Independent rejects it.' })
           if (!ok) return
           const membershipId = state.membershipId!
-          finish(() => requestTeamFinish(teamId, membershipId, state.revision, crypto.randomUUID()),
+          const command = crypto.randomUUID()
+          finish(() => onCurrentRevision(revision => requestTeamFinish(teamId, membershipId, revision, command)),
             'Finish requested. Waiting for the Independent.')
         }} />
       </div>} /></div>}

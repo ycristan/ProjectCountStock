@@ -1,0 +1,73 @@
+name: Nine users at the same time
+
+# Two admins and two teams (3 + 4 people) through the real screens at once, in a disposable
+# database with synthetic data. Saves one video per person and a grid video for review.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'actions/**'
+      - 'app/**'
+      - 'lib/**'
+      - 'components/**'
+      - 'tests/http/team-nine-users.mjs'
+      - 'package*.json'
+      - '.github/workflows/team-nine-users.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: nine-users-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+
+jobs:
+  nine-users:
+    name: Nine people counting at the same time
+    runs-on: ubuntu-24.04 # Playwright 1.58.2 não instala navegador no ubuntu-latest (26.04)
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Start disposable Supabase
+        run: |
+          if [ ! -f supabase/config.toml ]; then supabase init; fi
+          supabase start
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install app, browser and video tools
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm install --prefix /tmp/count-stock-browser --no-save --ignore-scripts playwright@1.58.2
+          /tmp/count-stock-browser/node_modules/.bin/playwright install --with-deps chromium
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - name: Nine users from login to final Excel (disposable only)
+        env:
+          VIDEO_DIR: ${{ runner.temp }}/nine-users
+          VIDEO_PACE_MS: '600'
+          SCREENSHOT_DIR: ${{ runner.temp }}/nine-users/failure
+        run: node tests/http/team-nine-users.mjs
+
+      # Synthetic run only: no real data, PINs are throwaway.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nine-users-video
+          path: ${{ runner.temp }}/nine-users
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Stop disposable Supabase
+        if: always()
+        run: supabase stop

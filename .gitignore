@@ -38,3 +38,7 @@ next-env.d.ts
 
 # graphify: mapa do código, refeito no início de cada sessão
 graphify-out/
+
+# Supabase CLI local state (disposable stack)
+supabase/.branches/
+supabase/.temp/

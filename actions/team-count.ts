@@ -45,7 +45,9 @@ async function finishCommand(rpc: 'request_team_finish' | 'decide_team_finish', 
   const { error } = await db.rpc(rpc, args)
   if (!error) return {}
   if (!['40001', '42501', 'P0001'].includes(error.code)) await reportTeamContextError('team.count')
-  return { error: error.code === '40001' ? 'The team changed. Refresh and try again.' : 'Not confirmed. Refresh and try again.' }
+  // conflict: another team action won the same revision; nothing was saved, so a retry is safe.
+  return error.code === '40001' ? { error: 'The team changed. Refresh and try again.', conflict: true }
+    : { error: 'Not confirmed. Refresh and try again.' }
 }
 
 export async function requestTeamFinish(teamId: string, membershipId: string, revision: string, command: string) {
